@@ -6,6 +6,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../spaces/data/models/space_models.dart';
@@ -236,39 +238,10 @@ class _ReservationsStatusScreenState
                   if (reservations.isEmpty) {
                     return SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xl24),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryContainer.withValues(alpha: 0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.event_busy_rounded,
-                                  color: AppColors.primary,
-                                  size: 36,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.md12),
-                              Text(
-                                'Belum Ada Pemesanan',
-                                style: AppTypography.h3,
-                              ),
-                              const SizedBox(height: AppSpacing.xs4),
-                              Text(
-                                'Pemesanan dengan status ini belum tersedia. Buat reservasi workstation baru di katalog.',
-                                style: AppTypography.caption,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
+                      child: AppEmptyState(
+                        illustration: const EmptyReservationsIllustration(size: 160),
+                        title: 'Belum Ada Pemesanan',
+                        message: 'Anda belum memiliki reservasi dengan status ini. Jelajahi katalog dan pesan space nyaman Anda sekarang.',
                       ),
                     );
                   }
@@ -309,27 +282,14 @@ class _ReservationsStatusScreenState
                     ),
                   ),
                 ),
-                error: (error, _) => SliverFillRemaining(
+                error: (error, stack) => SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xl24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
-                          const SizedBox(height: AppSpacing.sm8),
-                          Text('Gagal Memuat Reservasi', style: AppTypography.h3),
-                          const SizedBox(height: AppSpacing.xs4),
-                          Text(error.toString(), style: AppTypography.caption),
-                          const SizedBox(height: AppSpacing.md12),
-                          ElevatedButton(
-                            onPressed: () => ref.invalidate(myReservationsProvider),
-                            child: const Text('Coba Lagi'),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: AppEmptyState(
+                    illustration: const NetworkErrorIllustration(size: 160),
+                    title: 'Gagal Memuat Reservasi',
+                    message: '$error',
+                    actionLabel: 'Coba Lagi',
+                    onAction: () => ref.invalidate(myReservationsProvider),
                   ),
                 ),
               ),

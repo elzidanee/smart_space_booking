@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../providers/spaces_controller.dart';
@@ -216,39 +217,10 @@ class _SpacesCatalogScreenState extends ConsumerState<SpacesCatalogScreen> {
                   if (spaces.isEmpty) {
                     return SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xl24),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 72,
-                                height: 72,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryContainer.withValues(alpha: 0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.search_off_rounded,
-                                  color: AppColors.primary,
-                                  size: 36,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.md12),
-                              Text(
-                                'Space Tidak Ditemukan',
-                                style: AppTypography.h3,
-                              ),
-                              const SizedBox(height: AppSpacing.xs4),
-                              Text(
-                                'Coba gunakan kata kunci lain atau ganti filter kategori.',
-                                style: AppTypography.caption,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
+                      child: AppEmptyState(
+                        illustration: const EmptySpacesIllustration(size: 160),
+                        title: 'Space Tidak Ditemukan',
+                        message: 'Coba gunakan kata kunci lain atau pilih filter kategori yang berbeda.',
                       ),
                     );
                   }
@@ -288,34 +260,12 @@ class _SpacesCatalogScreenState extends ConsumerState<SpacesCatalogScreen> {
                 ),
                 error: (error, _) => SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xl24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline_rounded,
-                            color: AppColors.danger,
-                            size: 40,
-                          ),
-                          const SizedBox(height: AppSpacing.sm8),
-                          Text('Gagal Memuat Katalog', style: AppTypography.h3),
-                          const SizedBox(height: AppSpacing.xs4),
-                          Text(
-                            error.toString(),
-                            style: AppTypography.caption,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: AppSpacing.md12),
-                          ElevatedButton.icon(
-                            onPressed: () => ref.invalidate(spacesListProvider),
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Coba Lagi'),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: AppEmptyState(
+                    illustration: const NetworkErrorIllustration(size: 160),
+                    title: 'Gagal Memuat Data Space',
+                    message: '$error',
+                    actionLabel: 'Coba Lagi',
+                    onAction: () => ref.invalidate(spacesCatalogProvider),
                   ),
                 ),
               ),

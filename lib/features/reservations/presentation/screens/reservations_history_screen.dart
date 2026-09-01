@@ -7,6 +7,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_empty_state.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../providers/reservations_controller.dart';
@@ -244,30 +246,10 @@ class _ReservationsHistoryScreenState
                 if (summary.items.isEmpty) {
                   return SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.xl24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.history_toggle_off_rounded,
-                              size: 48,
-                              color: AppColors.ink600,
-                            ),
-                            const SizedBox(height: AppSpacing.sm8),
-                            Text(
-                              'Tidak Ada Riwayat',
-                              style: AppTypography.h3,
-                            ),
-                            const SizedBox(height: AppSpacing.xs4),
-                            Text(
-                              'Belum ada transaksi di bulan ${_bulanList[selectedMonth - 1]} $selectedYear.',
-                              style: AppTypography.caption,
-                            ),
-                          ],
-                        ),
-                      ),
+                    child: AppEmptyState(
+                      illustration: const EmptyReservationsIllustration(size: 160),
+                      title: 'Tidak Ada Riwayat Transaksi',
+                      message: 'Belum ada catatan reservasi atau transaksi selesai di bulan ${_bulanList[selectedMonth - 1]} $selectedYear.',
                     ),
                   );
                 }
