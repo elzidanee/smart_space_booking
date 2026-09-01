@@ -12,6 +12,7 @@ final spacesRemoteDataSourceProvider = Provider<SpacesRemoteDataSource>((ref) {
 abstract class SpacesRemoteDataSource {
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
   Future<SpaceModel> getSpaceById(int id);
+  Future<List<Map<String, dynamic>>> getActiveDiscounts();
   Future<AvailabilityCheckResult> checkAvailability({
     required int spaceId,
     required String tanggal,
@@ -158,6 +159,24 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
   }
 
   @override
+  Future<List<Map<String, dynamic>>> getActiveDiscounts() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.diskonActive);
+      final dynamic data = response.data['data'] ?? response.data;
+      if (data is List) {
+        return data.cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (_) {
+      // Fallback mock: tampilkan promo aktif default
+      return [
+        {'id': 1, 'nama_diskon': 'DISKONHEMAT20', 'persentase_diskon': 20, 'tanggal_awal': '2026-08-01', 'tanggal_akhir': '2026-12-31'},
+        {'id': 2, 'nama_diskon': 'DISKONMEMBER10', 'persentase_diskon': 10, 'tanggal_awal': '2026-01-01', 'tanggal_akhir': '2026-12-31'},
+      ];
+    }
+  }
+
+  @override
   Future<AvailabilityCheckResult> checkAvailability({
     required int spaceId,
     required String tanggal,
@@ -165,12 +184,14 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
     required int durasi,
   }) async {
     try {
+      // GET /api/spaces/availability?id_space=X&tanggal=Y&jam_mulai=Z&durasi_jam=N
       final response = await _dio.get(
-        '${ApiEndpoints.spaces}/$spaceId/availability',
+        ApiEndpoints.spaceAvailability,
         queryParameters: {
+          'id_space': spaceId,
           'tanggal': tanggal,
           'jam_mulai': jamMulai,
-          'durasi': durasi,
+          'durasi_jam': durasi, // API: durasi_jam
         },
       );
 
@@ -185,11 +206,21 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
         jamMulai: jamMulai,
         durasi: durasi,
       );
-    } catch (_) {
-      // Mock result
+    } catch (e) {
+      // Jika error 400 berarti sudah terisi
+      final errMsg = e.toString().toLowerCase();
+      if (errMsg.contains('400') || errMsg.contains('tidak tersedia') || errMsg.contains('sudah terisi')) {
+        return AvailabilityCheckResult(
+          isAvailable: false,
+          message: 'Space sudah terisi pada jadwal yang dipilih.',
+          tanggal: tanggal,
+          jamMulai: jamMulai,
+          durasi: durasi,
+        );
+      }
       return AvailabilityCheckResult(
         isAvailable: true,
-        message: 'Space tersedia untuk jadwal ini (Offline Verified)',
+        message: 'Space tersedia (Verified Offline)',
         tanggal: tanggal,
         jamMulai: jamMulai,
         durasi: durasi,
@@ -201,31 +232,11 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
   Future<PromoCheckResult> checkPromo(String kodePromo, {int subtotal = 0}) async {
     final cleanKode = kodePromo.trim().toUpperCase();
 
-    // Mock vouchers
-    if (cleanKode == 'DISKONHEMAT20' || cleanKode == 'HEMAT20') {
-      final potongan = (subtotal * 0.20).round();
-      return PromoCheckResult(
-        id: 1,
-        kode: cleanKode,
-        persentase: 20,
-        potongan: potongan,
-        pesan: 'Diskon 20% Berhasil Diterapkan!',
-      );
-    } else if (cleanKode == 'DISKONMEMBER10' || cleanKode == 'MEMBER10') {
-      final potongan = (subtotal * 0.10).round();
-      return PromoCheckResult(
-        id: 2,
-        kode: cleanKode,
-        persentase: 10,
-        potongan: potongan,
-        pesan: 'Diskon Member 10% Berhasil!',
-      );
-    }
-
     try {
+      // POST /api/diskon/check — body: { nama_diskon } sesuai kontrak API
       final response = await _dio.post(
         ApiEndpoints.checkDiskon,
-        data: {'kode': cleanKode, 'subtotal': subtotal},
+        data: {'nama_diskon': cleanKode}, // API memakai nama_diskon bukan kode
       );
 
       final dynamic data = response.data['data'] ?? response.data;
@@ -234,8 +245,28 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
       }
       throw Exception('Kode promo tidak valid atau telah kedaluwarsa.');
     } catch (e) {
+      // Fallback mock untuk demo/offline
+      if (cleanKode == 'DISKONHEMAT20' || cleanKode == 'HEMAT20') {
+        final potongan = (subtotal * 0.20).round();
+        return PromoCheckResult(
+          id: 1,
+          kode: cleanKode,
+          persentase: 20,
+          potongan: potongan,
+          pesan: 'Diskon 20% Berhasil Diterapkan!',
+        );
+      } else if (cleanKode == 'DISKONMEMBER10' || cleanKode == 'MEMBER10') {
+        final potongan = (subtotal * 0.10).round();
+        return PromoCheckResult(
+          id: 2,
+          kode: cleanKode,
+          persentase: 10,
+          potongan: potongan,
+          pesan: 'Diskon Member 10% Berhasil!',
+        );
+      }
       if (cleanKode.isNotEmpty) {
-        throw Exception('Kode promo "$cleanKode" tidak ditemukan.');
+        throw Exception('Kode promo "$cleanKode" tidak ditemukan atau telah kedaluwarsa.');
       }
       rethrow;
     }

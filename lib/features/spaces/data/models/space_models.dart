@@ -57,9 +57,12 @@ class SpaceModel {
       }
     }
 
+    // foto_url (full URL dari server) diutamakan vs foto (nama file saja)
+    final foto = json['foto_url']?.toString() ?? json['foto']?.toString();
+
     return SpaceModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      nama: json['nama']?.toString() ?? json['nama_space']?.toString() ?? 'Space',
+      nama: json['nama_space']?.toString() ?? json['nama']?.toString() ?? 'Space',
       tipe: json['tipe']?.toString() ?? 'personal_desk',
       kapasitas: json['kapasitas'] is int
           ? json['kapasitas']
@@ -68,7 +71,7 @@ class SpaceModel {
           ? json['harga_per_jam']
           : int.tryParse(json['harga_per_jam']?.toString() ?? '0') ?? 0,
       fasilitas: parsedFasilitas,
-      foto: json['foto']?.toString(),
+      foto: foto,
       deskripsi: json['deskripsi']?.toString(),
       status: json['status']?.toString() ?? 'tersedia',
     );
@@ -76,15 +79,13 @@ class SpaceModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'nama': nama,
+      'nama_space': nama, // API key untuk create/update
       'tipe': tipe,
       'kapasitas': kapasitas,
       'harga_per_jam': hargaPerJam,
       'fasilitas': fasilitas,
-      'foto': foto,
-      'deskripsi': deskripsi,
-      'status': status,
+      if (foto != null) 'foto': foto,
+      if (deskripsi != null) 'deskripsi': deskripsi,
     };
   }
 
@@ -163,10 +164,13 @@ class PromoCheckResult {
   });
 
   factory PromoCheckResult.fromJson(Map<String, dynamic> json, {int subtotal = 0}) {
-    final persentaseVal = json['persentase'] is int
-        ? json['persentase']
-        : int.tryParse(json['persentase']?.toString() ?? '0') ?? 0;
-    
+    // API /api/diskon/check mengembalikan: persentase_diskon, nama_diskon, is_active
+    final persentaseVal = json['persentase_diskon'] is int
+        ? json['persentase_diskon']
+        : json['persentase'] is int
+            ? json['persentase']
+            : int.tryParse((json['persentase_diskon'] ?? json['persentase'])?.toString() ?? '0') ?? 0;
+
     int potonganVal = json['potongan'] is int
         ? json['potongan']
         : int.tryParse(json['potongan']?.toString() ?? '0') ?? 0;
@@ -175,9 +179,12 @@ class PromoCheckResult {
       potonganVal = (subtotal * persentaseVal / 100).round();
     }
 
+    // API mengembalikan nama_diskon sebagai nama/kode voucher
+    final kode = json['nama_diskon']?.toString() ?? json['kode']?.toString() ?? '';
+
     return PromoCheckResult(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      kode: json['kode']?.toString() ?? '',
+      kode: kode,
       persentase: persentaseVal,
       potongan: potonganVal,
       pesan: json['message']?.toString() ?? 'Promo berhasil diterapkan',
@@ -186,12 +193,15 @@ class PromoCheckResult {
 }
 
 /// Request pembuatan reservasi baru (FR-11)
+/// POST /api/reservasi
+/// Body: { id_space, tanggal_reservasi, jam_mulai, durasi_jam, id_diskon?, kode_promo? }
 class CreateReservationRequest {
   final int spaceId;
-  final String tanggal; // YYYY-MM-DD
-  final String jamMulai; // HH:mm
-  final int durasi; // Durasi jam
-  final String? kodePromo;
+  final String tanggal;    // YYYY-MM-DD → API key: tanggal_reservasi
+  final String jamMulai;   // HH:mm      → API key: jam_mulai
+  final int durasi;        // jam        → API key: durasi_jam
+  final String? kodePromo; // → API key: kode_promo
+  final int? idDiskon;     // → API key: id_diskon
 
   const CreateReservationRequest({
     required this.spaceId,
@@ -199,15 +209,19 @@ class CreateReservationRequest {
     required this.jamMulai,
     required this.durasi,
     this.kodePromo,
+    this.idDiskon,
   });
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
-      'space_id': spaceId,
-      'tanggal': tanggal,
+      'id_space': spaceId,           // API: id_space (bukan space_id)
+      'tanggal_reservasi': tanggal,  // API: tanggal_reservasi
       'jam_mulai': jamMulai,
-      'durasi': durasi,
+      'durasi_jam': durasi,          // API: durasi_jam (bukan durasi)
     };
+    if (idDiskon != null) {
+      map['id_diskon'] = idDiskon;
+    }
     if (kodePromo != null && kodePromo!.trim().isNotEmpty) {
       map['kode_promo'] = kodePromo!.trim();
     }
