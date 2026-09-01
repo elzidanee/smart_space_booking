@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Daftar Akun - Smart Space</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#f1f1ef",
+                        "on-tertiary-fixed-variant": "#51443a",
+                        "inverse-primary": "#ffb693",
+                        "outline": "#8b7267",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e3e2e0",
+                        "on-primary-fixed": "#351000",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#276d67",
+                        "on-secondary-fixed-variant": "#00504a",
+                        "tertiary-fixed": "#f3dfd0",
+                        "surface-bright": "#faf9f7",
+                        "surface-tint": "#a04100",
+                        "surface-dim": "#dadad8",
+                        "surface": "#faf9f7",
+                        "on-surface": "#1a1c1b",
+                        "inverse-surface": "#2f3130",
+                        "tertiary-fixed-dim": "#d6c3b5",
+                        "tertiary-container": "#827367",
+                        "error": "#ba1a1a",
+                        "primary": "#9d4000",
+                        "tertiary": "#685a4f",
+                        "surface-container-high": "#e9e8e6",
+                        "secondary-fixed": "#abefe7",
+                        "outline-variant": "#dec0b3",
+                        "surface-container-low": "#f4f3f1",
+                        "on-secondary-fixed": "#00201d",
+                        "secondary": "#216962",
+                        "on-tertiary-container": "#fffeff",
+                        "on-primary-fixed-variant": "#7a3000",
+                        "on-tertiary": "#ffffff",
+                        "background": "#faf9f7",
+                        "primary-container": "#c2540e",
+                        "on-surface-variant": "#574238",
+                        "primary-fixed-dim": "#ffb693",
+                        "on-tertiary-fixed": "#231a11",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#a8ece4",
+                        "surface-variant": "#e3e2e0",
+                        "secondary-fixed-dim": "#8fd3cb",
+                        "on-primary-container": "#fffdff",
+                        "surface-container": "#efeeec",
+                        "on-background": "#1a1c1b",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#ffdbcc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "24px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "stack-lg": "24px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "body-emphasis": ["Inter"],
+                        "headline-md": ["Sora"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Sora"],
+                        "label-md": ["Inter"],
+                        "headline-sm": ["Sora"],
+                        "headline-lg": ["Sora"],
+                        "title-lg": ["Sora"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-emphasis": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "title-lg": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col">
+<!-- Top Navigation for Linear/Transactional Flow -->
+<header class="bg-surface sticky top-0 z-40">
+<div class="flex items-center px-margin-mobile md:px-margin-desktop w-full h-16 max-w-[1200px] mx-auto">
+<button aria-label="Go back" class="w-12 h-12 flex items-center justify-center text-on-surface hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="ml-2 font-headline-sm text-headline-sm text-primary">Daftar Akun</h1>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
+<div class="max-w-md mx-auto bg-surface-container-lowest shadow-sm rounded-xl p-6 md:p-8 border border-surface-variant/50">
+<form class="space-y-stack-lg">
+<!-- Photo Upload -->
+<div class="flex flex-col items-center">
+<label class="cursor-pointer group relative" for="photo-upload">
+<div class="w-24 h-24 rounded-full border-2 border-dashed border-outline-variant flex flex-col items-center justify-center bg-surface-container-low group-hover:bg-surface-container transition-colors overflow-hidden">
+<span class="material-symbols-outlined text-outline text-3xl group-hover:text-primary transition-colors" data-icon="add_a_photo">add_a_photo</span>
+<span class="font-label-md text-label-md text-outline mt-1 group-hover:text-primary transition-colors">Foto</span>
+</div>
+<input accept="image/*" class="sr-only" id="photo-upload" type="file"/>
+</label>
+</div>
+<div class="space-y-stack-md">
+<!-- Nama Lengkap -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="nama">Nama Lengkap</label>
+<input class="w-full h-12 rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors" id="nama" name="nama" placeholder="Masukkan nama lengkap" type="text"/>
+</div>
+<!-- Instansi -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="instansi">Instansi (Opsional)</label>
+<input class="w-full h-12 rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors" id="instansi" name="instansi" placeholder="Masukkan nama instansi" type="text"/>
+</div>
+<!-- No. Telepon -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="telepon">No. Telepon</label>
+<input class="w-full h-12 rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors" id="telepon" name="telepon" placeholder="Contoh: 08123456789" type="tel"/>
+</div>
+<!-- Alamat -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="alamat">Alamat</label>
+<textarea class="w-full rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors resize-none py-3" id="alamat" name="alamat" placeholder="Masukkan alamat lengkap" rows="3"></textarea>
+</div>
+<!-- Username -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="username">Username</label>
+<input class="w-full h-12 rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors" id="username" name="username" placeholder="Pilih username unik" type="text"/>
+</div>
+<!-- Password -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="password">Password</label>
+<div class="relative">
+<input class="w-full h-12 rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors pr-12" id="password" name="password" placeholder="Minimal 8 karakter" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors focus:outline-none" type="button">
+<span class="material-symbols-outlined" data-icon="visibility_off">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Konfirmasi Password -->
+<div>
+<label class="block font-body-emphasis text-body-emphasis text-on-surface mb-stack-sm" for="confirm-password">Konfirmasi Password</label>
+<div class="relative">
+<input class="w-full h-12 rounded-lg border-[#E7E3DE] bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary placeholder-outline-variant transition-colors pr-12" id="confirm-password" name="confirm-password" placeholder="Ulangi password" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors focus:outline-none" type="button">
+<span class="material-symbols-outlined" data-icon="visibility_off">visibility_off</span>
+</button>
+</div>
+</div>
+</div>
+<!-- T&C Checkbox -->
+<div class="flex items-start pt-stack-sm">
+<div class="flex items-center h-5">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary focus:ring-offset-background bg-surface-container-lowest transition-colors" id="terms" name="terms" type="checkbox"/>
+</div>
+<div class="ml-3 text-sm">
+<label class="font-body-md text-body-md text-on-surface-variant" for="terms">
+                            Saya setuju dengan <a class="text-secondary hover:underline font-semibold" href="#">Syarat &amp; Ketentuan</a> yang berlaku.
+                        </label>
+</div>
+</div>
+<!-- Actions -->
+<div class="pt-stack-sm flex flex-col items-center">
+<button class="w-full h-12 bg-primary text-on-primary rounded-xl font-body-emphasis text-body-emphasis hover:bg-primary-container transition-colors relative overflow-hidden group shadow-[0_4px_12px_rgba(157,64,0,0.12)] hover:shadow-none hover:translate-y-[1px]" type="submit">
+<span class="relative z-10">Daftar</span>
+<div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
+</button>
+<p class="mt-stack-lg font-body-md text-body-md text-on-surface-variant">
+                        Sudah punya akun? <a class="text-[#0E5C56] font-semibold hover:underline" href="#">Masuk</a>
+</p>
+</div>
+</form>
+</div>
+</main>
+<script>
+        // Simple password toggle logic for demo
+        document.querySelectorAll('button[aria-label="Toggle password visibility"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                const icon = this.querySelector('span');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.textContent = 'visibility';
+                    icon.setAttribute('data-icon', 'visibility');
+                } else {
+                    input.type = 'password';
+                    icon.textContent = 'visibility_off';
+                    icon.setAttribute('data-icon', 'visibility_off');
+                }
+            });
+        });
+    </script>
+</body></html>
