@@ -11,6 +11,7 @@ final spacesRepositoryProvider = Provider<SpacesRepository>((ref) {
 abstract class SpacesRepository {
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
   Future<SpaceModel> getSpaceById(int id);
+  Future<List<Map<String, dynamic>>> getActiveDiscounts();
   Future<AvailabilityCheckResult> checkAvailability({
     required int spaceId,
     required String tanggal,
@@ -41,6 +42,15 @@ class SpacesRepositoryImpl implements SpacesRepository {
       return await _remoteDataSource.getSpaceById(id);
     } catch (e) {
       throw ExceptionMapper.map(e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveDiscounts() async {
+    try {
+      return await _remoteDataSource.getActiveDiscounts();
+    } catch (e) {
+      return [];
     }
   }
 

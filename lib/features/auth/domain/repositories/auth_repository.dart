@@ -131,9 +131,9 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       final finalRequest = RegisterMemberRequest(
-        nama: request.nama,
+        namaMember: request.namaMember,
         instansi: request.instansi,
-        telepon: request.telepon,
+        telp: request.telp,
         alamat: request.alamat,
         username: request.username,
         password: request.password,

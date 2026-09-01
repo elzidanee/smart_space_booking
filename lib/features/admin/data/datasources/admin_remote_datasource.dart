@@ -687,7 +687,8 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<ReservationModel> getReservationById(int id) async {
     try {
-      final response = await _dio.get(ApiEndpoints.reservasiDetail(id));
+      // GET /api/admin/reservasi/{id} sesuai kontrak API
+      final response = await _dio.get(ApiEndpoints.adminReservasiDetail(id));
       final dynamic data = response.data['data'] ?? response.data;
       if (data is Map<String, dynamic>) {
         return ReservationModel.fromJson(data);

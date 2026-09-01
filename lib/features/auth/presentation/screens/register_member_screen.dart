@@ -129,9 +129,9 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
     setState(() => _isLoading = true);
 
     final request = RegisterMemberRequest(
-      nama: _namaController.text.trim(),
+      namaMember: _namaController.text.trim(),
       instansi: _instansiController.text.trim(),
-      telepon: _teleponController.text.trim(),
+      telp: _teleponController.text.trim(),
       alamat: _alamatController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text,

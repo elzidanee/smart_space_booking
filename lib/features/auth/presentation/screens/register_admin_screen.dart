@@ -49,10 +49,9 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
     setState(() => _isLoading = true);
 
     final request = RegisterAdminRequest(
-      namaSpace: _namaSpaceController.text.trim(),
+      namaCoworking: _namaSpaceController.text.trim(),
       namaPemilik: _namaPemilikController.text.trim(),
-      telepon: _teleponController.text.trim(),
-      alamat: _alamatController.text.trim(),
+      telp: _teleponController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text,
     );
