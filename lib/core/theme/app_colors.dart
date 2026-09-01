@@ -16,6 +16,7 @@ class AppColors {
 
   // Brand Colors
   static const Color primary = Color(0xFFC2540E); // Ember - Terakota Hangat
+  static const Color primaryLight = Color(0xFFD97736); // Ember Light
   static const Color primaryContainer = Color(0xFFFBE7D8); // Latar chip/badge primer
   static const Color secondary = Color(0xFF0E5C56); // Deep Teal
   static const Color secondaryContainer = Color(0xFFDCEEEC); // Latar info non-status

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/auth_illustration.dart';
 import '../../data/models/auth_models.dart';
 import '../providers/auth_controller.dart';
 
@@ -84,72 +85,106 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Daftar Pengelola Space',
-          style: AppTypography.h2.copyWith(color: AppColors.secondary),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.ink900),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg16,
-            vertical: AppSpacing.md12,
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.xl24),
-                decoration: BoxDecoration(
-                  color: AppColors.surface0,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: AppSpacing.cardShadow,
+      backgroundColor: AppColors.surface50,
+      body: CustomScrollView(
+        slivers: [
+          // ── Banner Header Bergradien (Deep Teal) ───────────────────────────
+          SliverAppBar(
+            expandedHeight: 210,
+            pinned: true,
+            backgroundColor: AppColors.secondary,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => context.pop(),
+            ),
+            title: const Text(
+              'Daftar Pengelola Space',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 17,
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF1A7A72),
+                      Color(0xFF0E5C56),
+                      Color(0xFF093D39),
+                    ],
+                  ),
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header Icon & Intro
-                      Center(
-                        child: Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            color: AppColors.secondaryContainer,
-                            borderRadius: BorderRadius.circular(16),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 48, 16, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Daftarkan\nSpace Anda',
+                                style: AppTypography.h1.copyWith(
+                                  color: Colors.white,
+                                  height: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Kelola reservasi workstation &\ncoworking secara profesional.',
+                                style: AppTypography.caption.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.82),
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                            ],
                           ),
-                          child: const Icon(
-                            Icons.storefront_rounded,
-                            color: AppColors.secondary,
-                            size: 32,
-                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.md12),
-                      Center(
-                        child: Text(
-                          'Pendaftaran Lokasi Coworking',
-                          style: AppTypography.h2,
-                          textAlign: TextAlign.center,
+                        // Ilustrasi gedung di sudut kanan
+                        const BuildingIllustration(
+                          width: 130,
+                          height: 100,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs4),
-                      Center(
-                        child: Text(
-                          'Daftarkan lokasi coworking space Anda untuk mulai mengelola workstation & reservasi.',
-                          style: AppTypography.caption,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xl24),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
 
+          // ── Konten Form ────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg16,
+                vertical: AppSpacing.md12,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.xl24),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface0,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppSpacing.cardShadow,
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                       // Nama Coworking Space
                       Text('Nama Coworking Space', style: AppTypography.bodyMedium),
                       const SizedBox(height: AppSpacing.xs4),
@@ -362,12 +397,14 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
                         ),
                       ),
                     ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

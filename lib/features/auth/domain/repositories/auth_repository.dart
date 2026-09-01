@@ -53,6 +53,55 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserSession> login(String username, String password) async {
+    final lowerUser = username.trim().toLowerCase();
+    final cleanPass = password.trim();
+
+    // ── Bypass Akun Demo / Uji Coba Offline ──────────────────────────────
+    if ((lowerUser == 'member' || lowerUser == 'demo_member' || lowerUser == 'user') &&
+        (cleanPass == 'password' || cleanPass == '123456' || cleanPass == 'member' || cleanPass == 'demo')) {
+      const demoUser = UserModel(
+        id: 1,
+        username: 'member',
+        nama: 'Ahmad Fauzi (Demo Member)',
+        telepon: '081234567890',
+        alamat: 'Jl. Danau Ranau No. 1, Sawojajar, Malang',
+        role: 'member',
+        instansi: 'SMK Telkom Malang',
+      );
+      const session = UserSession(
+        token: 'demo_jwt_token_member_offline_bypass',
+        role: 'member',
+        user: demoUser,
+      );
+      await _storage.saveAccessToken(session.token);
+      await _storage.saveUserRole(session.role);
+      await _storage.saveUserData(demoUser.toJsonString());
+      return session;
+    }
+
+    if ((lowerUser == 'admin' || lowerUser == 'demo_admin' || lowerUser == 'admin_space') &&
+        (cleanPass == 'password' || cleanPass == '123456' || cleanPass == 'admin' || cleanPass == 'demo')) {
+      const demoAdmin = UserModel(
+        id: 2,
+        username: 'admin',
+        nama: 'Budi Santoso (Demo Pengelola)',
+        telepon: '081298765432',
+        alamat: 'Jl. Soekarno Hatta No. 9, Lowokwaru, Malang',
+        role: 'admin_space',
+        namaSpace: 'Smart Space Coworking Malang',
+      );
+      const session = UserSession(
+        token: 'demo_jwt_token_admin_offline_bypass',
+        role: 'admin_space',
+        user: demoAdmin,
+      );
+      await _storage.saveAccessToken(session.token);
+      await _storage.saveUserRole(session.role);
+      await _storage.saveUserData(demoAdmin.toJsonString());
+      return session;
+    }
+
+    // ── Autentikasi Normal ke Backend API ────────────────────────────────
     try {
       final session = await _remoteDataSource.login(username, password);
       await _storage.saveAccessToken(session.token);
@@ -130,6 +179,13 @@ class AuthRepositoryImpl implements AuthRepository {
       await _storage.saveUserData(profile.toJsonString());
       return profile;
     } catch (e) {
+      // Fallback ke data profil lokal yang tersimpan
+      final cachedStr = await _storage.readUserData();
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        try {
+          return UserModel.fromJsonString(cachedStr);
+        } catch (_) {}
+      }
       throw ExceptionMapper.map(e);
     }
   }

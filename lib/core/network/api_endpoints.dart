@@ -5,7 +5,7 @@ class ApiEndpoints {
   /// Base URL API.
   /// Default menggunakan IP gateway emulator Android (10.0.2.2:8000) atau localhost jika diuji di web/desktop.
   /// Dapat diubah saat pengujian atau ketika panitia memberikan URL resmi.
-  static String baseUrl = 'http://10.0.2.2:8000';
+  static String baseUrl = 'https://learn.smktelkom-mlg.sch.id/coworking';
 
   // --- 1. App Maker ---
   static const String makerRegister = '/api/maker/register';

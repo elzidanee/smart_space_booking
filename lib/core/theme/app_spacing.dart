@@ -16,6 +16,7 @@ class AppSpacing {
 
   // Corner Radius
   static const double radiusButton = 12.0;
+  static const double radiusField = 12.0;
   static const double radiusCard = 16.0;
   static const double radiusBottomSheet = 24.0;
   static const double radiusPill = 999.0;

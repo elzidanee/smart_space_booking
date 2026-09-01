@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/auth_illustration.dart';
 import '../providers/auth_controller.dart';
 
 /// Layar Login dengan Role Toggle sesuai Stitch Screen 01 (dbf3107b63324e40804cecf2554c0c4b).
@@ -75,8 +76,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     // Warna aksen dinamis menyesuaikan role terpilih (Ember untuk Member, Deep Teal untuk Pengelola)
     final activeColor = _isMemberRole ? AppColors.primary : AppColors.secondary;
-    final activeContainer =
-        _isMemberRole ? AppColors.primaryContainer : AppColors.secondaryContainer;
 
     return Scaffold(
       body: SafeArea(
@@ -92,23 +91,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // --- Header ---
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: activeContainer,
-                      borderRadius: BorderRadius.circular(16),
+                  // --- Ilustrasi Header ---
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.08),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
+                      ),
                     ),
-                    child: Icon(
-                      _isMemberRole
-                          ? Icons.meeting_room_rounded
-                          : Icons.corporate_fare_rounded,
-                      color: activeColor,
-                      size: 28,
+                    child: CoworkingIllustration(
+                      key: ValueKey(_isMemberRole),
+                      width: double.infinity,
+                      height: 165,
+                      isAdmin: !_isMemberRole,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md12),
+                  const SizedBox(height: AppSpacing.lg16),
                   Text(
                     'Smart Space',
                     style: AppTypography.h1.copyWith(
@@ -119,8 +122,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: AppSpacing.xs4),
                   Text(
                     _isMemberRole
-                        ? 'Masuk ke akun Member untuk pesan space'
-                        : 'Masuk ke portal Pengelola Space',
+                        ? 'Ruang kerja terbaik, satu ketuk dari sini'
+                        : 'Portal pengelola space profesional',
                     style: AppTypography.caption,
                     textAlign: TextAlign.center,
                   ),
@@ -393,6 +396,119 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md12),
+
+                  // --- Quick Demo Login Container ---
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.md12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F5F2),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                      border: Border.all(color: const Color(0xFFE2DDD7)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.bolt_rounded,
+                              size: 16,
+                              color: Color(0xFFD97706),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Akses Cepat Demo (Tanpa Backend):',
+                                style: AppTypography.captionMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.ink900,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _isMemberRole = true;
+                                          _usernameController.text = 'member';
+                                          _passwordController.text = '123456';
+                                        });
+                                        _handleLogin();
+                                      },
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                    horizontal: 6,
+                                  ),
+                                  side: BorderSide(
+                                    color: AppColors.primary.withValues(alpha: 0.5),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  '👤 Demo Member\n(member / 123456)',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.captionMedium.copyWith(
+                                    color: AppColors.primary,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm8),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _isMemberRole = false;
+                                          _usernameController.text = 'admin';
+                                          _passwordController.text = '123456';
+                                        });
+                                        _handleLogin();
+                                      },
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                    horizontal: 6,
+                                  ),
+                                  side: BorderSide(
+                                    color: AppColors.secondary.withValues(alpha: 0.5),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  '🏢 Demo Admin\n(admin / 123456)',
+                                  textAlign: TextAlign.center,
+                                  style: AppTypography.captionMedium.copyWith(
+                                    color: AppColors.secondary,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg16),

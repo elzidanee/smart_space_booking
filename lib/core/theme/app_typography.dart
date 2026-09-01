@@ -21,6 +21,13 @@ class AppTypography {
         height: 1.35,
       );
 
+  static TextStyle get h3 => GoogleFonts.sora(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.ink900,
+        height: 1.4,
+      );
+
   static TextStyle get sectionLabel => GoogleFonts.sora(
         fontSize: 13,
         fontWeight: FontWeight.w500,
@@ -35,6 +42,13 @@ class AppTypography {
         fontWeight: FontWeight.w400,
         color: AppColors.ink900,
         height: 1.5,
+      );
+
+  static TextStyle get bodyEmphasis => GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.ink900,
+        height: 1.4,
       );
 
   static TextStyle get bodyMedium => GoogleFonts.inter(

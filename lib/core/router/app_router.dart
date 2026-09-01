@@ -7,6 +7,9 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_admin_screen.dart';
 import '../../features/auth/presentation/screens/register_member_screen.dart';
 import '../../features/member/presentation/screens/member_shell_screen.dart';
+import '../../features/reservations/presentation/screens/e_ticket_screen.dart';
+import '../../features/reservations/presentation/screens/reservations_history_screen.dart';
+import '../../features/spaces/presentation/screens/space_detail_booking_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -69,6 +72,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/member',
         builder: (context, state) => const MemberShellScreen(),
+      ),
+
+      // Space Detail & Booking Route
+      GoRoute(
+        path: '/spaces/:id',
+        builder: (context, state) {
+          final idStr = state.pathParameters['id'] ?? '1';
+          final id = int.tryParse(idStr) ?? 1;
+          return SpaceDetailBookingScreen(spaceId: id);
+        },
+      ),
+
+      // Member Reservation History Route (Layar M6)
+      GoRoute(
+        path: '/reservations/history',
+        builder: (context, state) => const ReservationsHistoryScreen(),
+      ),
+
+      // Member E-Ticket Detail Route (Layar M7)
+      GoRoute(
+        path: '/reservations/ticket/:id',
+        builder: (context, state) {
+          final idStr = state.pathParameters['id'];
+          final id = int.tryParse(idStr ?? '');
+          return ETicketScreen(reservationId: id);
+        },
       ),
 
       // Admin Shell Routes

@@ -12,13 +12,23 @@ class ApiHeaderInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    // 1. Sisipkan header x-maker-key jika tersedia
+    // 1. Normalisasi URL path untuk baseUrl bersubfolder (misal: /coworking)
+    if (options.baseUrl.isNotEmpty) {
+      if (!options.baseUrl.endsWith('/')) {
+        options.baseUrl = '${options.baseUrl}/';
+      }
+      if (options.path.startsWith('/')) {
+        options.path = options.path.substring(1);
+      }
+    }
+
+    // 2. Sisipkan header x-maker-key jika tersedia
     final appKey = await storage.readAppKey();
     if (appKey != null && appKey.isNotEmpty) {
       options.headers['x-maker-key'] = appKey;
     }
 
-    // 2. Sisipkan Authorization Bearer jika ada sesi aktif
+    // 3. Sisipkan Authorization Bearer jika ada sesi aktif
     final token = await storage.readAccessToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
