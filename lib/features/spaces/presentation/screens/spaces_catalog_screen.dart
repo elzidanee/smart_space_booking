@@ -265,7 +265,7 @@ class _SpacesCatalogScreenState extends ConsumerState<SpacesCatalogScreen> {
                     title: 'Gagal Memuat Data Space',
                     message: '$error',
                     actionLabel: 'Coba Lagi',
-                    onAction: () => ref.invalidate(spacesCatalogProvider),
+                    onAction: () => ref.invalidate(spacesListProvider),
                   ),
                 ),
               ),

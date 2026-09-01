@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
@@ -209,28 +210,28 @@ class AdminDashboardScreen extends ConsumerWidget {
                 error: (err, _) => const SizedBox.shrink(),
                 data: (data) {
                   final list = data.todayReservations;
-                  if (list.isEmpty) {
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface0,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            const Icon(Icons.event_available, size: 48, color: AppColors.ink300),
-                            const SizedBox(height: 8),
-                            Text('Tidak ada reservasi untuk hari ini', style: AppTypography.h2.copyWith(fontSize: 15)),
-                            const SizedBox(height: 4),
-                            Text('Jadwal pemesanan berikutnya akan tampil di sini.', style: AppTypography.caption),
-                          ],
+                    if (list.isEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface0,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
                         ),
-                      ),
-                    );
-                  }
+                        child: Center(
+                          child: Column(
+                            children: [
+                              const EmptyReservationsIllustration(size: 110),
+                              const SizedBox(height: 12),
+                              Text('Tidak ada reservasi hari ini', style: AppTypography.h2.copyWith(fontSize: 15)),
+                              const SizedBox(height: 4),
+                              Text('Jadwal pemesanan masuk berikutnya akan tampil di sini.', style: AppTypography.caption),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
 
                   return Column(
                     children: list.map((item) {

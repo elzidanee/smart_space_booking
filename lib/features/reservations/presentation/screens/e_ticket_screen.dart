@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../providers/reservations_controller.dart';
@@ -65,41 +66,12 @@ class ETicketScreen extends ConsumerWidget {
       body: ticketAsync.when(
         data: (ticket) {
           if (ticket == null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.confirmation_number_outlined,
-                        size: 40,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md12),
-                    Text('Belum Ada E-Ticket Aktif', style: AppTypography.h3),
-                    const SizedBox(height: AppSpacing.xs4),
-                    Text(
-                      'Pemesanan yang telah disetujui akan menampilkan e-ticket QR di sini.',
-                      style: AppTypography.caption,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.lg16),
-                    ElevatedButton(
-                      onPressed: () => context.go('/member'),
-                      child: const Text('Jelajahi Ruangan'),
-                    ),
-                  ],
-                ),
-              ),
+            return AppEmptyState(
+              illustration: const EmptyPromoIllustration(size: 160),
+              title: 'Belum Ada E-Ticket Aktif',
+              message: 'Pemesanan yang telah disetujui atau sedang aktif akan menampilkan barcode QR dan detail akses di layar ini.',
+              actionLabel: 'Jelajahi Ruangan',
+              onAction: () => context.go('/member'),
             );
           }
 

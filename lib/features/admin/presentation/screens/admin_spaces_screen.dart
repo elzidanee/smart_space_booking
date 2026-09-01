@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../providers/admin_controller.dart';
@@ -193,47 +194,23 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                   ),
                 ),
               ),
-              error: (err, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
-                      const SizedBox(height: 12),
-                      Text('Gagal memuat data space', style: AppTypography.h2),
-                      const SizedBox(height: 6),
-                      Text('$err', style: AppTypography.caption),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => ref.invalidate(adminSpacesControllerProvider),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-                        child: const Text('Coba Lagi'),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (err, _) => AppEmptyState(
+                illustration: const NetworkErrorIllustration(size: 160),
+                title: 'Gagal Memuat Data Space',
+                message: '$err',
+                actionLabel: 'Coba Lagi',
+                actionColor: AppColors.secondary,
+                onAction: () => ref.invalidate(adminSpacesControllerProvider),
               ),
               data: (spaces) {
                 if (spaces.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.meeting_room_outlined, size: 64, color: AppColors.ink300),
-                          const SizedBox(height: 16),
-                          Text('Belum ada data space', style: AppTypography.h2),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Tambahkan inventaris ruangan atau meja kerja dengan tombol di bawah.',
-                            style: AppTypography.caption,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+                  return AppEmptyState(
+                    illustration: const EmptySpacesIllustration(size: 160),
+                    title: 'Belum Ada Data Ruangan',
+                    message: 'Tambahkan inventaris ruangan kerja atau meja baru untuk mulai menerima pemesanan tamu.',
+                    actionLabel: 'Tambah Ruangan',
+                    actionColor: AppColors.secondary,
+                    onAction: () => _showSpaceFormDialog(),
                   );
                 }
 

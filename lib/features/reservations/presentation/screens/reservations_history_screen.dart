@@ -7,7 +7,6 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/widgets/app_empty_state.dart';
 import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../spaces/data/models/space_models.dart';

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../data/models/admin_models.dart';
 import '../providers/admin_controller.dart';
@@ -95,47 +96,23 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
             child: ShimmerPlaceholder(height: 100, borderRadius: 16),
           ),
         ),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
-                const SizedBox(height: 12),
-                Text('Gagal memuat kode promo', style: AppTypography.h2),
-                const SizedBox(height: 6),
-                Text('$err', style: AppTypography.caption),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => ref.invalidate(adminDiscountsControllerProvider),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-                  child: const Text('Coba Lagi'),
-                ),
-              ],
-            ),
-          ),
+        error: (err, _) => AppEmptyState(
+          illustration: const NetworkErrorIllustration(size: 160),
+          title: 'Gagal Memuat Promo',
+          message: '$err',
+          actionLabel: 'Coba Lagi',
+          actionColor: AppColors.secondary,
+          onAction: () => ref.invalidate(adminDiscountsControllerProvider),
         ),
         data: (discounts) {
           if (discounts.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.discount_outlined, size: 64, color: AppColors.ink300),
-                    const SizedBox(height: 16),
-                    Text('Belum ada kode promo aktif', style: AppTypography.h2),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Buat voucher diskon pertama untuk menarik lebih banyak member coworking.',
-                      style: AppTypography.caption,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
+            return AppEmptyState(
+              illustration: const EmptyPromoIllustration(size: 160),
+              title: 'Belum Ada Kode Promo',
+              message: 'Buat kupon diskon menarik untuk meningkatkan okupansi coworking space Anda.',
+              actionLabel: 'Buat Promo Baru',
+              actionColor: AppColors.secondary,
+              onAction: () => _showDiscountFormDialog(),
             );
           }
 

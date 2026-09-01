@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../data/models/admin_models.dart';
 import '../providers/admin_controller.dart';
@@ -144,47 +145,23 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                   child: ShimmerPlaceholder(height: 90, borderRadius: 16),
                 ),
               ),
-              error: (err, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
-                      const SizedBox(height: 12),
-                      Text('Gagal memuat data member', style: AppTypography.h2),
-                      const SizedBox(height: 6),
-                      Text('$err', style: AppTypography.caption),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => ref.invalidate(adminMembersControllerProvider),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-                        child: const Text('Coba Lagi'),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (err, _) => AppEmptyState(
+                illustration: const NetworkErrorIllustration(size: 160),
+                title: 'Gagal Memuat Member',
+                message: '$err',
+                actionLabel: 'Coba Lagi',
+                actionColor: AppColors.secondary,
+                onAction: () => ref.invalidate(adminMembersControllerProvider),
               ),
               data: (members) {
                 if (members.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.people_outline, size: 64, color: AppColors.ink300),
-                          const SizedBox(height: 16),
-                          Text('Belum ada data member', style: AppTypography.h2),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Tambahkan member baru atau ubah kata kunci pencarian.',
-                            style: AppTypography.caption,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+                  return AppEmptyState(
+                    illustration: const EmptyMembersIllustration(size: 160),
+                    title: 'Belum Ada Data Member',
+                    message: 'Data pengguna atau pelanggan terdaftar akan muncul di sini. Tambahkan member baru dengan tombol di bawah.',
+                    actionLabel: 'Tambah Member',
+                    actionColor: AppColors.secondary,
+                    onAction: () => _showMemberFormDialog(),
                   );
                 }
 

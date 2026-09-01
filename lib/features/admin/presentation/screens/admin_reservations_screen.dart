@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../spaces/data/models/space_models.dart';
@@ -239,53 +240,24 @@ class _AdminReservationsScreenState
                   child: ShimmerPlaceholder(height: 140, borderRadius: 16),
                 ),
               ),
-              error: (err, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
-                      const SizedBox(height: 12),
-                      Text('Gagal memuat data reservasi', style: AppTypography.h2),
-                      const SizedBox(height: 6),
-                      Text('$err', style: AppTypography.caption, textAlign: TextAlign.center),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => ref.invalidate(adminReservationsControllerProvider),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary),
-                        child: const Text('Coba Lagi'),
-                      ),
-                    ],
-                  ),
-                ),
+              error: (err, _) => AppEmptyState(
+                illustration: const NetworkErrorIllustration(size: 160),
+                title: 'Gagal Memuat Reservasi',
+                message: '$err',
+                actionLabel: 'Coba Lagi',
+                actionColor: AppColors.secondary,
+                onAction: () => ref.invalidate(adminReservationsControllerProvider),
               ),
               data: (reservations) {
                 if (reservations.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.event_busy_outlined, size: 64, color: AppColors.ink300),
-                          const SizedBox(height: 16),
-                          Text(
-                            filter.query.isNotEmpty
-                                ? 'Tidak ditemukan reservasi untuk "${filter.query}"'
-                                : 'Belum ada data reservasi',
-                            style: AppTypography.h2,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Reservasi tamu akan muncul di daftar ini sesuai filter yang dipilih.',
-                            style: AppTypography.caption,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
+                  return AppEmptyState(
+                    illustration: const EmptyReservationsIllustration(size: 160),
+                    title: filter.query.isNotEmpty
+                        ? 'Tidak Ditemukan'
+                        : 'Belum Ada Reservasi',
+                    message: filter.query.isNotEmpty
+                        ? 'Tidak ada reservasi yang cocok dengan kata kunci "${filter.query}"'
+                        : 'Belum ada reservasi masuk pada kategori status yang dipilih.',
                   );
                 }
 
