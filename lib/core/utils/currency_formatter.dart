@@ -15,6 +15,9 @@ class CurrencyFormatter {
     return _formatter.format(amount);
   }
 
+  /// Alias format untuk Rupiah
+  static String formatRupiah(num amount) => format(amount);
+
   /// Format harga per jam: contoh `50000` -> `Rp 50.000/jam`
   static String formatPerHour(num amount) {
     return '${_formatter.format(amount)}/jam';

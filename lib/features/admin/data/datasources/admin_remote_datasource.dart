@@ -675,7 +675,7 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       if (query != null && query.trim().isNotEmpty) {
         final q = query.toLowerCase().trim();
         final match = r.kodeBooking.toLowerCase().contains(q) ||
-            r.namaSpace.toLowerCase().contains(q) ||
+            (r.namaSpace?.toLowerCase().contains(q) ?? false) ||
             (r.namaMember?.toLowerCase().contains(q) ?? false) ||
             (r.teleponMember?.contains(q) ?? false);
         if (!match) return false;

@@ -183,8 +183,14 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                 padding: const EdgeInsets.all(16),
                 itemCount: 3,
                 separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (_, __) => const AppShimmer(
-                  child: ShimmerPlaceholder(height: 200, borderRadius: 16),
+                itemBuilder: (_, __) => AppShimmer(
+                  child: Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                 ),
               ),
               error: (err, _) => Center(
@@ -284,11 +290,16 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 child: CachedNetworkImage(
-                  imageUrl: space.foto,
+                  imageUrl: space.foto ?? '',
                   height: 140,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  placeholder: (_, __) => const ShimmerPlaceholder(height: 140),
+                  placeholder: (_, __) => AppShimmer(
+                    child: Container(
+                      height: 140,
+                      color: Colors.white,
+                    ),
+                  ),
                   errorWidget: (_, __, ___) => Container(
                     height: 140,
                     color: AppColors.secondaryContainer,
@@ -302,7 +313,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.65),
+                    color: Colors.black.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -361,7 +372,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                       ),
                     ),
                     Text(
-                      '${CurrencyFormatter.formatRupiah(space.hargaPerJam)}/jam',
+                      CurrencyFormatter.formatPerHour(space.hargaPerJam),
                       style: AppTypography.h2.copyWith(
                         color: AppColors.secondary,
                         fontSize: 15,
@@ -371,7 +382,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  space.deskripsi,
+                  space.deskripsi ?? '',
                   style: AppTypography.caption.copyWith(color: AppColors.ink600),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -550,7 +561,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
 
               // Dropdown Tipe Space
               DropdownButtonFormField<String>(
-                value: _selectedTipe,
+                initialValue: _selectedTipe,
                 decoration: const InputDecoration(
                   labelText: 'Tipe Space *',
                 ),

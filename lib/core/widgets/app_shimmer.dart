@@ -9,6 +9,7 @@ class AppShimmer extends StatelessWidget {
   final double? height;
   final double borderRadius;
   final EdgeInsetsGeometry? margin;
+  final Widget? child;
 
   const AppShimmer({
     super.key,
@@ -16,6 +17,7 @@ class AppShimmer extends StatelessWidget {
     this.height,
     this.borderRadius = AppSpacing.radiusButton,
     this.margin,
+    this.child,
   });
 
   /// Factory skeleton untuk card katalog space
@@ -38,14 +40,14 @@ class AppShimmer extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AppShimmer(width: 140, height: 18),
-                const SizedBox(height: AppSpacing.sm8),
-                const AppShimmer(width: 80, height: 14),
-                const SizedBox(height: AppSpacing.md12),
+              children: const [
+                AppShimmer(width: 140, height: 18),
+                SizedBox(height: AppSpacing.sm8),
+                AppShimmer(width: 80, height: 14),
+                SizedBox(height: AppSpacing.md12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
+                  children: [
                     AppShimmer(width: 100, height: 14),
                     AppShimmer(width: 110, height: 20),
                   ],
@@ -70,18 +72,18 @@ class AppShimmer extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: const [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               AppShimmer(width: 120, height: 14),
               AppShimmer(width: 90, height: 22, borderRadius: AppSpacing.radiusPill),
             ],
           ),
-          const SizedBox(height: AppSpacing.md12),
-          const AppShimmer(width: 180, height: 18),
-          const SizedBox(height: AppSpacing.sm8),
-          const AppShimmer(width: 130, height: 14),
+          SizedBox(height: AppSpacing.md12),
+          AppShimmer(width: 180, height: 18),
+          SizedBox(height: AppSpacing.sm8),
+          AppShimmer(width: 130, height: 14),
         ],
       ),
     );
@@ -94,14 +96,44 @@ class AppShimmer extends StatelessWidget {
       child: Shimmer.fromColors(
         baseColor: AppColors.border.withValues(alpha: 0.6),
         highlightColor: Colors.white,
-        child: Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: AppColors.border,
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-        ),
+        child: child ??
+            Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(borderRadius),
+              ),
+            ),
+      ),
+    );
+  }
+}
+
+/// Placeholder container inside an AppShimmer
+class ShimmerPlaceholder extends StatelessWidget {
+  final double? width;
+  final double? height;
+  final double borderRadius;
+  final EdgeInsetsGeometry? margin;
+
+  const ShimmerPlaceholder({
+    super.key,
+    this.width,
+    this.height,
+    this.borderRadius = 8,
+    this.margin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
   }

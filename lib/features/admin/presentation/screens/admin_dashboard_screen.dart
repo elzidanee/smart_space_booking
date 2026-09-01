@@ -285,7 +285,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     item.kodeBooking,
                     style: AppTypography.h2.copyWith(color: AppColors.secondary, fontSize: 14),
                   ),
-                  StatusBadge(status: item.status),
+                  StatusBadge(status: ReservasiStatus.fromApi(item.status)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -296,7 +296,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.namaSpace, style: AppTypography.h2.copyWith(fontSize: 15)),
+                        Text(item.namaSpace ?? 'Space', style: AppTypography.h2.copyWith(fontSize: 15)),
                         const SizedBox(height: 2),
                         Text('Tamu: ${item.namaMember ?? "Ahmad Fauzi"}', style: AppTypography.caption),
                       ],

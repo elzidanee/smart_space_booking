@@ -73,7 +73,7 @@ class ConfirmationDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: confirmColor.withOpacity(0.12),
+                    color: confirmColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: confirmColor, size: 28),
@@ -92,7 +92,7 @@ class ConfirmationDialog extends StatelessWidget {
             // Message description
             Text(
               message,
-              style: AppTypography.bodySmall.copyWith(color: AppColors.ink600),
+              style: AppTypography.caption.copyWith(color: AppColors.ink600),
             ),
             const SizedBox(height: 16),
 
@@ -140,7 +140,7 @@ class ConfirmationDialog extends StatelessWidget {
                     ),
                     child: Text(
                       cancelLabel,
-                      style: AppTypography.button.copyWith(color: AppColors.ink900),
+                      style: AppTypography.bodyEmphasis.copyWith(color: AppColors.ink900),
                     ),
                   ),
                 ),
@@ -159,7 +159,7 @@ class ConfirmationDialog extends StatelessWidget {
                     ),
                     child: Text(
                       confirmLabel,
-                      style: AppTypography.button.copyWith(color: Colors.white),
+                      style: AppTypography.bodyEmphasis.copyWith(color: Colors.white),
                     ),
                   ),
                 ),

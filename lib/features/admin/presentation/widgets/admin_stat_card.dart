@@ -64,7 +64,7 @@ class AdminStatCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: iconBgColor ?? iconColor.withOpacity(0.12),
+                      color: iconBgColor ?? iconColor.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, size: 18, color: iconColor),

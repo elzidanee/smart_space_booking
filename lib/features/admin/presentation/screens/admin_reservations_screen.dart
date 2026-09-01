@@ -352,7 +352,7 @@ class _AdminReservationsScreenState
                       fontSize: 15,
                     ),
                   ),
-                  StatusBadge(status: item.status),
+                  StatusBadge(status: ReservasiStatus.fromApi(item.status)),
                 ],
               ),
               const SizedBox(height: 10),
@@ -368,7 +368,7 @@ class _AdminReservationsScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.namaSpace,
+                          item.namaSpace ?? 'Space',
                           style: AppTypography.h2.copyWith(fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

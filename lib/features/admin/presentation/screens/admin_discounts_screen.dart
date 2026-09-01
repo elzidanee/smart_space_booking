@@ -194,7 +194,7 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
                   : AppColors.primaryContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isExpired ? AppColors.border : AppColors.primary.withOpacity(0.3),
+                color: isExpired ? AppColors.border : AppColors.primary.withValues(alpha: 0.3),
               ),
             ),
             child: Column(
@@ -239,8 +239,8 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: isExpired
-                            ? AppColors.danger.withOpacity(0.12)
-                            : AppColors.success.withOpacity(0.12),
+                            ? AppColors.danger.withValues(alpha: 0.12)
+                            : AppColors.success.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
