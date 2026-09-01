@@ -31,10 +31,16 @@ class ETicketScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface0,
         elevation: 0,
-        leading: context.canPop()
+        leading: Navigator.canPop(context)
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, color: AppColors.ink900),
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    context.go('/member');
+                  }
+                },
               )
             : null,
         title: Text(

@@ -88,6 +88,30 @@ class SpaceModel {
     };
   }
 
+  SpaceModel copyWith({
+    int? id,
+    String? nama,
+    String? tipe,
+    int? kapasitas,
+    int? hargaPerJam,
+    List<String>? fasilitas,
+    String? foto,
+    String? deskripsi,
+    String? status,
+  }) {
+    return SpaceModel(
+      id: id ?? this.id,
+      nama: nama ?? this.nama,
+      tipe: tipe ?? this.tipe,
+      kapasitas: kapasitas ?? this.kapasitas,
+      hargaPerJam: hargaPerJam ?? this.hargaPerJam,
+      fasilitas: fasilitas ?? this.fasilitas,
+      foto: foto ?? this.foto,
+      deskripsi: deskripsi ?? this.deskripsi,
+      status: status ?? this.status,
+    );
+  }
+
   String toJsonString() => jsonEncode(toJson());
 }
 
@@ -254,6 +278,46 @@ class ReservationModel {
       namaMember: json['nama_member']?.toString() ?? json['member']?['nama']?.toString(),
       teleponMember: json['telepon_member']?.toString() ?? json['member']?['telepon']?.toString(),
       createdAt: json['created_at']?.toString(),
+    );
+  }
+
+  ReservationModel copyWith({
+    int? id,
+    String? kodeBooking,
+    int? spaceId,
+    String? namaSpace,
+    String? tipeSpace,
+    String? fotoSpace,
+    String? tanggal,
+    String? jamMulai,
+    String? jamSelesai,
+    int? durasi,
+    int? subtotal,
+    int? potonganDiskon,
+    int? totalBayar,
+    String? status,
+    String? namaMember,
+    String? teleponMember,
+    String? createdAt,
+  }) {
+    return ReservationModel(
+      id: id ?? this.id,
+      kodeBooking: kodeBooking ?? this.kodeBooking,
+      spaceId: spaceId ?? this.spaceId,
+      namaSpace: namaSpace ?? this.namaSpace,
+      tipeSpace: tipeSpace ?? this.tipeSpace,
+      fotoSpace: fotoSpace ?? this.fotoSpace,
+      tanggal: tanggal ?? this.tanggal,
+      jamMulai: jamMulai ?? this.jamMulai,
+      jamSelesai: jamSelesai ?? this.jamSelesai,
+      durasi: durasi ?? this.durasi,
+      subtotal: subtotal ?? this.subtotal,
+      potonganDiskon: potonganDiskon ?? this.potonganDiskon,
+      totalBayar: totalBayar ?? this.totalBayar,
+      status: status ?? this.status,
+      namaMember: namaMember ?? this.namaMember,
+      teleponMember: teleponMember ?? this.teleponMember,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

@@ -53,4 +53,26 @@ class DateFormatter {
   static String formatTimeRange(String jamMulai, String jamSelesai) {
     return '$jamMulai - $jamSelesai WIB';
   }
+
+  /// Format dari ISO string `YYYY-MM-DD` → `15 Oktober 2026`
+  static String formatIndonesian(String isoDateString) {
+    try {
+      // Accept both full ISO strings and date-only 'YYYY-MM-DD'
+      final cleanDate = isoDateString.split('T').first.trim();
+      final parts = cleanDate.split('-');
+      if (parts.length < 3) return isoDateString;
+      final day = int.parse(parts[2]);
+      final month = int.parse(parts[1]);
+      final year = int.parse(parts[0]);
+      return '$day ${_bulanIndo[month - 1]} $year';
+    } catch (_) {
+      return isoDateString;
+    }
+  }
+
+  /// Nama bulan dari angka (1–12) dalam Bahasa Indonesia
+  static String getMonthName(int month) {
+    if (month < 1 || month > 12) return 'Bulan $month';
+    return _bulanIndo[month - 1];
+  }
 }
