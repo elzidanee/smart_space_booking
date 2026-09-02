@@ -201,7 +201,9 @@ class AppNetworkImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        headers: const {'Accept': '*/*'},
         errorBuilder: (context, error, stackTrace) {
+          debugPrint('[AppNetworkImage] Error loading "$fullUrl": $error');
           return errorWidget ?? _buildFallback();
         },
         loadingBuilder: (context, child, loadingProgress) {
