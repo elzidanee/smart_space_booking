@@ -435,7 +435,8 @@ class AdminMonthlyReportModel {
       json['total_reservasi'] ??
       json['total_transaksi'],
     );
-    final totalJam = parseInt(
+    // total_jam tidak ada di ringkasan → hitung dari jumlah semua jam di per tipe space
+    int totalJam = parseInt(
       ringkasanObj?['total_jam'] ??
       json['total_jam_terpakai'] ??
       json['total_jam'],
@@ -464,12 +465,23 @@ class AdminMonthlyReportModel {
           ));
         }
       });
+      // Hitung total jam dari semua tipe jika tidak ada di ringkasan
+      if (totalJam == 0 && items.isNotEmpty) {
+        totalJam = items.fold(0, (sum, item) => sum + item.totalJam);
+      }
+      // Fallback: estimasi dari total booking × rata-rata durasi (jika masih 0)
+      if (totalJam == 0) {
+        totalJam = items.fold(0, (sum, item) => sum + item.totalBooking);
+      }
     } else if (perTipeRaw is List) {
       // Format lama: array of objects
       items = perTipeRaw
           .whereType<Map>()
           .map((e) => SpaceTypeDistribution.fromJson(Map<String, dynamic>.from(e)))
           .toList();
+      if (totalJam == 0 && items.isNotEmpty) {
+        totalJam = items.fold(0, (sum, item) => sum + item.totalJam);
+      }
     }
 
     return AdminMonthlyReportModel(
