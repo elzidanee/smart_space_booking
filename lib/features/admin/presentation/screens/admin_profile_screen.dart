@@ -352,7 +352,7 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
       telepon: _teleponCtrl.text.trim(),
       alamat: _alamatCtrl.text.trim(),
       deskripsiFasilitas: _deskripsiCtrl.text.trim(),
-      foto: _existingFotoUrl,
+      foto: _selectedPhotoFile?.path ?? _existingFotoUrl,
     );
 
     widget.onSave(updated, _selectedPhotoFile);

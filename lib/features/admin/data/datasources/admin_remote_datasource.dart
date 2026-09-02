@@ -50,8 +50,12 @@ abstract class AdminRemoteDataSource {
 
   // 6. Rekapitulasi Pendapatan Bulanan
   Future<AdminMonthlyReportModel> getMonthlyReport({int? month, int? year});
+  Future<Map<String, dynamic>> getIncomeReport({int? month, int? year});
 
-  // 7. Upload Media
+  // 7. App Maker Multi-Tenancy Info
+  Future<Map<String, dynamic>> getMakerStats();
+
+  // 8. Upload Media
   Future<String> uploadSpacePhoto(File file);
   Future<String> uploadMemberPhoto(File file);
 }
@@ -478,7 +482,12 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       );
       final dynamic data = response.data['data'] ?? response.data;
       if (data is Map<String, dynamic>) {
-        final newSpace = SpaceModel.fromJson(data);
+        final parsed = SpaceModel.fromJson(data);
+        final newSpace = parsed.copyWith(
+          foto: parsed.foto ?? space.foto,
+          fasilitas: parsed.fasilitas.isNotEmpty ? parsed.fasilitas : space.fasilitas,
+          deskripsi: parsed.deskripsi ?? space.deskripsi,
+        );
         _mockSpaces.insert(0, newSpace);
         return newSpace;
       }
@@ -501,7 +510,12 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       );
       final dynamic data = response.data['data'] ?? response.data;
       if (data is Map<String, dynamic>) {
-        final updated = SpaceModel.fromJson(data);
+        final parsed = SpaceModel.fromJson(data);
+        final updated = parsed.copyWith(
+          foto: parsed.foto ?? space.foto,
+          fasilitas: parsed.fasilitas.isNotEmpty ? parsed.fasilitas : space.fasilitas,
+          deskripsi: parsed.deskripsi ?? space.deskripsi,
+        );
         _updateLocalSpace(updated);
         return updated;
       }
@@ -931,8 +945,42 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     );
   }
 
+  @override
+  Future<Map<String, dynamic>> getIncomeReport({int? month, int? year}) async {
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.adminIncomeReport,
+        queryParameters: {
+          if (month != null) 'month': month,
+          if (year != null) 'year': year,
+        },
+      );
+      final dynamic data = response.data['data'] ?? response.data;
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getMakerStats() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.makerStats);
+      final dynamic data = response.data['data'] ?? response.data;
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
   // ==========================================
-  // 7. Upload Media
+  // 8. Upload Media
   // ==========================================
   @override
   Future<String> uploadSpacePhoto(File file) async {
@@ -962,9 +1010,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
           return data['filename'].toString();
         }
       }
-      return fileName;
+      return file.path;
     } catch (_) {
-      return fileName;
+      return file.path;
     }
   }
 
@@ -996,9 +1044,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
           return data['filename'].toString();
         }
       }
-      return fileName;
+      return file.path;
     } catch (_) {
-      return fileName;
+      return file.path;
     }
   }
 }

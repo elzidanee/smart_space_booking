@@ -10,6 +10,7 @@ final spacesRepositoryProvider = Provider<SpacesRepository>((ref) {
 
 abstract class SpacesRepository {
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
+  Future<List<Map<String, dynamic>>> getSpaceTypes();
   Future<SpaceModel> getSpaceById(int id);
   Future<List<Map<String, dynamic>>> getActiveDiscounts();
   Future<AvailabilityCheckResult> checkAvailability({
@@ -33,6 +34,19 @@ class SpacesRepositoryImpl implements SpacesRepository {
       return await _remoteDataSource.getSpaces(query: query, tipe: tipe);
     } catch (e) {
       throw ExceptionMapper.map(e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getSpaceTypes() async {
+    try {
+      return await _remoteDataSource.getSpaceTypes();
+    } catch (e) {
+      return [
+        {'id': 1, 'tipe': 'personal_desk', 'nama': 'Personal Desk'},
+        {'id': 2, 'tipe': 'meeting_room', 'nama': 'Meeting Room'},
+        {'id': 3, 'tipe': 'private_office', 'nama': 'Private Office'},
+      ];
     }
   }
 

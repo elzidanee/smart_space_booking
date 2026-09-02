@@ -22,6 +22,18 @@ final spacesListProvider = FutureProvider.autoDispose<List<SpaceModel>>((ref) as
   );
 });
 
+/// Provider tipe/kategori space dari API /api/spaces/types (FR-06 / Endpoint #12)
+final spaceTypesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(spacesRepositoryProvider);
+  return await repository.getSpaceTypes();
+});
+
+/// Provider promo/diskon aktif dari API /api/diskon/active (Endpoint #16)
+final activeDiscountsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(spacesRepositoryProvider);
+  return await repository.getActiveDiscounts();
+});
+
 /// Provider detail space berdasarkan ID
 final spaceDetailProvider =
     FutureProvider.autoDispose.family<SpaceModel, int>((ref, spaceId) async {

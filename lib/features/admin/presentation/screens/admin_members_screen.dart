@@ -374,7 +374,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
       instansi: _instansiCtrl.text.trim().isNotEmpty ? _instansiCtrl.text.trim() : '-',
       telepon: _teleponCtrl.text.trim(),
       alamat: _alamatCtrl.text.trim(),
-      foto: _existingFotoUrl,
+      foto: _selectedPhotoFile?.path ?? _existingFotoUrl,
       totalReservasi: widget.member?.totalReservasi ?? 0,
       createdAt: widget.member?.createdAt ?? DateTime.now().toIso8601String(),
     );

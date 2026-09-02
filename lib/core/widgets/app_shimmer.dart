@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../theme/app_colors.dart';
@@ -164,6 +165,27 @@ class AppNetworkImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rawUrl = imageUrl?.trim();
+
+    if (rawUrl != null && rawUrl.isNotEmpty) {
+      // 1. Cek apakah ini path file lokal (hasil jepretan kamera / galeri lokal)
+      try {
+        final localFile = File(rawUrl);
+        if (localFile.existsSync()) {
+          final img = Image.file(
+            localFile,
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (context, error, stackTrace) => _buildFallback(),
+          );
+          if (borderRadius != null) {
+            return ClipRRect(borderRadius: borderRadius!, child: img);
+          }
+          return img;
+        }
+      } catch (_) {}
+    }
+
     String? fullUrl;
     if (rawUrl != null && rawUrl.isNotEmpty) {
       if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
@@ -171,7 +193,11 @@ class AppNetworkImage extends StatelessWidget {
       } else {
         const base = 'https://learn.smktelkom-mlg.sch.id/coworking';
         final cleanPath = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
-        fullUrl = '$base$cleanPath';
+        if (!cleanPath.startsWith('/uploads/') && cleanPath.contains('.')) {
+          fullUrl = '$base/uploads/spaces$cleanPath';
+        } else {
+          fullUrl = '$base$cleanPath';
+        }
       }
     }
 

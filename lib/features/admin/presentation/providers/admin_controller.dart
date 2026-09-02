@@ -28,7 +28,7 @@ class AdminProfileController extends AsyncNotifier<AdminProfileModel> {
       if (photoFile != null) {
         photoUrl = await repo.uploadSpacePhoto(photoFile);
       }
-      final updatedProfile = profile.copyWith(foto: photoUrl);
+      final updatedProfile = profile.copyWith(foto: photoUrl ?? photoFile?.path ?? profile.foto);
       return repo.updateProfile(updatedProfile);
     });
   }
@@ -64,7 +64,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadMemberPhoto(photoFile);
       }
-      final newMember = member.copyWith(foto: photoUrl);
+      final newMember = member.copyWith(foto: photoUrl ?? photoFile?.path ?? member.foto);
       await repo.createMember(newMember);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
@@ -79,7 +79,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadMemberPhoto(photoFile);
       }
-      final updatedMember = member.copyWith(foto: photoUrl);
+      final updatedMember = member.copyWith(foto: photoUrl ?? photoFile?.path ?? member.foto);
       await repo.updateMember(updatedMember);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
@@ -133,7 +133,7 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadSpacePhoto(photoFile);
       }
-      final newSpace = space.copyWith(foto: photoUrl);
+      final newSpace = space.copyWith(foto: photoUrl ?? photoFile?.path ?? space.foto);
       await repo.createSpace(newSpace);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
@@ -149,7 +149,7 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadSpacePhoto(photoFile);
       }
-      final updatedSpace = space.copyWith(foto: photoUrl);
+      final updatedSpace = space.copyWith(foto: photoUrl ?? photoFile?.path ?? space.foto);
       await repo.updateSpace(updatedSpace);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
@@ -316,6 +316,19 @@ final adminMonthlyReportProvider = FutureProvider.family<
     AdminMonthlyReportModel, MonthYearParam>((ref, param) async {
   final repo = ref.watch(adminRepositoryProvider);
   return repo.getMonthlyReport(month: param.month, year: param.year);
+});
+
+/// Provider ringkasan pendapatan dari API /api/admin/reports/income (Endpoint #47)
+final adminIncomeReportProvider = FutureProvider.family<
+    Map<String, dynamic>, MonthYearParam>((ref, param) async {
+  final repo = ref.watch(adminRepositoryProvider);
+  return repo.getIncomeReport(month: param.month, year: param.year);
+});
+
+/// Provider statistik App Maker dari API /api/maker/stats (Endpoint #6)
+final adminMakerStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final repo = ref.watch(adminRepositoryProvider);
+  return repo.getMakerStats();
 });
 
 // ============================================================================

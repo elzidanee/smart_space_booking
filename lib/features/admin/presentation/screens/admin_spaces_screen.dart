@@ -476,7 +476,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
       hargaPerJam: int.tryParse(_hargaCtrl.text) ?? 20000,
       fasilitas: fasList.isNotEmpty ? fasList : ['WiFi Cepat', 'AC'],
       deskripsi: _deskripsiCtrl.text.trim(),
-      foto: _existingFotoUrl,
+      foto: _selectedPhotoFile?.path ?? _existingFotoUrl,
       status: widget.space?.status ?? 'tersedia',
     );
 

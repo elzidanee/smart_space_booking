@@ -12,6 +12,7 @@ final spacesRemoteDataSourceProvider = Provider<SpacesRemoteDataSource>((ref) {
 
 abstract class SpacesRemoteDataSource {
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
+  Future<List<Map<String, dynamic>>> getSpaceTypes();
   Future<SpaceModel> getSpaceById(int id);
   Future<List<Map<String, dynamic>>> getActiveDiscounts();
   Future<AvailabilityCheckResult> checkAvailability({
@@ -143,6 +144,28 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
 
       return matchQuery && matchTipe;
     }).toList();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getSpaceTypes() async {
+    try {
+      final response = await _dio.get(ApiEndpoints.spaceTypes);
+      final dynamic data = response.data['data'] ?? response.data;
+      if (data is List) {
+        return data.cast<Map<String, dynamic>>();
+      }
+      return [
+        {'id': 1, 'tipe': 'personal_desk', 'nama': 'Personal Desk'},
+        {'id': 2, 'tipe': 'meeting_room', 'nama': 'Meeting Room'},
+        {'id': 3, 'tipe': 'private_office', 'nama': 'Private Office'},
+      ];
+    } catch (_) {
+      return [
+        {'id': 1, 'tipe': 'personal_desk', 'nama': 'Personal Desk'},
+        {'id': 2, 'tipe': 'meeting_room', 'nama': 'Meeting Room'},
+        {'id': 3, 'tipe': 'private_office', 'nama': 'Private Office'},
+      ];
+    }
   }
 
   @override

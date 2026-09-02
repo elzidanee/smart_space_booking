@@ -48,6 +48,10 @@ abstract class AdminRepository {
 
   // Monthly Report
   Future<AdminMonthlyReportModel> getMonthlyReport({int? month, int? year});
+  Future<Map<String, dynamic>> getIncomeReport({int? month, int? year});
+
+  // App Maker Multi-Tenancy Info
+  Future<Map<String, dynamic>> getMakerStats();
 
   // Upload Media
   Future<String> uploadSpacePhoto(File file);
@@ -147,6 +151,13 @@ class AdminRepositoryImpl implements AdminRepository {
   @override
   Future<AdminMonthlyReportModel> getMonthlyReport({int? month, int? year}) =>
       _dataSource.getMonthlyReport(month: month, year: year);
+
+  @override
+  Future<Map<String, dynamic>> getIncomeReport({int? month, int? year}) =>
+      _dataSource.getIncomeReport(month: month, year: year);
+
+  @override
+  Future<Map<String, dynamic>> getMakerStats() => _dataSource.getMakerStats();
 
   @override
   Future<String> uploadSpacePhoto(File file) => _dataSource.uploadSpacePhoto(file);
