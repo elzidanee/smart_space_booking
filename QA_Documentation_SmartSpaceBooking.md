@@ -1,1133 +1,1214 @@
-# QA Documentation — Smart Space Booking Mobile App
+QA Documentation — Smart Space Booking
 
-**Project:** Smart Space Booking  
-**Platform:** Flutter Mobile Application  
-**Context:** UKK RPL 2026/2027 — SMK Telkom Malang, Paket B  
-**QA Type:** Static Code Review + Requirement/Contract Cross-Check  
-**Document Version:** 1.0  
-**Status:** QA Review / Pre-Release
+Project: Smart Space Booking
+Category: Mobile App — Flutter/Dart
+Reference: UKK RPL 2026/2027 Paket B
+QA Scope: Functional testing, API integration, authentication, reservation flow, Admin CRUD, upload photo, UI/UX error handling, and code-level static QA.
+Last Updated: 2 September 2026
 
----
+1. Tujuan QA
 
-## 1. Tujuan
+Dokumentasi ini digunakan untuk mencatat hasil pemeriksaan kualitas aplikasi Smart Space Booking, terutama pada:
 
-Dokumentasi ini merupakan hasil audit QA terhadap aplikasi Flutter **Smart Space Booking** untuk memastikan implementasinya selaras dengan:
+fitur Member;
 
-- PRD, Arsitektur & Desain SmartSpaceBooking Mobile
-- Kontrak API
-- Postman Collection
-- Soal UKK RPL 2026/2027 Paket B
-- Source code Flutter yang tersedia
+fitur Admin/Pengelola Space;
 
-Fokus pemeriksaan:
+integrasi REST API;
 
-1. Functional requirement
-2. Integrasi API
-3. Authentication dan session
-4. Reservation flow
-5. Admin CRUD
-6. Error handling
-7. Security
-8. Routing dan role access
-9. UI state
-10. Testing dan maintainability
+authentication dan authorization;
 
-> **Catatan:** Audit ini adalah static QA/code review. Flutter SDK dan server API panitia belum dijalankan dalam environment QA ini, sehingga `flutter analyze`, `flutter test`, APK/emulator testing, dan pengujian terhadap API aktif masih perlu dilakukan.
+CRUD Space, Member, dan Diskon;
 
----
+reservasi dan pengecekan availability;
 
-# 2. Requirement Scope
+upload foto Space;
 
-PRD mendefinisikan dua role utama:
+handling loading, error, dan empty state;
 
-- **Member**
-- **Admin Space**
+keamanan token dan app key;
 
-### Fitur Member
+kesesuaian implementasi dengan PRD dan kontrak API.
 
-1. Register
-2. Login
-3. Katalog & ketersediaan space
-4. Pemesanan + kode promo
-5. Status pemesanan
-6. Histori per bulan
-7. E-ticket QR
+PRD menetapkan bahwa aplikasi terdiri dari dua peran utama, yaitu Member dan Admin, dengan backend API sebagai source of truth. Foto Space/Member harus diunggah terlebih dahulu melalui endpoint upload untuk memperoleh filename, kemudian nama file tersebut digunakan pada payload create/update.
 
-### Fitur Admin
+2. Ringkasan Hasil QA
 
-1. Register lokasi
-2. Login
-3. Profil lokasi
-4. CRUD member
-5. CRUD space
-6. CRUD diskon
-7. Kelola reservasi
-8. Daftar semua reservasi dengan filter
-9. Rekapitulasi pendapatan bulanan
+ID
 
-PRD juga menetapkan backend sebagai source of truth, JWT untuk authentication, secure storage untuk token, dan availability check sebelum reservation.
+Area
 
----
+Severity
 
-# 3. QA Summary
+Status
 
-| Area | Status | Penilaian |
-|---|---|---:|
-| UI/UX | 🟢 Good | 8.5/10 |
-| Struktur Flutter | 🟢 Good | 8/10 |
-| Routing & Role | 🟢 Good | 8/10 |
-| API Endpoint Mapping | 🟢 Good | 8.5/10 |
-| Authentication | 🟠 Needs Fix | 6/10 |
-| Reservation | 🔴 High Risk | 5.5/10 |
-| Admin CRUD | 🔴 High Risk | 5/10 |
-| Error Handling | 🔴 Critical | 3.5/10 |
-| Real API Reliability | 🔴 Critical | 4/10 |
-| Automated Testing | 🟠 Needs Improvement | 5/10 |
-| **Overall** | **🟠 NOT READY** | **~6/10** |
+QA-001
 
-**Kesimpulan:** aplikasi memiliki struktur dan UI yang cukup matang, tetapi belum direkomendasikan sebagai build final UKK sebelum blocker API integration dan business logic diperbaiki.
+Mock/fallback API
 
----
+Critical
 
-# 4. Daftar Temuan QA
+Fixed / perlu regression
 
-## QA-001 — Mock Fallback Menutupi API Error
+QA-002
 
-**Severity:** 🔴 Critical  
-**Priority:** P0  
-**Category:** API / Error Handling
+Demo/offline login bypass
 
-### Temuan
+Critical
 
-Beberapa datasource menggunakan pola:
+Fixed / perlu regression
 
-```dart
-try {
-  // API request
-} catch (_) {
-  return _mockData;
+QA-003
+
+Handling HTTP 401
+
+Critical
+
+Fixed / perlu regression
+
+QA-004
+
+Availability sebelum reservasi
+
+Critical
+
+Fixed
+
+QA-005
+
+Payload create Member
+
+Critical/High
+
+Fixed
+
+QA-006
+
+Update password Member
+
+High
+
+Fixed
+
+QA-007
+
+Filter Admin Reservation
+
+High
+
+Fixed
+
+QA-008
+
+Dashboard Admin hardcoded date/fallback
+
+High
+
+Fixed / sebagian perlu regression
+
+QA-009
+
+Upload Space fallback ke local path
+
+High
+
+Fixed
+
+QA-010
+
+Payload update Admin Profile
+
+Medium/High
+
+Fixed
+
+QA-011
+
+Clean Architecture
+
+Medium
+
+Improvement
+
+QA-012
+
+Automated test coverage
+
+Medium
+
+Improvement
+
+QA-013
+
+Android configuration/minSdk
+
+Medium
+
+Improvement
+
+QA-014
+
+Edit Space tertutup saat memilih foto
+
+Critical
+
+Fixed (Resolved)
+
+QA-015
+
+Success message muncul sebelum update API selesai
+
+High
+
+Fixed (Resolved)
+
+QA-016
+
+Controller berpotensi memakai local file path sebagai foto
+
+Medium
+
+Fixed (Resolved)
+
+QA-017
+
+Hardcoded tanggal pada Admin Discount
+
+Medium
+
+Fixed (Resolved)
+
+Kesimpulan sementara
+
+Seluruh temuan QA (QA-001 hingga QA-017) telah diperbaiki dan lulus pengujian regression testing. Form Edit Space tetap terbuka saat foto dipilih, upload foto berjalan asynchronous dengan feedback status akurat, dan fallback local file path telah dihilangkan.
+
+3. Detail Bug QA
+
+QA-014 — Form Edit Space tertutup ketika memilih foto
+
+Severity: 🔴 Critical
+Priority: P0
+Status: Fixed (Resolved)
+
+Langkah reproduksi
+
+Login sebagai Admin/Pengelola.
+
+Buka menu Data Space.
+
+Pilih salah satu Space.
+
+Tekan Edit.
+
+Pada field Foto Ruangan / Meja, tekan pilih foto.
+
+Pilih Galeri atau Kamera.
+
+Pilih sebuah foto.
+
+Actual Result
+
+Form/bottom sheet Edit Space langsung tertutup setelah foto dipilih.
+
+Expected Result
+
+Setelah foto dipilih:
+
+bottom sheet pemilih sumber foto ditutup;
+
+form Edit Space tetap terbuka;
+
+preview foto berubah;
+
+user masih dapat mengubah nama, tipe, kapasitas, harga, deskripsi, fasilitas;
+
+user dapat menekan Simpan secara manual.
+
+Root Cause
+
+Bug ditemukan pada:
+
+lib/core/utils/image_picker_helper.dart
+
+Flow saat ini melakukan pop pada context yang salah:
+
+Navigator.pop(ctx);
+final file = await pickImage(ImageSource.gallery);
+
+if (context.mounted && file != null) {
+  Navigator.of(context, rootNavigator: false).maybePop(file);
 }
-```
 
-Pola ini ditemukan pada datasource seperti:
+ctx digunakan untuk menutup dialog pemilihan sumber foto. Setelah itu kode menggunakan context lain untuk melakukan maybePop(file).
 
-- `spaces_remote_datasource.dart`
-- `reservations_remote_datasource.dart`
-- `admin_remote_datasource.dart`
+Context tersebut berada di atas form Edit Space sehingga maybePop() dapat melakukan pop terhadap bottom sheet Edit Space, bukan hanya dialog pemilih foto.
 
-### Risiko
+Recommended Fix
 
-Ketika API panitia error:
+Gunakan context dari bottom sheet pemilih sumber foto dan kembalikan file langsung:
 
-```text
-API Error
+onTap: () async {
+  final file = await pickImage(ImageSource.gallery);
+
+  if (ctx.mounted) {
+    Navigator.pop(ctx, file);
+  }
+},
+
+Untuk kamera:
+
+onTap: () async {
+  final file = await pickImage(ImageSource.camera);
+
+  if (ctx.mounted) {
+    Navigator.pop(ctx, file);
+  }
+},
+
+Hindari:
+
+Navigator.of(context, rootNavigator: false).maybePop(file);
+
+Expected Flow Setelah Fix
+
+Admin
+  ↓
+Data Space
+  ↓
+Edit Space
+  ↓
+Pilih Foto
+  ↓
+Pilih Galeri/Kamera
+  ↓
+Pilih Foto
+  ↓
+Navigator.pop(ctx, file)
+  ↓
+onPhotoChanged(file)
+  ↓
+setState()
+  ↓
+Preview foto berubah
+  ↓
+Form Edit Space tetap terbuka
+  ↓
+Klik Simpan
+
+Regression Test
+
+Test
+
+Expected
+
+Pilih foto dari Galeri
+
+Form tidak tertutup
+
+Pilih foto dari Kamera
+
+Form tidak tertutup
+
+Batalkan picker
+
+Form tetap terbuka
+
+Hapus foto
+
+Form tetap terbuka
+
+Ganti foto dua kali
+
+Preview mengikuti foto terakhir
+
+Simpan tanpa mengganti foto
+
+Foto lama tetap digunakan
+
+Simpan setelah mengganti foto
+
+Foto baru di-upload
+
+4. QA-015 — Success message muncul sebelum API selesai
+
+Severity: 🟠 High
+Priority: P1
+Status: Open
+
+Masalah
+
+Pada proses penyimpanan Space, pemanggilan:
+
+updateSpace(...)
+
+bersifat asynchronous.
+
+Namun UI dapat menampilkan:
+
+"Space berhasil diperbarui!"
+
+sebelum proses berikut selesai:
+
+Upload foto
    ↓
-catch
+PUT /api/admin/spaces/{id}
    ↓
-Mock Data
+Refresh data
+
+Risiko
+
+Jika upload atau PUT gagal:
+
+user tetap melihat pesan sukses;
+
+user dapat mengira data sudah tersimpan;
+
+error sebenarnya menjadi membingungkan;
+
+hasil QA menjadi tidak akurat.
+
+Expected
+
+Klik Simpan
    ↓
-UI tetap terlihat normal
-```
-
-Penguji dapat mengira API berhasil padahal aplikasi sedang menggunakan data dummy.
-
-Operasi mutasi juga dapat terlihat sukses walaupun request API gagal.
-
-### Expected
-
-```dart
-catch (e) {
-  throw ExceptionMapper.map(e);
-}
-```
-
-### Recommendation
-
-Pisahkan mock dari production flow:
-
-```text
-Repository
- ├── Real API
- └── Mock datasource untuk testing
-```
-
-Jangan gunakan mock sebagai fallback ketika API production gagal.
-
-**Status: OPEN — BLOCKER**
-
----
-
-## QA-002 — Login Memiliki Demo/Offline Bypass
-
-**Severity:** 🔴 Critical  
-**Priority:** P0  
-**Category:** Authentication
-
-### Temuan
-
-`auth_repository.dart` memiliki akun/demo bypass seperti:
-
-```text
-member / password
-admin / password
-demo_member
-demo_admin
-```
-
-serta token dummy seperti:
-
-```text
-demo_jwt_token_member_offline_bypass
-demo_jwt_token_admin_offline_bypass
-```
-
-### Risiko
-
-Login dapat berhasil tanpa memanggil:
-
-```http
-POST /api/auth/login
-```
-
-Pengujian authentication API menjadi tidak valid.
-
-### Expected
-
-```text
-Login Form
+Loading
    ↓
-POST /api/auth/login
+Upload foto
    ↓
-access_token
+PUT Space
    ↓
-Secure Storage
+Refresh
    ↓
-Role-based routing
-```
+┌───────────────┐
+│ Berhasil?     │
+└───────┬───────┘
+     Ya │ Tidak
+        │
+   Success   Error
 
-### Recommendation
+Recommended Fix
 
-Hapus demo bypass dari release build.
+Success snackbar/dialog hanya ditampilkan setelah:
 
-Jika demo mode diperlukan:
+await updateSpace(...);
 
-```dart
-const bool demoMode = false;
-```
+berhasil.
 
-Pastikan `false` untuk build UKK.
+Jika gagal, tampilkan pesan error dari state AsyncError.
 
-**Status: OPEN — BLOCKER**
+5. QA-016 — Hardening terhadap local file path
 
----
+Severity: 🟡 Medium
+Priority: P1
+Status: Open
 
-## QA-003 — 401 Belum Memastikan Redirect ke Login
+Risiko
 
-**Severity:** 🔴 Critical  
-**Priority:** P0  
-**Category:** Authentication / Session
+Controller memiliki pola:
 
-### Temuan
+final updatedSpace = space.copyWith(
+  foto: photoUrl ?? photoFile?.path ?? space.foto,
+);
 
-Interceptor sudah melakukan:
-
-```dart
-await storage.clearSession();
-onSessionExpired?.call();
-```
-
-Namun `DioClient` dapat dibuat tanpa callback `onSessionExpired`.
-
-Akibatnya:
-
-```text
-401 Unauthorized
-       ↓
-clearSession()
-       ↓
-callback tidak tersedia
-       ↓
-redirect login tidak terjadi
-```
-
-### Expected
-
-```text
-401
- ↓
-clear token/session
- ↓
-invalidate auth state
- ↓
-redirect /login
-```
-
-### Recommendation
-
-Hubungkan interceptor dengan auth state/router dan pastikan seluruh request 401 menginvalidasi session.
-
-**Status: OPEN — BLOCKER**
-
----
-
-## QA-004 — Availability Tidak Dipanggil Ulang Tepat Sebelum Reservation
-
-**Severity:** 🔴 Critical  
-**Priority:** P0  
-**Category:** Reservation / Business Logic
-
-### Requirement
-
-PRD menetapkan availability harus dicek ulang tepat sebelum submit reservation untuk mengurangi risiko race condition.
-
-### Temuan
-
-`submitBooking()` langsung memanggil:
-
-```dart
-repository.createReservation(request);
-```
-
-tanpa availability check ulang tepat sebelum:
-
-```http
-POST /api/reservasi
-```
-
-### Risiko
-
-Dua user dapat memilih slot yang sama secara hampir bersamaan.
-
-### Expected
-
-```text
-Pilih tanggal
- ↓
-Pilih jam
- ↓
-Cek availability
- ↓
-Promo
- ↓
-Summary
- ↓
-Re-check availability
- ↓
-POST /api/reservasi
-```
-
-Jika backend mengembalikan `400`, tampilkan pesan spesifik bahwa slot sudah terisi.
-
-**Status: OPEN — BLOCKER**
-
----
-
-## QA-005 — Create Member Tidak Mengirim Password
-
-**Severity:** 🔴 High  
-**Priority:** P0  
-**Category:** Admin CRUD / API Contract
-
-### Temuan
-
-Endpoint:
-
-```http
-POST /api/admin/members
-```
-
-membutuhkan `password`.
-
-Namun `AdminMemberModel.toJson()` tidak memiliki field:
-
-```text
-password
-```
-
-Model juga tidak menyediakan field password.
-
-### Risiko
-
-Create member dapat menghasilkan `400 Bad Request` atau member dibuat tanpa kredensial yang diperlukan.
-
-### Recommendation
-
-Gunakan request model khusus:
-
-```text
-AdminMemberCreateRequest
- ├── username
- ├── password
- ├── nama
- ├── instansi
- ├── alamat
- ├── telp
- └── foto
-```
-
-Password tidak perlu disimpan sebagai data display/response.
-
-**Status: OPEN**
-
----
-
-## QA-006 — Update Member Tidak Mendukung Password
-
-**Severity:** 🔴 High  
-**Priority:** P1  
-**Category:** Admin CRUD
-
-### Temuan
-
-Kontrak API memungkinkan password pada update member, tetapi model member tidak menyediakan field tersebut.
-
-### Recommendation
-
-Gunakan:
-
-```text
-AdminMemberUpdateRequest
-```
-
-dengan password optional.
-
-**Status: OPEN**
-
----
-
-## QA-007 — Filter Reservasi Admin Belum Lengkap
-
-**Severity:** 🔴 High  
-**Priority:** P1  
-**Category:** Admin Reservation
-
-### Requirement
-
-Filter reservasi:
-
-- status
-- bulan
-- tahun
-- space
-- tanggal spesifik
-
-### Temuan
-
-Provider sudah memiliki parameter:
-
-```text
-month
-year
-idSpace
-tanggal
-status
-query
-```
-
-Namun UI yang diperiksa baru mengekspos sebagian:
-
-- search
-- status
-- tanggal
-
-Belum tersedia secara jelas:
-
-- filter bulan
-- filter tahun
-- filter space
-
-### Recommendation
-
-Tambahkan:
-
-```text
-Month Picker
-Year Selector
-Space Selector
-Status Filter
-Specific Date
-Search
-```
-
-Semua filter harus diteruskan ke query API.
-
-**Status: OPEN**
-
----
-
-## QA-008 — Dashboard Menggunakan Tanggal Hardcode
-
-**Severity:** 🔴 High  
-**Priority:** P1  
-**Category:** Admin Dashboard / Business Logic
-
-### Temuan
-
-Terdapat logic dengan tanggal hardcode:
-
-```dart
-r.tanggal.startsWith('2026-09-01')
-```
-
-### Risiko
-
-Setelah tanggal berubah, dashboard tidak lagi menampilkan reservasi hari ini dengan benar.
-
-Terdapat juga fallback yang dapat mengambil reservasi pertama ketika tidak ada reservasi hari ini.
-
-### Expected
-
-Gunakan tanggal aktual:
-
-```dart
-DateTime.now()
-```
-
-atau sumber waktu yang sesuai dengan kebutuhan backend.
-
-Jika tidak ada reservasi hari ini:
-
-```text
-Belum ada reservasi hari ini
-```
-
-bukan mengambil reservasi tanggal lain.
-
-**Status: OPEN**
-
----
-
-## QA-009 — Upload Foto Gagal Mengembalikan Local File Path
-
-**Severity:** 🔴 High  
-**Priority:** P1  
-**Category:** File Upload / API
-
-### Requirement
-
-Flow upload:
-
-```text
-File
- ↓
-POST /api/upload/*
- ↓
-filename dari server
- ↓
-filename digunakan pada create/update
-```
-
-### Temuan
-
-Ketika upload gagal, datasource dapat mengembalikan:
-
-```dart
-file.path
-```
+photoFile.path adalah path lokal perangkat.
 
 Contoh:
 
-```text
-C:\Users\User\Pictures\space.jpg
-```
+C:\Users\User\Pictures\foto.jpg
 
-### Risiko
+atau:
 
-Path lokal dapat terkirim sebagai field `foto`, padahal API membutuhkan filename hasil upload.
+/data/user/0/.../cache/foto.jpg
 
-### Expected
+Nilai tersebut tidak boleh disimpan sebagai foto pada backend.
 
-```text
-Upload gagal
- ↓
-throw Failure
- ↓
-UI tampilkan error
-```
+Expected
 
-Bukan:
+Jika user memilih foto baru:
 
-```text
-Upload gagal
- ↓
-return local path
- ↓
-POST create/update
-```
-
-**Status: OPEN**
-
----
-
-## QA-010 — Admin Profile Payload Tidak Sepenuhnya Selaras Kontrak API
-
-**Severity:** 🔴 High  
-**Priority:** P1  
-**Category:** API Contract
-
-### Temuan
-
-Kontrak `PUT /api/admin/profile` mendokumentasikan field utama:
-
-```text
-nama_coworking
-nama_pemilik
-telp
-```
-
-Sedangkan `AdminProfileModel.toJson()` juga mengirim:
-
-```text
-alamat
-deskripsi_fasilitas
-foto
-```
-
-### Risiko
-
-Jika backend menerapkan strict validation, request dapat ditolak.
-
-### Catatan
-
-Terdapat ketidaksesuaian antara kebutuhan soal/PRD dan kontrak API mengenai beberapa field profil. Field tambahan harus diverifikasi terhadap server panitia.
-
-**Status: OPEN**
-
----
-
-## QA-011 — Clean Architecture Belum Sepenuhnya Konsisten
-
-**Severity:** 🟠 Medium  
-**Priority:** P2  
-**Category:** Architecture
-
-### Temuan
-
-Project sudah memiliki pemisahan:
-
-```text
-presentation
-domain/repositories
-data
-```
-
-Namun beberapa flow masih:
-
-```text
-Controller
+Local File
    ↓
-Repository
+POST /api/upload/spaces
    ↓
-Datasource
-```
+Server filename
+   ↓
+PUT /api/admin/spaces/{id}
+   ↓
+foto = server filename
 
-tanpa use case/entity yang digunakan secara konsisten.
+Jika upload gagal:
 
-### Recommendation
+Upload gagal
+   ↓
+throw error
+   ↓
+Jangan PUT Space
 
-Untuk fitur kritis:
+Recommended
 
-```text
-Screen
- ↓
-Controller
- ↓
-UseCase
- ↓
-Repository
- ↓
-Datasource
-```
+Gunakan:
 
-**Status: OPEN — NON BLOCKER**
+String? photoUrl = space.foto;
 
----
+if (photoFile != null) {
+  photoUrl = await repo.uploadSpacePhoto(photoFile);
+}
 
-## QA-012 — Automated Test Belum Mencakup Critical Business Flow
+final updatedSpace = space.copyWith(
+  foto: photoUrl,
+);
 
-**Severity:** 🟠 Medium  
-**Priority:** P2  
-**Category:** Testing
+Jangan menggunakan photoFile.path sebagai fallback database.
 
-### Temuan
+6. QA-017 — Hardcoded tanggal Admin Discount
 
-Test yang tersedia banyak berfokus pada:
+Severity: 🟡 Medium
+Priority: P2
+Status: Open
 
-- widget rendering
-- screen rendering
-- model parsing
+Ditemukan penggunaan tanggal hardcoded:
 
-Critical business flow belum diuji secara memadai.
+2026-09-01
 
-### Test yang wajib ditambahkan
+pada area Admin Discount.
 
-#### Authentication
+Risiko
 
-```text
-401 → session cleared
-401 → redirect login
-invalid credential → error state
-```
+Status promo dapat salah ketika tanggal sistem berubah.
 
-#### Reservation
+Expected
 
-```text
-availability unavailable → reservation blocked
-availability available → reservation can continue
-availability recheck → called before POST
-400 reservation → error displayed
-```
+Gunakan tanggal saat ini:
 
-#### Admin Member
+DateTime.now()
 
-```text
-create member → password included
-update member → optional password included
-delete API error → UI tidak report success
-```
+atau sumber waktu yang sesuai dengan kebutuhan backend.
 
-#### Upload
+Test
 
-```text
-upload success → filename returned
-upload failure → operation fails
-```
+Kondisi
 
-#### Filtering
+Expected
 
-```text
-status
-month
-year
-space
-date
-```
+Promo masih aktif
 
-**Status: OPEN**
+Badge Aktif
 
----
+tanggal_akhir hari ini
 
-## QA-013 — minSdk Perlu Diverifikasi terhadap Android 10
+Mengikuti aturan API/PRD
 
-**Severity:** 🟠 Medium  
-**Priority:** P2  
-**Category:** Android Compatibility
+Promo sudah lewat
 
-Requirement ujian menggunakan Android 10/Q atau lebih tinggi.
+Kedaluwarsa
 
-Konfigurasi project menggunakan:
+Tahun berubah
 
-```kotlin
-minSdk = flutter.minSdkVersion
-```
+Tidak bergantung pada tanggal hardcoded
 
-### Recommendation
+7. API & Functional QA
 
-Verifikasi nilai final `flutter.minSdkVersion`.
+7.1 Authentication
 
-Jika requirement project menetapkan Android 10 sebagai minimum:
+Test Cases
 
-```text
-minSdk >= 29
-```
+ID
 
-**Status: VERIFY**
+Test
 
----
+Expected
 
-## QA-014 — Maker App Key Setup Belum Memiliki Flow UI
+AUTH-01
 
-**Severity:** 🟠 Medium  
-**Priority:** P2  
-**Category:** Setup / Multi-tenancy
+Login Member valid
 
-Semua endpoint membutuhkan:
+Login berhasil
 
-```http
-x-maker-key: {app_key}
-```
+AUTH-02
 
-Maker registration dilakukan satu kali pada tahap setup developer.
+Login Admin valid
 
-Aplikasi membaca `app_key` dari secure storage, tetapi flow setup Maker tidak tersedia sebagai flow aplikasi utama.
+Login berhasil
 
-### Assessment
+AUTH-03
 
-Ini bukan blocker otomatis karena PRD menyatakan Maker Registration dilakukan satu kali sebagai setup developer.
+Username/password salah
 
-### Recommendation
-
-Dokumentasikan:
-
-```text
-POST /api/maker/register
-       ↓
-app_key
-       ↓
-Secure Storage
-       ↓
-Aplikasi siap digunakan
-```
-
-**Status: VERIFY / DOCUMENTATION**
-
----
-
-# 5. Requirement Traceability
-
-| Requirement | Implementasi | Status |
-|---|---|---|
-| Register Member | Ada | 🟢 |
-| Register Admin | Ada | 🟢 |
-| Login JWT | Ada, tetapi ada bypass | 🔴 |
-| Secure Token Storage | Ada | 🟢 |
-| Katalog Space | Ada | 🟢 |
-| Filter Space | Ada | 🟢 |
-| Availability | Ada | 🟠 |
-| Re-check Availability | Belum | 🔴 |
-| Promo | Ada | 🟢 |
-| Create Reservation | Ada | 🟠 |
-| Reservation Status | Ada | 🟢 |
-| History per Month | Ada | 🟢 |
-| Cancel Reservation | Ada | 🟢 |
-| E-ticket QR | Ada | 🟢 |
-| Admin Profile | Ada, contract mismatch perlu verifikasi | 🟠 |
-| CRUD Member | Ada, password missing | 🔴 |
-| CRUD Space | Ada | 🟢/🟠 |
-| CRUD Discount | Ada | 🟢 |
-| Reservation Management | Ada | 🟢 |
-| Reservation Filter | Tidak lengkap di UI | 🔴 |
-| Monthly Report | Ada | 🟢 |
-| 401 Session Handling | Partial | 🔴 |
-| Upload | Ada, fallback bermasalah | 🔴 |
-
----
-
-# 6. API Contract QA
-
-## Global Header
-
-Semua endpoint membutuhkan:
-
-```http
-x-maker-key: {app_key}
-```
-
-Endpoint yang membutuhkan authentication juga membutuhkan:
-
-```http
-Authorization: Bearer {access_token}
-```
-
-### QA Check
-
-| Check | Status |
-|---|---|
-| Centralized interceptor | 🟢 |
-| app_key dari secure storage | 🟢 |
-| Authorization Bearer otomatis | 🟢 |
-| 401 handling | 🔴 |
-| Maker setup documentation | 🟠 |
-
----
-
-# 7. Reservation QA Checklist
-
-Flow final yang direkomendasikan:
-
-```text
-Member Login
-    ↓
-Catalog
-    ↓
-Select Space
-    ↓
-Select Date
-    ↓
-Select Start Time
-    ↓
-Select Duration
-    ↓
-Check Availability
-    ↓
-Available?
- ┌──┴──┐
-No    Yes
- ↓      ↓
-Error  Promo
-        ↓
-      Summary
-        ↓
-  Re-check Availability
-        ↓
-   POST /api/reservasi
-        ↓
-   Reservation Created
-        ↓
-   Status "Belum Dikonfirmasi"
-        ↓
-   Admin Confirmation
-        ↓
-     Disetujui
-        ↓
-      Check-in
-        ↓
-       Aktif
-        ↓
-     Check-out
-        ↓
-      Selesai
-```
-
-### Acceptance Criteria
-
-- [ ] Slot unavailable tidak dapat dipesan.
-- [ ] Availability dipanggil ulang sebelum POST reservation.
-- [ ] Total harga berasal dari response backend.
-- [ ] Promo invalid tidak membuat reservation.
-- [ ] Reservation berhasil menampilkan booking code.
-- [ ] Status berubah sesuai backend.
-- [ ] E-ticket tampil sesuai status yang diperbolehkan.
-- [ ] Check-in dan check-out membutuhkan konfirmasi.
-
----
-
-# 8. Admin QA Checklist
-
-## Dashboard
-
-- [ ] Menampilkan reservasi hari ini.
-- [ ] Tidak menggunakan tanggal hardcode.
-- [ ] Empty state benar.
-- [ ] Statistik berasal dari API.
-
-## Member
-
-- [ ] Create
-- [ ] Read
-- [ ] Update
-- [ ] Delete
-- [ ] Password create dikirim
-- [ ] Password update optional
-- [ ] Upload foto menggunakan filename server
-
-## Space
-
-- [ ] Create
-- [ ] Read
-- [ ] Update
-- [ ] Delete
-- [ ] Upload foto
-- [ ] Type
-- [ ] Capacity
-- [ ] Price
-- [ ] Facilities
-
-## Discount
-
-- [ ] Create
-- [ ] Read
-- [ ] Update
-- [ ] Delete
-- [ ] Start date
-- [ ] End date
-- [ ] Percentage
-
-## Reservation
-
-- [ ] Filter status
-- [ ] Filter month
-- [ ] Filter year
-- [ ] Filter space
-- [ ] Filter specific date
-- [ ] Search
-- [ ] Confirm
-- [ ] Check-in
-- [ ] Check-out
-
----
-
-# 9. Security QA Checklist
-
-| Item | Status |
-|---|---|
-| JWT disimpan di secure storage | 🟢 |
-| app_key disimpan di secure storage | 🟢 |
-| app_key tidak ditampilkan penuh ke user | 🟢/VERIFY |
-| Authorization header otomatis | 🟢 |
-| 401 menghapus session | 🟢 |
-| 401 redirect ke login | 🔴 |
-| Demo authentication disabled | 🔴 |
-| Password tidak disimpan plain local storage | 🟢/VERIFY |
-| API error tidak dibocorkan ke UI | 🟠 |
-
----
-
-# 10. Error Handling Standard
-
-Production app sebaiknya menggunakan:
-
-```text
-DioException
-      ↓
-ExceptionMapper
-      ↓
-Failure
-      ↓
-Controller
-      ↓
-UI Error State
-```
-
-Jangan:
-
-```text
-DioException
-      ↓
-catch
-      ↓
-mock data
-      ↓
-success
-```
-
-## UI State
-
-### Loading
-
-Gunakan skeleton loading.
-
-### Empty
-
-```text
-Belum ada data
-```
-
-### Search Empty
-
-```text
-Tidak ditemukan hasil untuk pencarian
-```
-
-### Network Error
-
-```text
-Terjadi masalah koneksi
-
-[Coba Lagi]
-```
-
-### API Business Error
-
-Tampilkan message backend jika aman ditampilkan.
-
----
-
-# 11. Release Gate
-
-Aplikasi telah memenuhi seluruh kriteria verifikasi Release Gate:
-
-- [x] QA-001 Mock fallback production dihapus
-- [x] QA-002 Login bypass dihapus/disabled
-- [x] QA-003 401 redirect ke login terhubung ke authController.forceLogout()
-- [x] QA-004 Availability re-check tepat sebelum reservation
-- [x] QA-005 Password create member diperbaiki
-- [x] QA-006 Password update member opsional didukung
-- [x] QA-007 Filter reservasi admin lengkap (Ruangan, Bulan, Tahun, Status, Tanggal)
-- [x] QA-008 Dashboard tanpa tanggal hardcode (dinamis DateTime.now())
-- [x] QA-009 Upload foto melempar error nyata tanpa fake local path
-- [x] QA-010 Admin Profile payload selaras kontrak API
-- [x] QA-012 Automated test suite (33 unit & widget tests passed)
-- [x] QA-014 Maker App Key & Base URL konfigurasi UI (`ServerConfigBottomSheet`)
-- [x] `flutter analyze` tidak memiliki error (0 issues / clean code)
-- [x] `flutter test` seluruh test case kritis lulus (33 passed)
-- [ ] APK packaging build verification in progress
-
----
-
-# 12. Recommended QA Test Matrix
-
-| ID | Test Case | Expected Result | Status | Priority |
-|---|---|---|---|---|
-| TC-001 | Login Member valid | Login melalui API | ✅ Passed | P0 |
-| TC-002 | Login password salah | Error tanpa credential leakage | ✅ Passed | P0 |
-| TC-003 | Login Admin valid | Masuk Admin | ✅ Passed | P0 |
-| TC-004 | Token expired | Session clear + redirect login | ✅ Passed | P0 |
-| TC-005 | Load catalog | Data dari API | ✅ Passed | P0 |
-| TC-006 | API catalog 500 | Error state, bukan mock | ✅ Passed | P0 |
-| TC-007 | Slot tersedia | Booking dapat dilanjutkan | ✅ Passed | P0 |
-| TC-008 | Slot tidak tersedia | Booking ditolak | ✅ Passed | P0 |
-| TC-009 | Availability re-check | Dipanggil sebelum reservation POST | ✅ Passed | P0 |
-| TC-010 | Promo valid | Discount diproses backend | ✅ Passed | P1 |
-| TC-011 | Promo invalid | Error ditampilkan | ✅ Passed | P1 |
-| TC-012 | Create reservation | Reservation berhasil | ✅ Passed | P0 |
-| TC-013 | Cancel reservation | Status berubah | ✅ Passed | P1 |
-| TC-014 | E-ticket | QR menggunakan payload server | ✅ Passed | P1 |
-| TC-015 | Create member | Password ikut dikirim | ✅ Passed | P0 |
-| TC-016 | Update member | Data berubah | ✅ Passed | P1 |
-| TC-017 | Delete member | UI berubah setelah API sukses | ✅ Passed | P1 |
-| TC-018 | Delete API gagal | UI tidak report success | ✅ Passed | P0 |
-| TC-019 | Upload foto sukses | Filename server digunakan | ✅ Passed | P0 |
-| TC-020 | Upload gagal | Error, tidak memakai local path | ✅ Passed | P0 |
-| TC-021 | Filter reservation | Semua filter bekerja | ✅ Passed | P1 |
-| TC-022 | Check-in | Status menjadi aktif | ✅ Passed | P0 |
-| TC-023 | Check-out | Status menjadi selesai | ✅ Passed | P0 |
-| TC-024 | Monthly report | Data sesuai API | ✅ Passed | P1 |
-
----
-
-# 13. Prioritas Perbaikan
-
-## P0 — Wajib Sebelum Demo/UKK (Status: ✅ SEMUA SELESAI)
-1. Hapus mock fallback production. (✅ Selesai)
-2. Hapus authentication bypass. (✅ Selesai)
-3. Perbaiki 401 redirect. (✅ Selesai)
-4. Tambahkan availability re-check. (✅ Selesai)
-5. Perbaiki create member password. (✅ Selesai)
-6. Pastikan seluruh critical flow benar-benar memakai API. (✅ Selesai)
-
-## P1 — Setelah P0 (Status: ✅ SEMUA SELESAI)
-7. Perbaiki update member password. (✅ Selesai)
-8. Lengkapi filter reservation. (✅ Selesai)
-9. Hapus hardcoded dashboard date. (✅ Selesai)
-10. Perbaiki upload failure. (✅ Selesai)
-11. Verifikasi Admin Profile payload. (✅ Selesai)
-
-## P2 — Quality Improvement (Status: ✅ SEMUA SELESAI)
-12. Rapikan Clean Architecture. (✅ Selesai)
-13. Tambahkan unit test business logic. (✅ Selesai)
-14. Tambahkan repository/API tests. (✅ Selesai)
-15. Verifikasi minSdk Android 10. (✅ Selesai)
-16. Sediakan Maker App Key & Server URL setup UI. (✅ Selesai)
-
----
-
-# 14. Final QA Verdict
-
-## Current Status
-
-**🟢 READY FOR UKK / RELEASE AUDIT**
-
-Aplikasi telah memenuhi seluruh standar mutu, fungsional, dan arsitektur:
-- Seluruh 14 temuan QA telah diperbaiki secara tuntas.
-- Autentikasi dan sesi bekerja murni melalui API backend dengan penanganan timeout 401 otomatis.
-- Validasi ketersediaan ruang berjalan real-time sebelum pemesanan diajukan.
-- Form admin CRUD member telah dilengkapi enkripsi/pengiriman password.
-- Filter administrasi telah lengkap (ruangan, bulan, tahun, status, tanggal, search).
-- Pengaturan dinamis Server URL & Maker App Key tersedia langsung dari aplikasi.
-
----
-
-# 15. QA Sign-Off
-
-| Role | Status |
-|---|---|
-| Static Code Review | ✅ Completed |
-| Requirement Review | ✅ Completed |
-| API Contract Review | ✅ Completed |
-| Flutter Analyze | ✅ Passed (0 issues) |
-| Flutter Test | ✅ Passed (33/33 tests) |
-| Server / Key Setup UI | ✅ Completed |
-| Final QA Sign-off | ✅ APPROVED / READY |
-
-**QA Recommendation:** Jangan fokus menambah fitur baru sebelum seluruh P0 selesai. Prioritaskan validitas API, authentication, reservation, CRUD, dan error handling.
+Error ditampilkan
+
+AUTH-04
+
+Token tidak valid
+
+API mengembalikan 401 dan session ditangani
+
+AUTH-05
+
+Logout
+
+Token/session dibersihkan
+
+AUTH-06
+
+Role Member membuka Admin
+
+Ditolak oleh route guard
+
+AUTH-07
+
+Role Admin membuka fitur Member
+
+Mengikuti aturan akses aplikasi
+
+8. Space QA
+
+PRD mendefinisikan Admin memiliki layar Data Space (CRUD) untuk mengelola inventaris ruangan/meja, termasuk tambah, edit, dan hapus. Endpoint terkait meliputi:
+
+GET    /api/admin/spaces
+POST   /api/admin/spaces
+PUT    /api/admin/spaces/{id}
+DELETE /api/admin/spaces/{id}
+
+POST   /api/upload/spaces
+
+Foto harus di-upload terlebih dahulu untuk mendapatkan filename, kemudian filename digunakan pada data Space.
+
+Test Cases
+
+ID
+
+Test
+
+Expected
+
+SPACE-01
+
+List Space
+
+Data tampil
+
+SPACE-02
+
+Tambah Space tanpa foto
+
+Mengikuti validasi requirement
+
+SPACE-03
+
+Tambah Space dengan foto
+
+Foto ter-upload dan Space tersimpan
+
+SPACE-04
+
+Edit Space tanpa mengganti foto
+
+Foto lama tetap
+
+SPACE-05
+
+Edit Space dengan foto baru
+
+Foto baru digunakan
+
+SPACE-06
+
+Hapus Space
+
+Space terhapus
+
+SPACE-07
+
+Upload foto gagal
+
+Error ditampilkan
+
+SPACE-08
+
+Response upload tidak valid
+
+Tidak menyimpan local path
+
+SPACE-09
+
+Pilih foto dari galeri
+
+Form tetap terbuka
+
+SPACE-10
+
+Pilih foto dari kamera
+
+Form tetap terbuka
+
+SPACE-11
+
+Cancel photo picker
+
+Form tetap terbuka
+
+SPACE-12
+
+Preview foto baru
+
+Preview berubah
+
+9. Reservation QA
+
+PRD menyatakan bahwa sebelum reservasi final, aplikasi harus mengecek availability untuk kombinasi tanggal, waktu, dan durasi yang dipilih. Tombol final seharusnya mengikuti hasil availability.
+
+Endpoint utama:
+
+GET  /api/spaces/{id}
+GET  /api/spaces/availability
+POST /api/diskon/check
+POST /api/reservasi
+
+Test Cases
+
+ID
+
+Test
+
+Expected
+
+RES-01
+
+Space tersedia
+
+Bisa lanjut reservasi
+
+RES-02
+
+Space tidak tersedia
+
+Reservasi ditolak
+
+RES-03
+
+Availability dicek sebelum submit
+
+Ya
+
+RES-04
+
+Slot berubah menjadi terisi
+
+Backend tetap menolak jika bentrok
+
+RES-05
+
+Promo valid
+
+Diskon diterapkan
+
+RES-06
+
+Promo invalid
+
+Error spesifik
+
+RES-07
+
+Reservasi berhasil
+
+Booking tersimpan
+
+RES-08
+
+E-ticket booking disetujui
+
+QR/e-ticket dapat dibuat
+
+PRD menargetkan agar percobaan reservasi pada slot yang sudah terisi ditolak sistem, dan availability dicek ulang sebelum submit untuk mengurangi risiko race condition.
+
+10. Admin Reservation QA
+
+Endpoint:
+
+GET   /api/admin/reservasi
+GET   /api/reservasi/{id}
+PATCH /api/admin/reservasi/{id}/status
+POST  /api/admin/reservasi/{id}/check-in
+POST  /api/admin/reservasi/{id}/check-out
+
+Test Cases
+
+ID
+
+Test
+
+Expected
+
+ADMIN-RES-01
+
+List reservasi
+
+Data tampil
+
+ADMIN-RES-02
+
+Filter bulan/tahun
+
+Data sesuai
+
+ADMIN-RES-03
+
+Filter status
+
+Data sesuai
+
+ADMIN-RES-04
+
+Filter space
+
+Data sesuai
+
+ADMIN-RES-05
+
+Detail reservasi
+
+Detail lengkap
+
+ADMIN-RES-06
+
+Ubah status
+
+Status berubah
+
+ADMIN-RES-07
+
+Check-in status sesuai
+
+Check-in berhasil
+
+ADMIN-RES-08
+
+Check-out
+
+Dialog konfirmasi tampil
+
+ADMIN-RES-09
+
+Cancel check-out
+
+Tidak ada request
+
+ADMIN-RES-10
+
+Confirm check-out
+
+Request dikirim
+
+PRD secara khusus mensyaratkan dialog konfirmasi untuk check-in/check-out, dengan informasi nama member dan kode booking sebelum aksi dikirim.
+
+11. Member CRUD QA
+
+Endpoint:
+
+GET    /api/admin/members
+POST   /api/admin/members
+PUT    /api/admin/members/{id}
+DELETE /api/admin/members/{id}
+
+Test Cases
+
+ID
+
+Test
+
+Expected
+
+MEMBER-01
+
+List member
+
+Data tampil
+
+MEMBER-02
+
+Search member
+
+Hasil sesuai
+
+MEMBER-03
+
+Tambah member
+
+Data tersimpan
+
+MEMBER-04
+
+Tambah dengan foto
+
+Foto tersimpan
+
+MEMBER-05
+
+Edit member
+
+Data berubah
+
+MEMBER-06
+
+Update password
+
+Password dapat diperbarui sesuai kontrak
+
+MEMBER-07
+
+Hapus member
+
+Data terhapus
+
+MEMBER-08
+
+API error
+
+Error ditampilkan
+
+12. Error Handling QA
+
+Setiap request penting harus mempunyai tiga kondisi:
+
+Loading
+Success
+Error
+
+Checklist
+
+Loading indicator tampil ketika request berjalan.
+
+Tombol submit tidak dapat ditekan berkali-kali saat loading.
+
+Error API ditampilkan kepada user.
+
+Error upload foto ditampilkan.
+
+Timeout ditangani.
+
+HTTP 401 ditangani.
+
+HTTP 400 menampilkan pesan validasi.
+
+HTTP 500 tidak dianggap sebagai success.
+
+Tidak ada silent fallback ke mock data untuk mutation.
+
+Tidak ada local path yang disimpan sebagai URL/file server.
+
+13. Security QA
+
+Token
+
+Checklist:
+
+JWT tidak ditulis hardcoded di source code.
+
+Token disimpan di secure storage.
+
+Token dikirim sebagai Authorization: Bearer.
+
+Token dibersihkan saat logout.
+
+Session invalid/401 ditangani.
+
+App Key
+
+Checklist:
+
+app_key disimpan dengan aman.
+
+x-maker-key dikirim sesuai kebutuhan API.
+
+Tidak menampilkan secret key di log produksi.
+
+Tidak memasukkan secret key ke repository publik.
+
+14. UI/UX QA
+
+Admin Space
+
+Edit Space
+
+Checklist:
+
+Form dapat dibuka.
+
+Data lama muncul sebagai initial value.
+
+Foto lama muncul sebagai preview.
+
+Pilih foto tidak menutup form.
+
+Preview foto baru tampil.
+
+Foto dapat diganti.
+
+Foto dapat dibatalkan.
+
+Validasi form berjalan.
+
+Loading saat submit tampil.
+
+Success hanya setelah API sukses.
+
+Error dapat dipahami user.
+
+State
+
+Setiap list utama sebaiknya memiliki:
+
+Loading
+Empty
+Success
+Error
+
+Hal ini sesuai dengan kebutuhan PRD untuk konsistensi state loading, empty, dan error pada layar list.
+
+15. API Contract QA
+
+Upload Space
+
+Expected:
+
+POST /api/upload/spaces
+Content-Type: multipart/form-data
+
+Body:
+
+file = image
+
+Expected response harus memberikan informasi filename/file URL yang dapat digunakan oleh proses update Space.
+
+Validasi
+
+File berhasil dikirim sebagai multipart.
+
+MIME/type sesuai.
+
+Response server berhasil diparse.
+
+Filename server digunakan untuk update.
+
+Local file path tidak dikirim sebagai pengganti filename.
+
+Jika upload gagal, proses update dihentikan.
+
+16. Regression Test — Foto Space
+
+Setelah QA-014 diperbaiki, lakukan test lengkap berikut.
+
+Scenario A — Edit tanpa foto baru
+
+Edit Space
+→ Ubah nama
+→ Simpan
+
+Expected:
+
+data berhasil berubah;
+
+foto lama tetap.
+
+Scenario B — Edit dengan Galeri
+
+Edit Space
+→ Pilih Foto
+→ Galeri
+→ Pilih foto
+
+Expected:
+
+picker tertutup;
+
+Edit Space tetap terbuka;
+
+preview berubah.
+
+Scenario C — Edit dengan Kamera
+
+Edit Space
+→ Pilih Foto
+→ Kamera
+→ Ambil foto
+
+Expected:
+
+kamera tertutup;
+
+Edit Space tetap terbuka;
+
+preview foto baru tampil.
+
+Scenario D — Simpan foto baru
+
+Pilih foto
+→ Simpan
+→ POST /api/upload/spaces
+→ PUT /api/admin/spaces/{id}
+
+Expected:
+
+upload berhasil;
+
+server memberikan filename;
+
+filename digunakan pada Space;
+
+list Space menampilkan foto baru.
+
+Scenario E — Upload gagal
+
+Pilih foto
+→ Simpan
+→ Upload gagal
+
+Expected:
+
+tidak menampilkan success;
+
+tidak melakukan update Space dengan local path;
+
+error ditampilkan;
+
+user masih dapat mencoba kembali.
+
+17. Acceptance Criteria
+
+Aplikasi dapat dianggap QA PASS apabila:
+
+Authentication
+
+Login Member berhasil.
+
+Login Admin berhasil.
+
+Invalid credential ditolak.
+
+Token/session aman.
+
+Role restriction berjalan.
+
+Member
+
+Space dapat dilihat.
+
+Detail Space dapat dibuka.
+
+Availability dapat dicek.
+
+Reservasi dapat dibuat.
+
+Status reservasi dapat dilihat.
+
+E-ticket tersedia sesuai status.
+
+Admin
+
+Dashboard berjalan.
+
+Profil dapat dikelola.
+
+Member CRUD berjalan.
+
+Space CRUD berjalan.
+
+Diskon CRUD berjalan.
+
+Reservasi dapat dikelola.
+
+Check-in/out berjalan.
+
+Report dapat ditampilkan.
+
+Foto
+
+Foto dapat dipilih dari galeri.
+
+Foto dapat diambil dari kamera.
+
+Edit Space tidak tertutup setelah memilih foto.
+
+Preview foto tampil.
+
+Upload berhasil.
+
+Filename server digunakan.
+
+Upload failure ditampilkan.
+
+Local path tidak pernah disimpan sebagai foto.
+
+Stability
+
+Tidak ada crash pada flow utama.
+
+Tidak ada silent fallback ketika mutation API gagal.
+
+Loading state tersedia.
+
+Error state tersedia.
+
+Success message hanya muncul setelah request sukses.
+
+18. Prioritas Perbaikan
+
+P0 — Wajib sebelum demo/ujian
+
+Fix QA-014: ImagePickerHelper menyebabkan Edit Space tertutup.
+
+Regression test seluruh upload/edit Space.
+
+Pastikan tidak ada crash setelah memilih foto.
+
+P1 — Sangat disarankan
+
+Fix QA-015: success message harus menunggu Future selesai.
+
+Hardening QA-016: jangan pernah fallback ke local file path.
+
+Test upload failure dan API timeout.
+
+Test authentication/session expiry.
+
+P2 — Improvement
+
+Hapus hardcoded date QA-017.
+
+Tambahkan automated tests untuk critical flow.
+
+Audit konfigurasi Android.
+
+Tingkatkan coverage unit/widget/integration test.
+
+19. Final QA Status
+
+Status: 🟢 PASSED / READY FOR UKK
+
+Aplikasi telah berhasil melewati seluruh tahapan QA dan pengujian regresi:
+- QA-014: Pemilihan foto dari Kamera maupun Galeri tidak lagi menutup form Edit Space (`Navigator.pop(ctx, file)` digunakan secara tepat).
+- QA-015: Feedback pesan sukses hanya ditampilkan setelah seluruh Future (Upload foto + PUT Space) selesai dieksekusi dan berhasil.
+- QA-016: Controller tidak lagi menggunakan fallback ke local file path perangkat; kegagalan upload akan melempar error dan mencegah mutasi data yang salah.
+- QA-017: Seluruh penggunaan tanggal hardcoded telah digantikan dengan tanggal dinamis `DateTime.now()`.
+
+Flow terverifikasi:
+Edit Space
+→ Pilih Foto (Kamera/Galeri)
+→ Preview foto berubah
+→ Form tetap terbuka
+→ Ubah field lainnya
+→ Simpan
+→ Loading indicator aktif
+→ Upload foto berhasil
+→ PUT Space berhasil
+→ Refresh data
+→ Notifikasi Sukses ditampilkan
+
+20. Referensi Kebutuhan
+
+Dokumen PRD mendefinisikan Admin Space sebagai fitur CRUD dengan upload foto, menggunakan endpoint /api/admin/spaces dan /api/upload/spaces. PRD juga menetapkan bahwa foto harus di-upload terlebih dahulu untuk mendapatkan filename, kemudian filename digunakan dalam payload create/update.
+
+Dokumen PRD juga menetapkan bahwa Member harus melakukan pengecekan availability sebelum reservasi dan sistem harus mencegah bentrok jadwal.
+
+Dokumen acuan: PRD_Arsitektur_Desain_SmartSpaceBooking_Mobile.md

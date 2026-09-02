@@ -44,29 +44,33 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
       ),
       builder: (context) => _SpaceFormBottomSheet(
         space: space,
-        onSave: (savedSpace, photoFile) {
+        onSave: (savedSpace, photoFile) async {
           if (space == null) {
-            ref.read(adminSpacesControllerProvider.notifier).createSpace(
+            await ref.read(adminSpacesControllerProvider.notifier).createSpace(
                   savedSpace,
                   photoFile: photoFile,
                 );
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Space berhasil ditambahkan!'),
-                backgroundColor: AppColors.secondary,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Space berhasil ditambahkan!'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            }
           } else {
-            ref.read(adminSpacesControllerProvider.notifier).updateSpace(
+            await ref.read(adminSpacesControllerProvider.notifier).updateSpace(
                   savedSpace,
                   photoFile: photoFile,
                 );
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Space berhasil diperbarui!'),
-                backgroundColor: AppColors.secondary,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Space berhasil diperbarui!'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            }
           }
         },
       ),
@@ -412,7 +416,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
 
 class _SpaceFormBottomSheet extends StatefulWidget {
   final SpaceModel? space;
-  final void Function(SpaceModel space, File? photoFile) onSave;
+  final Future<void> Function(SpaceModel space, File? photoFile) onSave;
 
   const _SpaceFormBottomSheet({
     this.space,
@@ -433,6 +437,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
   File? _selectedPhotoFile;
   String? _existingFotoUrl;
   late String _selectedTipe;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -459,7 +464,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final fasList = _fasilitasCtrl.text
@@ -476,12 +481,27 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
       hargaPerJam: int.tryParse(_hargaCtrl.text) ?? 20000,
       fasilitas: fasList.isNotEmpty ? fasList : ['WiFi Cepat', 'AC'],
       deskripsi: _deskripsiCtrl.text.trim(),
-      foto: _selectedPhotoFile?.path ?? _existingFotoUrl,
+      foto: _existingFotoUrl,
       status: widget.space?.status ?? 'tersedia',
     );
 
-    widget.onSave(space, _selectedPhotoFile);
-    Navigator.of(context).pop();
+    setState(() => _isLoading = true);
+    try {
+      await widget.onSave(space, _selectedPhotoFile);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan space: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -628,7 +648,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
                     foregroundColor: Colors.white,
@@ -637,7 +657,16 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(isEdit ? 'Simpan Perubahan' : 'Tambah Space'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(isEdit ? 'Simpan Perubahan' : 'Tambah Space'),
                 ),
               ),
             ],

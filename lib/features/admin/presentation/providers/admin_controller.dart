@@ -28,9 +28,10 @@ class AdminProfileController extends AsyncNotifier<AdminProfileModel> {
       if (photoFile != null) {
         photoUrl = await repo.uploadSpacePhoto(photoFile);
       }
-      final updatedProfile = profile.copyWith(foto: photoUrl ?? photoFile?.path ?? profile.foto);
+      final updatedProfile = profile.copyWith(foto: photoUrl);
       return repo.updateProfile(updatedProfile);
     });
+    if (state.hasError) throw state.error!;
   }
 }
 
@@ -64,11 +65,12 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadMemberPhoto(photoFile);
       }
-      final newMember = member.copyWith(foto: photoUrl ?? photoFile?.path ?? member.foto);
+      final newMember = member.copyWith(foto: photoUrl);
       await repo.createMember(newMember, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
+    if (state.hasError) throw state.error!;
   }
 
   Future<void> updateMember(AdminMemberModel member, {File? photoFile, String? password}) async {
@@ -79,11 +81,12 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadMemberPhoto(photoFile);
       }
-      final updatedMember = member.copyWith(foto: photoUrl ?? photoFile?.path ?? member.foto);
+      final updatedMember = member.copyWith(foto: photoUrl);
       await repo.updateMember(updatedMember, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
+    if (state.hasError) throw state.error!;
   }
 
   Future<void> deleteMember(int id) async {
@@ -94,6 +97,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
+    if (state.hasError) throw state.error!;
   }
 }
 
@@ -117,6 +121,10 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
     return repo.getSpaces(query: query, tipe: tipe);
   }
 
+  void filterByTipe(String tipe) {
+    ref.read(adminSpacesFilterTipeProvider.notifier).state = tipe;
+  }
+
   void setFilterTipe(String tipe) {
     ref.read(adminSpacesFilterTipeProvider.notifier).state = tipe;
   }
@@ -133,12 +141,13 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadSpacePhoto(photoFile);
       }
-      final newSpace = space.copyWith(foto: photoUrl ?? photoFile?.path ?? space.foto);
+      final newSpace = space.copyWith(foto: photoUrl);
       await repo.createSpace(newSpace);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);
     });
+    if (state.hasError) throw state.error!;
   }
 
   Future<void> updateSpace(SpaceModel space, {File? photoFile}) async {
@@ -149,12 +158,13 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       if (photoFile != null) {
         photoUrl = await repo.uploadSpacePhoto(photoFile);
       }
-      final updatedSpace = space.copyWith(foto: photoUrl ?? photoFile?.path ?? space.foto);
+      final updatedSpace = space.copyWith(foto: photoUrl);
       await repo.updateSpace(updatedSpace);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);
     });
+    if (state.hasError) throw state.error!;
   }
 
   Future<void> deleteSpace(int id) async {
@@ -166,6 +176,7 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);
     });
+    if (state.hasError) throw state.error!;
   }
 }
 
@@ -191,6 +202,7 @@ class AdminDiscountsController extends AsyncNotifier<List<AdminDiscountModel>> {
       await repo.createDiscount(discount);
       return repo.getDiscounts();
     });
+    if (state.hasError) throw state.error!;
   }
 
   Future<void> updateDiscount(AdminDiscountModel discount) async {
@@ -200,6 +212,7 @@ class AdminDiscountsController extends AsyncNotifier<List<AdminDiscountModel>> {
       await repo.updateDiscount(discount);
       return repo.getDiscounts();
     });
+    if (state.hasError) throw state.error!;
   }
 
   Future<void> deleteDiscount(int id) async {
@@ -209,6 +222,7 @@ class AdminDiscountsController extends AsyncNotifier<List<AdminDiscountModel>> {
       await repo.deleteDiscount(id);
       return repo.getDiscounts();
     });
+    if (state.hasError) throw state.error!;
   }
 }
 

@@ -36,31 +36,35 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
       ),
       builder: (context) => _MemberFormBottomSheet(
         member: member,
-        onSave: (savedMember, photoFile, password) {
+        onSave: (savedMember, photoFile, password) async {
           if (member == null) {
-            ref.read(adminMembersControllerProvider.notifier).createMember(
+            await ref.read(adminMembersControllerProvider.notifier).createMember(
                   savedMember,
                   photoFile: photoFile,
                   password: password,
                 );
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Member baru berhasil didaftarkan!'),
-                backgroundColor: AppColors.secondary,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Member baru berhasil didaftarkan!'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            }
           } else {
-            ref.read(adminMembersControllerProvider.notifier).updateMember(
+            await ref.read(adminMembersControllerProvider.notifier).updateMember(
                   savedMember,
                   photoFile: photoFile,
                   password: password,
                 );
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Data member berhasil diperbarui!'),
-                backgroundColor: AppColors.secondary,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Data member berhasil diperbarui!'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            }
           }
         },
       ),
@@ -324,7 +328,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
 
 class _MemberFormBottomSheet extends StatefulWidget {
   final AdminMemberModel? member;
-  final void Function(AdminMemberModel member, File? photoFile, String? password) onSave;
+  final Future<void> Function(AdminMemberModel member, File? photoFile, String? password) onSave;
 
   const _MemberFormBottomSheet({
     this.member,
@@ -346,6 +350,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
   bool _obscurePassword = true;
   File? _selectedPhotoFile;
   String? _existingFotoUrl;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -370,7 +375,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final member = AdminMemberModel(
@@ -380,14 +385,30 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
       instansi: _instansiCtrl.text.trim().isNotEmpty ? _instansiCtrl.text.trim() : '-',
       telepon: _teleponCtrl.text.trim(),
       alamat: _alamatCtrl.text.trim(),
-      foto: _selectedPhotoFile?.path ?? _existingFotoUrl,
+      foto: _existingFotoUrl,
       totalReservasi: widget.member?.totalReservasi ?? 0,
       createdAt: widget.member?.createdAt ?? DateTime.now().toIso8601String(),
     );
 
     final pass = _passwordCtrl.text.trim().isNotEmpty ? _passwordCtrl.text.trim() : null;
-    widget.onSave(member, _selectedPhotoFile, pass);
-    Navigator.of(context).pop();
+
+    setState(() => _isLoading = true);
+    try {
+      await widget.onSave(member, _selectedPhotoFile, pass);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan member: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -527,7 +548,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
                     foregroundColor: Colors.white,
@@ -536,7 +557,16 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(isEdit ? 'Simpan Perubahan' : 'Daftarkan Member'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(isEdit ? 'Simpan Perubahan' : 'Daftarkan Member'),
                 ),
               ),
             ],

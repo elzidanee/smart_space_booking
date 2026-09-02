@@ -28,27 +28,31 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
       ),
       builder: (context) => _DiscountFormBottomSheet(
         discount: discount,
-        onSave: (savedDisc) {
+        onSave: (savedDisc) async {
           if (discount == null) {
-            ref
+            await ref
                 .read(adminDiscountsControllerProvider.notifier)
                 .createDiscount(savedDisc);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Kode promo baru berhasil dibuat!'),
-                backgroundColor: AppColors.secondary,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Kode promo baru berhasil dibuat!'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            }
           } else {
-            ref
+            await ref
                 .read(adminDiscountsControllerProvider.notifier)
                 .updateDiscount(savedDisc);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Kode promo berhasil diperbarui!'),
-                backgroundColor: AppColors.secondary,
-              ),
-            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Kode promo berhasil diperbarui!'),
+                  backgroundColor: AppColors.secondary,
+                ),
+              );
+            }
           }
         },
       ),
@@ -288,7 +292,7 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
 
 class _DiscountFormBottomSheet extends StatefulWidget {
   final AdminDiscountModel? discount;
-  final ValueChanged<AdminDiscountModel> onSave;
+  final Future<void> Function(AdminDiscountModel discount) onSave;
 
   const _DiscountFormBottomSheet({
     this.discount,
@@ -306,17 +310,25 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
   late TextEditingController _persenCtrl;
   late TextEditingController _mulaiCtrl;
   late TextEditingController _akhirCtrl;
+  bool _isLoading = false;
+  late String _defaultTodayStr;
+  late String _defaultEndStr;
 
   @override
   void initState() {
     super.initState();
+    final now = DateTime.now();
+    _defaultTodayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final endOfMonth = DateTime(now.year, now.month + 1, 0);
+    _defaultEndStr = "${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}";
+
     _kodeCtrl = TextEditingController(text: widget.discount?.kode ?? '');
     _persenCtrl = TextEditingController(
         text: widget.discount?.persentase.toString() ?? '15');
     _mulaiCtrl = TextEditingController(
-        text: widget.discount?.tanggalMulai ?? '2026-09-01');
+        text: widget.discount?.tanggalMulai ?? _defaultTodayStr);
     _akhirCtrl = TextEditingController(
-        text: widget.discount?.tanggalAkhir ?? '2026-12-31');
+        text: widget.discount?.tanggalAkhir ?? _defaultEndStr);
   }
 
   @override
@@ -328,7 +340,7 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final disc = AdminDiscountModel(
@@ -340,8 +352,23 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
       status: widget.discount?.status ?? 'aktif',
     );
 
-    widget.onSave(disc);
-    Navigator.of(context).pop();
+    setState(() => _isLoading = true);
+    try {
+      await widget.onSave(disc);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan promo: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -410,9 +437,9 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _mulaiCtrl,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Tanggal Mulai (YYYY-MM-DD) *',
-                        hintText: '2026-09-01',
+                        hintText: _defaultTodayStr,
                       ),
                       validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
                     ),
@@ -421,9 +448,9 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
                   Expanded(
                     child: TextFormField(
                       controller: _akhirCtrl,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Tanggal Akhir (YYYY-MM-DD) *',
-                        hintText: '2026-12-31',
+                        hintText: _defaultEndStr,
                       ),
                       validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
                     ),
@@ -435,7 +462,7 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
                     foregroundColor: Colors.white,
@@ -444,7 +471,16 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(isEdit ? 'Simpan Perubahan' : 'Buat Kode Promo'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(isEdit ? 'Simpan Perubahan' : 'Buat Kode Promo'),
                 ),
               ),
             ],

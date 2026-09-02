@@ -89,10 +89,9 @@ class ImagePickerHelper {
                 title: 'Kamera',
                 subtitle: 'Ambil foto baru langsung dari kamera',
                 onTap: () async {
-                  Navigator.pop(ctx);
                   final file = await pickImage(ImageSource.camera);
-                  if (context.mounted && file != null) {
-                    Navigator.of(context, rootNavigator: false).maybePop(file);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx, file);
                   }
                 },
               ),
@@ -105,10 +104,9 @@ class ImagePickerHelper {
                 title: 'Galeri Foto',
                 subtitle: 'Pilih foto yang tersimpan di memori perangkat',
                 onTap: () async {
-                  Navigator.pop(ctx);
                   final file = await pickImage(ImageSource.gallery);
-                  if (context.mounted && file != null) {
-                    Navigator.of(context, rootNavigator: false).maybePop(file);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx, file);
                   }
                 },
               ),
