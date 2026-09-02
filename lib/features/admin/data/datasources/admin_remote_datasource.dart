@@ -18,14 +18,14 @@ abstract class AdminRemoteDataSource {
 
   // 2. Master Data Member
   Future<List<AdminMemberModel>> getMembers({String? query});
-  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password});
-  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password});
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password});
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {File? photoFile, String? password});
   Future<bool> deleteMember(int id);
 
   // 3. Master Data Space
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
-  Future<SpaceModel> createSpace(SpaceModel space);
-  Future<SpaceModel> updateSpace(SpaceModel space);
+  Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile});
+  Future<SpaceModel> updateSpace(SpaceModel space, {File? photoFile});
   Future<bool> deleteSpace(int id);
 
   // 4. Master Data Diskon
@@ -110,10 +110,29 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password}) async {
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password}) async {
+    dynamic body;
+    if (photoFile != null) {
+      final fileName = photoFile.path.split(Platform.pathSeparator).last;
+      body = FormData.fromMap({
+        'nama_member': member.nama,
+        'username': member.username,
+        if (password != null && password.isNotEmpty) 'password': password,
+        'instansi': member.instansi,
+        'alamat': member.alamat,
+        'telp': member.telepon,
+        'foto': await MultipartFile.fromFile(
+          photoFile.path,
+          filename: fileName,
+        ),
+      });
+    } else {
+      body = member.toJson(password: password);
+    }
+
     final response = await _dio.post(
       ApiEndpoints.adminMembers,
-      data: member.toJson(password: password),
+      data: body,
     );
     final dynamic data = response.data['data'] ?? response.data;
     if (data is Map<String, dynamic>) {
@@ -123,10 +142,29 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password}) async {
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {File? photoFile, String? password}) async {
+    dynamic body;
+    if (photoFile != null) {
+      final fileName = photoFile.path.split(Platform.pathSeparator).last;
+      body = FormData.fromMap({
+        'nama_member': member.nama,
+        'username': member.username,
+        if (password != null && password.isNotEmpty) 'password': password,
+        'instansi': member.instansi,
+        'alamat': member.alamat,
+        'telp': member.telepon,
+        'foto': await MultipartFile.fromFile(
+          photoFile.path,
+          filename: fileName,
+        ),
+      });
+    } else {
+      body = member.toJson(password: password);
+    }
+
     final response = await _dio.put(
       ApiEndpoints.adminMemberDetail(member.id),
-      data: member.toJson(password: password),
+      data: body,
     );
     final dynamic data = response.data['data'] ?? response.data;
     if (data is Map<String, dynamic>) {
@@ -145,17 +183,14 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   // 3. Master Data Space CRUD
   // ==========================================
   @override
-  // ==========================================
-  // 3. Master Data Space CRUD
-  // ==========================================
-  @override
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe}) async {
+    final queryTipe = (tipe == 'personal_desk' || tipe == 'desk') ? 'desk' : tipe;
     final response = await _dio.get(
       ApiEndpoints.adminSpaces,
       queryParameters: {
         if (query != null && query.trim().isNotEmpty) 'search': query.trim(),
-        if (tipe != null && tipe.trim().isNotEmpty && tipe != 'all' && tipe != 'semua')
-          'tipe': tipe.trim(),
+        if (queryTipe != null && queryTipe.trim().isNotEmpty && queryTipe != 'all' && queryTipe != 'semua')
+          'tipe': queryTipe.trim(),
       },
     );
     final dynamic data = response.data['data'] ?? response.data;
@@ -166,10 +201,35 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<SpaceModel> createSpace(SpaceModel space) async {
+  Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile}) async {
+    final serverTipe = (space.tipe == 'personal_desk' || space.tipe == 'desk') ? 'desk' : space.tipe;
+    dynamic body;
+    if (photoFile != null) {
+      final fileName = photoFile.path.split(Platform.pathSeparator).last;
+      body = FormData.fromMap({
+        'nama_space': space.nama,
+        'tipe': serverTipe,
+        'kapasitas': space.kapasitas,
+        'harga_per_jam': space.hargaPerJam,
+        'deskripsi': space.deskripsi ?? '',
+        'foto': await MultipartFile.fromFile(
+          photoFile.path,
+          filename: fileName,
+        ),
+      });
+    } else {
+      body = {
+        'nama_space': space.nama,
+        'tipe': serverTipe,
+        'kapasitas': space.kapasitas,
+        'harga_per_jam': space.hargaPerJam,
+        'deskripsi': space.deskripsi ?? '',
+      };
+    }
+
     final response = await _dio.post(
       ApiEndpoints.adminSpaces,
-      data: space.toJson(),
+      data: body,
     );
     final dynamic data = response.data['data'] ?? response.data;
     if (data is Map<String, dynamic>) {
@@ -184,10 +244,35 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<SpaceModel> updateSpace(SpaceModel space) async {
+  Future<SpaceModel> updateSpace(SpaceModel space, {File? photoFile}) async {
+    final serverTipe = (space.tipe == 'personal_desk' || space.tipe == 'desk') ? 'desk' : space.tipe;
+    dynamic body;
+    if (photoFile != null) {
+      final fileName = photoFile.path.split(Platform.pathSeparator).last;
+      body = FormData.fromMap({
+        'nama_space': space.nama,
+        'tipe': serverTipe,
+        'kapasitas': space.kapasitas,
+        'harga_per_jam': space.hargaPerJam,
+        'deskripsi': space.deskripsi ?? '',
+        'foto': await MultipartFile.fromFile(
+          photoFile.path,
+          filename: fileName,
+        ),
+      });
+    } else {
+      body = {
+        'nama_space': space.nama,
+        'tipe': serverTipe,
+        'kapasitas': space.kapasitas,
+        'harga_per_jam': space.hargaPerJam,
+        'deskripsi': space.deskripsi ?? '',
+      };
+    }
+
     final response = await _dio.put(
       ApiEndpoints.adminSpaceDetail(space.id),
-      data: space.toJson(),
+      data: body,
     );
     final dynamic data = response.data['data'] ?? response.data;
     if (data is Map<String, dynamic>) {

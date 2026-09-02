@@ -107,13 +107,14 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
 
   @override
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe}) async {
+    final queryTipe = (tipe == 'personal_desk' || tipe == 'desk') ? 'desk' : tipe;
     try {
       final response = await _dio.get(
         ApiEndpoints.spaces,
         queryParameters: {
           if (query != null && query.trim().isNotEmpty) 'search': query.trim(),
-          if (tipe != null && tipe.trim().isNotEmpty && tipe != 'all' && tipe != 'semua')
-            'tipe': tipe.trim(),
+          if (queryTipe != null && queryTipe.trim().isNotEmpty && queryTipe != 'all' && queryTipe != 'semua')
+            'tipe': queryTipe.trim(),
         },
       );
 
@@ -135,10 +136,14 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
           space.nama.toLowerCase().contains(query.toLowerCase()) ||
           space.fasilitas.any((f) => f.toLowerCase().contains(query.toLowerCase()));
 
+      final isDeskFilter = tipe == 'desk' || tipe == 'personal_desk';
+      final isSpaceDesk = space.tipe == 'desk' || space.tipe == 'personal_desk';
+
       final matchTipe = tipe == null ||
           tipe.isEmpty ||
           tipe == 'all' ||
           tipe == 'semua' ||
+          (isDeskFilter && isSpaceDesk) ||
           space.tipe.toLowerCase() == tipe.toLowerCase();
 
       return matchQuery && matchTipe;

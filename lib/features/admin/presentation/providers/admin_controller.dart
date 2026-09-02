@@ -61,12 +61,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      String? photoUrl = member.foto;
-      if (photoFile != null) {
-        photoUrl = await repo.uploadMemberPhoto(photoFile);
-      }
-      final newMember = member.copyWith(foto: photoUrl);
-      await repo.createMember(newMember, password: password);
+      await repo.createMember(member, photoFile: photoFile, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
@@ -77,12 +72,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      String? photoUrl = member.foto;
-      if (photoFile != null) {
-        photoUrl = await repo.uploadMemberPhoto(photoFile);
-      }
-      final updatedMember = member.copyWith(foto: photoUrl);
-      await repo.updateMember(updatedMember, password: password);
+      await repo.updateMember(member, photoFile: photoFile, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
@@ -137,12 +127,7 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      String? photoUrl = space.foto;
-      if (photoFile != null) {
-        photoUrl = await repo.uploadSpacePhoto(photoFile);
-      }
-      final newSpace = space.copyWith(foto: photoUrl);
-      await repo.createSpace(newSpace);
+      await repo.createSpace(space, photoFile: photoFile);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);
@@ -154,12 +139,7 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      String? photoUrl = space.foto;
-      if (photoFile != null) {
-        photoUrl = await repo.uploadSpacePhoto(photoFile);
-      }
-      final updatedSpace = space.copyWith(foto: photoUrl);
-      await repo.updateSpace(updatedSpace);
+      await repo.updateSpace(space, photoFile: photoFile);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);

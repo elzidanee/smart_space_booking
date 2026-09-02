@@ -16,14 +16,14 @@ abstract class AdminRepository {
 
   // Members CRUD
   Future<List<AdminMemberModel>> getMembers({String? query});
-  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password});
-  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password});
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password});
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {File? photoFile, String? password});
   Future<bool> deleteMember(int id);
 
   // Spaces CRUD
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
-  Future<SpaceModel> createSpace(SpaceModel space);
-  Future<SpaceModel> updateSpace(SpaceModel space);
+  Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile});
+  Future<SpaceModel> updateSpace(SpaceModel space, {File? photoFile});
   Future<bool> deleteSpace(int id);
 
   // Discounts CRUD
@@ -75,12 +75,12 @@ class AdminRepositoryImpl implements AdminRepository {
       _dataSource.getMembers(query: query);
 
   @override
-  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password}) =>
-      _dataSource.createMember(member, password: password);
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password}) =>
+      _dataSource.createMember(member, photoFile: photoFile, password: password);
 
   @override
-  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password}) =>
-      _dataSource.updateMember(member, password: password);
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {File? photoFile, String? password}) =>
+      _dataSource.updateMember(member, photoFile: photoFile, password: password);
 
   @override
   Future<bool> deleteMember(int id) => _dataSource.deleteMember(id);
@@ -90,12 +90,12 @@ class AdminRepositoryImpl implements AdminRepository {
       _dataSource.getSpaces(query: query, tipe: tipe);
 
   @override
-  Future<SpaceModel> createSpace(SpaceModel space) =>
-      _dataSource.createSpace(space);
+  Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile}) =>
+      _dataSource.createSpace(space, photoFile: photoFile);
 
   @override
-  Future<SpaceModel> updateSpace(SpaceModel space) =>
-      _dataSource.updateSpace(space);
+  Future<SpaceModel> updateSpace(SpaceModel space, {File? photoFile}) =>
+      _dataSource.updateSpace(space, photoFile: photoFile);
 
   @override
   Future<bool> deleteSpace(int id) => _dataSource.deleteSpace(id);

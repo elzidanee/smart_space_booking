@@ -23,7 +23,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
 
   final List<({String label, String value})> _typeFilters = const [
     (label: 'Semua', value: 'all'),
-    (label: 'Personal Desk', value: 'personal_desk'),
+    (label: 'Personal Desk', value: 'desk'),
     (label: 'Meeting Room', value: 'meeting_room'),
     (label: 'Private Office', value: 'private_office'),
   ];
@@ -451,7 +451,8 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
     _fasilitasCtrl = TextEditingController(
         text: widget.space?.fasilitas.join(', ') ?? 'WiFi Cepat, AC, Power Outlet');
     _existingFotoUrl = widget.space?.foto;
-    _selectedTipe = widget.space?.tipe ?? 'personal_desk';
+    final initialTipe = widget.space?.tipe ?? 'desk';
+    _selectedTipe = (initialTipe == 'personal_desk') ? 'desk' : initialTipe;
   }
 
   @override
@@ -575,7 +576,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
                 ),
                 items: const [
                   DropdownMenuItem(
-                    value: 'personal_desk',
+                    value: 'desk',
                     child: Text('Personal Desk'),
                   ),
                   DropdownMenuItem(

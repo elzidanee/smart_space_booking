@@ -27,6 +27,7 @@ class SpaceModel {
   /// Label tipe yang mudah dibaca
   String get tipeLabel {
     switch (tipe.toLowerCase()) {
+      case 'desk':
       case 'personal_desk':
         return 'Personal Desk';
       case 'meeting_room':
@@ -63,7 +64,7 @@ class SpaceModel {
     return SpaceModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       nama: json['nama_space']?.toString() ?? json['nama']?.toString() ?? 'Space',
-      tipe: json['tipe']?.toString() ?? 'personal_desk',
+      tipe: json['tipe']?.toString() ?? 'desk',
       kapasitas: json['kapasitas'] is int
           ? json['kapasitas']
           : int.tryParse(json['kapasitas']?.toString() ?? '1') ?? 1,
@@ -78,14 +79,14 @@ class SpaceModel {
   }
 
   Map<String, dynamic> toJson() {
+    final serverTipe = (tipe == 'personal_desk' || tipe == 'desk') ? 'desk' : tipe;
     return {
       'nama_space': nama, // API key untuk create/update
-      'tipe': tipe,
+      'tipe': serverTipe,
       'kapasitas': kapasitas,
       'harga_per_jam': hargaPerJam,
-      'fasilitas': fasilitas,
-      if (foto != null) 'foto': foto,
-      if (deskripsi != null) 'deskripsi': deskripsi,
+      'deskripsi': deskripsi ?? '',
+      if (foto != null && !foto!.startsWith('http')) 'foto': foto,
     };
   }
 
