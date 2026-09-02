@@ -592,7 +592,13 @@ class _AdminReservationsScreenState
                     ),
                   ),
                   Text(
-                    CurrencyFormatter.formatRupiah(item.totalBayar),
+                    CurrencyFormatter.formatRupiah(item.totalBayar > 0
+                        ? item.totalBayar
+                        : (item.subtotal > 0
+                            ? (item.subtotal - item.potonganDiskon > 0
+                                ? item.subtotal - item.potonganDiskon
+                                : item.subtotal)
+                            : 0)),
                     style: AppTypography.h2.copyWith(
                       color: AppColors.ink900,
                       fontSize: 15,

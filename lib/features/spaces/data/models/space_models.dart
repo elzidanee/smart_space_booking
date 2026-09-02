@@ -293,6 +293,10 @@ class CreateReservationRequest {
   final int durasi;        // jam        → API key: durasi_jam
   final String? kodePromo; // → API key: kode_promo
   final int? idDiskon;     // → API key: id_diskon
+  final int? hargaPerJam;
+  final int? subtotal;
+  final int? potonganDiskon;
+  final int? totalBayar;
 
   const CreateReservationRequest({
     required this.spaceId,
@@ -301,6 +305,10 @@ class CreateReservationRequest {
     required this.durasi,
     this.kodePromo,
     this.idDiskon,
+    this.hargaPerJam,
+    this.subtotal,
+    this.potonganDiskon,
+    this.totalBayar,
   });
 
   Map<String, dynamic> toJson() {
@@ -313,6 +321,23 @@ class CreateReservationRequest {
       'durasi_jam': durasi,
       'durasi': durasi,
     };
+    if (hargaPerJam != null && hargaPerJam! > 0) {
+      map['harga_per_jam'] = hargaPerJam;
+      map['harga'] = hargaPerJam;
+    }
+    if (subtotal != null && subtotal! > 0) {
+      map['total_harga_awal'] = subtotal;
+      map['subtotal'] = subtotal;
+      map['total_biaya'] = subtotal;
+    }
+    if (potonganDiskon != null && potonganDiskon! > 0) {
+      map['potongan_diskon'] = potonganDiskon;
+      map['diskon'] = potonganDiskon;
+    }
+    if (totalBayar != null && totalBayar! > 0) {
+      map['total_bayar'] = totalBayar;
+      map['total'] = totalBayar;
+    }
     if (idDiskon != null && idDiskon! > 0) {
       map['id_diskon'] = idDiskon;
       map['diskon_id'] = idDiskon;
@@ -397,13 +422,13 @@ class ReservationModel {
     final parsedDurasi = _parseInt(json['durasi_jam'] ?? json['durasi'] ?? json['durasi_sewa'], defaultValue: 1);
 
     final spaceHarga = _parseInt(
-      spaceObj?['harga_per_jam'] ?? spaceObj?['harga'] ?? json['harga_per_jam'] ?? json['harga'],
+      spaceObj?['harga_per_jam'] ?? spaceObj?['harga'] ?? spaceObj?['tarif'] ?? json['harga_per_jam'] ?? json['harga'] ?? json['price'] ?? json['tarif'],
       defaultValue: 0,
     );
 
-    // subtotal: API pakai 'total_harga_awal', fallback ke 'subtotal'
+    // subtotal: API pakai 'total_harga_awal', fallback ke 'subtotal', 'total_biaya'
     int parsedSubtotal = _parseInt(
-      json['total_harga_awal'] ?? json['subtotal'] ?? json['total_biaya'] ?? json['total_harga'] ?? rincianObj?['total_harga_awal'] ?? rincianObj?['subtotal'],
+      json['total_harga_awal'] ?? json['subtotal'] ?? json['sub_total'] ?? json['total_biaya'] ?? json['biaya'] ?? json['total_harga'] ?? rincianObj?['total_harga_awal'] ?? rincianObj?['subtotal'],
       defaultValue: 0,
     );
     if (parsedSubtotal == 0 && spaceHarga > 0) {
@@ -411,16 +436,18 @@ class ReservationModel {
     }
 
     final parsedPotongan = _parseInt(
-      json['potongan_diskon'] ?? json['diskon'] ?? json['potongan'] ?? rincianObj?['potongan_diskon'],
+      json['potongan_diskon'] ?? json['diskon'] ?? json['potongan'] ?? json['discount'] ?? rincianObj?['potongan_diskon'],
       defaultValue: 0,
     );
 
     int parsedTotalBayar = _parseInt(
-      json['total_bayar'] ?? json['total_biaya'] ?? json['total_harga'] ?? json['total'] ?? json['tagihan'] ?? json['amount'] ?? rincianObj?['total_bayar'],
+      json['total_bayar'] ?? json['total_biaya'] ?? json['total_harga'] ?? json['total'] ?? json['tagihan'] ?? json['total_tagihan'] ?? json['grand_total'] ?? json['net_total'] ?? json['amount'] ?? rincianObj?['total_bayar'],
       defaultValue: 0,
     );
     if (parsedTotalBayar == 0 && parsedSubtotal > 0) {
       parsedTotalBayar = (parsedSubtotal - parsedPotongan) > 0 ? (parsedSubtotal - parsedPotongan) : parsedSubtotal;
+    } else if (parsedSubtotal == 0 && parsedTotalBayar > 0) {
+      parsedSubtotal = parsedTotalBayar + parsedPotongan;
     }
 
     // member info

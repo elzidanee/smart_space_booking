@@ -6,6 +6,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../spaces/data/models/space_models.dart';
+import '../../domain/repositories/admin_repository.dart';
 import '../providers/admin_controller.dart';
 import '../widgets/confirmation_dialog.dart';
 
@@ -31,6 +32,17 @@ class _AdminReservationDetailScreenState
   void initState() {
     super.initState();
     _current = widget.reservation;
+    _fetchLatestDetail();
+  }
+
+  Future<void> _fetchLatestDetail() async {
+    try {
+      final repo = ref.read(adminRepositoryProvider);
+      final latest = await repo.getReservationById(_current.id);
+      if (mounted) {
+        setState(() => _current = latest);
+      }
+    } catch (_) {}
   }
 
   Future<void> _handleCheckIn() async {
@@ -329,34 +341,53 @@ class _AdminReservationDetailScreenState
                       children: [
                         Text('RINCIAN PEMBAYARAN', style: AppTypography.sectionLabel),
                         const SizedBox(height: 12),
-                        _buildPriceRow(
-                          'Subtotal (${_current.durasi} jam)',
-                          CurrencyFormatter.formatRupiah(_current.subtotal),
-                        ),
-                        if (_current.potonganDiskon > 0) ...[
-                          const SizedBox(height: 6),
-                          _buildPriceRow(
-                            'Potongan Diskon Promo',
-                            '- ${CurrencyFormatter.formatRupiah(_current.potonganDiskon)}',
-                            isDiscount: true,
-                          ),
-                        ],
-                        const SizedBox(height: 10),
-                        const Divider(color: AppColors.border),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Total Tagihan', style: AppTypography.h2.copyWith(fontSize: 16)),
-                            Text(
-                              CurrencyFormatter.formatRupiah(_current.totalBayar),
-                              style: AppTypography.h2.copyWith(
-                                color: AppColors.secondary,
-                                fontSize: 18,
+                        () {
+                          final subtotalVal = _current.subtotal > 0
+                              ? _current.subtotal
+                              : (_current.totalBayar > 0
+                                  ? _current.totalBayar + _current.potonganDiskon
+                                  : 0);
+                          final totalVal = _current.totalBayar > 0
+                              ? _current.totalBayar
+                              : (subtotalVal > 0
+                                  ? (subtotalVal - _current.potonganDiskon > 0
+                                      ? subtotalVal - _current.potonganDiskon
+                                      : subtotalVal)
+                                  : 0);
+
+                          return Column(
+                            children: [
+                              _buildPriceRow(
+                                'Subtotal (${_current.durasi} jam)',
+                                CurrencyFormatter.formatRupiah(subtotalVal),
                               ),
-                            ),
-                          ],
-                        ),
+                              if (_current.potonganDiskon > 0) ...[
+                                const SizedBox(height: 6),
+                                _buildPriceRow(
+                                  'Potongan Diskon Promo',
+                                  '- ${CurrencyFormatter.formatRupiah(_current.potonganDiskon)}',
+                                  isDiscount: true,
+                                ),
+                              ],
+                              const SizedBox(height: 10),
+                              const Divider(color: AppColors.border),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Total Tagihan', style: AppTypography.h2.copyWith(fontSize: 16)),
+                                  Text(
+                                    CurrencyFormatter.formatRupiah(totalVal),
+                                    style: AppTypography.h2.copyWith(
+                                      color: AppColors.secondary,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        }(),
                       ],
                     ),
                   ),

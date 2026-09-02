@@ -218,7 +218,7 @@ class BookingController extends StateNotifier<BookingFormState> {
     state = state.copyWith(clearPromo: true, clearPromoError: true);
   }
 
-  Future<ReservationModel?> submitBooking(int spaceId) async {
+  Future<ReservationModel?> submitBooking(int spaceId, {int? hargaPerJam}) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
       // 1. Re-check ketersediaan slot real-time tepat sebelum submit (QA-004 / PRD §9)
@@ -240,6 +240,15 @@ class BookingController extends StateNotifier<BookingFormState> {
         return null;
       }
 
+      int? subtotalVal;
+      int? discountVal;
+      int? totalVal;
+      if (hargaPerJam != null && hargaPerJam > 0) {
+        subtotalVal = state.calculateSubtotal(hargaPerJam);
+        discountVal = state.calculateDiscount(subtotalVal);
+        totalVal = state.calculateTotal(hargaPerJam);
+      }
+
       // 2. Submit Pemesanan ke POST /api/reservasi
       final request = CreateReservationRequest(
         spaceId: spaceId,
@@ -250,6 +259,10 @@ class BookingController extends StateNotifier<BookingFormState> {
         idDiskon: (state.appliedPromo?.id != null && state.appliedPromo!.id > 0)
             ? state.appliedPromo!.id
             : null,
+        hargaPerJam: hargaPerJam,
+        subtotal: subtotalVal,
+        potonganDiskon: discountVal,
+        totalBayar: totalVal,
       );
 
       final reservation = await _repository.createReservation(request);

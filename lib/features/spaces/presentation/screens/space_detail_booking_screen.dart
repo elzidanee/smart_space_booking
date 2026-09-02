@@ -177,7 +177,7 @@ class _SpaceDetailBookingScreenState
                     Navigator.pop(ctx);
                     final res = await ref
                         .read(bookingControllerProvider.notifier)
-                        .submitBooking(space.id);
+                        .submitBooking(space.id, hargaPerJam: space.hargaPerJam);
 
                     if (!mounted) return;
 

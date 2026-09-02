@@ -3,6 +3,8 @@ import '../../../spaces/data/models/space_models.dart';
 import '../../data/datasources/reservations_remote_datasource.dart';
 import '../../domain/repositories/reservations_repository.dart';
 
+import '../../../spaces/domain/repositories/spaces_repository.dart';
+
 /// Provider filter status reservasi: 'all' | 'menunggu' | 'disetujui' | 'aktif' | 'selesai' | 'dibatalkan'
 final selectedReservationStatusFilterProvider =
     StateProvider<String>((ref) => 'all');
@@ -20,7 +22,42 @@ final myReservationsProvider =
     FutureProvider.autoDispose<List<ReservationModel>>((ref) async {
   final repository = ref.watch(reservationsRepositoryProvider);
   final status = ref.watch(selectedReservationStatusFilterProvider);
-  return await repository.getMyReservations(status: status);
+  final list = await repository.getMyReservations(status: status);
+
+  // Jika ada data dengan totalBayar <= 0, perkaya data dari katalog space
+  if (list.any((r) => r.totalBayar <= 0)) {
+    try {
+      final spacesRepo = ref.watch(spacesRepositoryProvider);
+      final spaces = await spacesRepo.getSpaces();
+      final spaceMap = {for (final s in spaces) s.id: s};
+      final spaceNameMap = {
+        for (final s in spaces) s.nama.toLowerCase().trim(): s
+      };
+
+      return list.map((r) {
+        if (r.totalBayar > 0) return r;
+        final matched = spaceMap[r.spaceId] ??
+            spaceNameMap[r.namaSpace?.toLowerCase().trim() ?? ''];
+        if (matched != null && matched.hargaPerJam > 0) {
+          final durasi = r.durasi > 0 ? r.durasi : 1;
+          final calcSubtotal = matched.hargaPerJam * durasi;
+          final calcTotal = (calcSubtotal - r.potonganDiskon) > 0
+              ? (calcSubtotal - r.potonganDiskon)
+              : calcSubtotal;
+          return r.copyWith(
+            subtotal: r.subtotal > 0 ? r.subtotal : calcSubtotal,
+            totalBayar: calcTotal,
+            namaSpace: r.namaSpace ?? matched.nama,
+            tipeSpace: r.tipeSpace ?? matched.tipe,
+            fotoSpace: r.fotoSpace ?? matched.foto,
+          );
+        }
+        return r;
+      }).toList();
+    } catch (_) {}
+  }
+
+  return list;
 });
 
 /// Provider histori & rekapitulasi pengeluaran bulanan

@@ -262,10 +262,10 @@ final adminReservationsControllerProvider = AsyncNotifierProvider<
 class AdminReservationsController
     extends AsyncNotifier<List<ReservationModel>> {
   @override
-  FutureOr<List<ReservationModel>> build() {
+  FutureOr<List<ReservationModel>> build() async {
     final filter = ref.watch(adminReservationsFilterProvider);
     final repo = ref.watch(adminRepositoryProvider);
-    return repo.getReservations(
+    final list = await repo.getReservations(
       status: filter.status,
       month: filter.month,
       year: filter.year,
@@ -273,6 +273,39 @@ class AdminReservationsController
       tanggal: filter.tanggal,
       query: filter.query,
     );
+
+    if (list.any((r) => r.totalBayar <= 0)) {
+      try {
+        final spaces = await repo.getSpaces();
+        final spaceMap = {for (final s in spaces) s.id: s};
+        final spaceNameMap = {
+          for (final s in spaces) s.nama.toLowerCase().trim(): s
+        };
+
+        return list.map((r) {
+          if (r.totalBayar > 0) return r;
+          final matched = spaceMap[r.spaceId] ??
+              spaceNameMap[r.namaSpace?.toLowerCase().trim() ?? ''];
+          if (matched != null && matched.hargaPerJam > 0) {
+            final durasi = r.durasi > 0 ? r.durasi : 1;
+            final calcSubtotal = matched.hargaPerJam * durasi;
+            final calcTotal = (calcSubtotal - r.potonganDiskon) > 0
+                ? (calcSubtotal - r.potonganDiskon)
+                : calcSubtotal;
+            return r.copyWith(
+              subtotal: r.subtotal > 0 ? r.subtotal : calcSubtotal,
+              totalBayar: calcTotal,
+              namaSpace: r.namaSpace ?? matched.nama,
+              tipeSpace: r.tipeSpace ?? matched.tipe,
+              fotoSpace: r.fotoSpace ?? matched.foto,
+            );
+          }
+          return r;
+        }).toList();
+      } catch (_) {}
+    }
+
+    return list;
   }
 
   void updateFilter(AdminReservationsFilterState filter) {

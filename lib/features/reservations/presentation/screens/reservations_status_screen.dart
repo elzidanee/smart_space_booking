@@ -329,6 +329,14 @@ class _ReservationCard extends StatelessWidget {
         ? DateFormatter.formatFullDate(parsedDate)
         : reservation.tanggal;
 
+    final displayPrice = reservation.totalBayar > 0
+        ? reservation.totalBayar
+        : (reservation.subtotal > 0
+            ? (reservation.subtotal - reservation.potonganDiskon > 0
+                ? reservation.subtotal - reservation.potonganDiskon
+                : reservation.subtotal)
+            : 0);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface0,
@@ -357,26 +365,34 @@ class _ReservationCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        reservation.kodeBooking,
-                        style: AppTypography.captionMedium.copyWith(
-                          color: AppColors.ink600,
-                          fontSize: 11.5,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          reservation.kodeBooking,
+                          style: AppTypography.captionMedium.copyWith(
+                            color: AppColors.ink600,
+                            fontSize: 11.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        reservation.namaSpace ?? 'Workstation Space',
-                        style: AppTypography.h3.copyWith(
-                          decoration: isCancelled ? TextDecoration.lineThrough : null,
-                          color: isCancelled ? AppColors.ink600 : AppColors.ink900,
+                        const SizedBox(height: 2),
+                        Text(
+                          reservation.namaSpace ?? 'Workstation Space',
+                          style: AppTypography.h3.copyWith(
+                            decoration: isCancelled ? TextDecoration.lineThrough : null,
+                            color: isCancelled ? AppColors.ink600 : AppColors.ink900,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   _buildStatusBadge(status),
                 ],
               ),
@@ -387,16 +403,20 @@ class _ReservationCard extends StatelessWidget {
                 children: [
                   const Icon(
                     Icons.calendar_today_outlined,
-                    size: 16,
+                    size: 15,
                     color: AppColors.ink600,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    '$dateDisplay • ${reservation.jamMulai} - ${reservation.jamSelesai} (${reservation.durasi} Jam)',
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontSize: 13.5,
-                      color: isCancelled ? AppColors.ink600 : AppColors.ink900,
-                      decoration: isCancelled ? TextDecoration.lineThrough : null,
+                  Expanded(
+                    child: Text(
+                      '$dateDisplay • ${reservation.jamMulai} - ${reservation.jamSelesai} (${reservation.durasi} Jam)',
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontSize: 13,
+                        color: isCancelled ? AppColors.ink600 : AppColors.ink900,
+                        decoration: isCancelled ? TextDecoration.lineThrough : null,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -412,7 +432,7 @@ class _ReservationCard extends StatelessWidget {
                     style: AppTypography.caption.copyWith(color: AppColors.ink600),
                   ),
                   Text(
-                    CurrencyFormatter.format(reservation.totalBayar),
+                    CurrencyFormatter.format(displayPrice),
                     style: AppTypography.bodyEmphasis.copyWith(
                       color: isCancelled ? AppColors.ink600 : AppColors.primary,
                       fontWeight: FontWeight.bold,
@@ -478,7 +498,7 @@ class _ReservationCard extends StatelessWidget {
         bg = const Color(0xFFFFF4E5);
         text = const Color(0xFFB26B00);
         icon = Icons.hourglass_empty;
-        label = 'Menunggu Konfirmasi';
+        label = 'Menunggu';
         break;
       case 'disetujui':
         bg = const Color(0xFFE0F4F2);
@@ -490,7 +510,7 @@ class _ReservationCard extends StatelessWidget {
         bg = AppColors.primaryContainer;
         text = AppColors.primary;
         icon = Icons.pin_drop_outlined;
-        label = 'Aktif Digunakan';
+        label = 'Aktif';
         break;
       case 'selesai':
         bg = const Color(0xFFD4E9DB);
@@ -508,7 +528,7 @@ class _ReservationCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
@@ -516,7 +536,7 @@ class _ReservationCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: text),
+          Icon(icon, size: 12, color: text),
           const SizedBox(width: 4),
           Text(
             label,
