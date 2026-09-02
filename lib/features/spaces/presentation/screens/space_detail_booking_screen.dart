@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -37,11 +36,13 @@ class _SpaceDetailBookingScreenState
 
   Future<void> _selectDate(BuildContext context) async {
     final bookingState = ref.read(bookingControllerProvider);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: bookingState.selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      initialDate: bookingState.selectedDate.isBefore(today) ? today : bookingState.selectedDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 90)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -363,26 +364,12 @@ class _SpaceDetailBookingScreenState
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      space.foto != null && space.foto!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: space.foto!,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const AppShimmer(
-                                height: 280,
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: AppColors.primaryContainer,
-                                child: const Center(
-                                  child: Icon(Icons.meeting_room, size: 60, color: AppColors.primary),
-                                ),
-                              ),
-                            )
-                          : Container(
-                              color: AppColors.primaryContainer,
-                              child: const Center(
-                                child: Icon(Icons.meeting_room, size: 60, color: AppColors.primary),
-                              ),
-                            ),
+                      AppNetworkImage(
+                        imageUrl: space.foto,
+                        fit: BoxFit.cover,
+                        height: 280,
+                        width: double.infinity,
+                      ),
                       // Gradient overlay for better contrast
                       Positioned(
                         bottom: 0,

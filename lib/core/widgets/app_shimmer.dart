@@ -138,3 +138,92 @@ class ShimmerPlaceholder extends StatelessWidget {
     );
   }
 }
+
+/// Widget gambar jaringan yang aman untuk semua platform (Desktop Windows, Web, Mobile)
+/// Mencegah crash sqflite/platform channel pada Windows Desktop dengan fallback cerdas.
+class AppNetworkImage extends StatelessWidget {
+  final String? imageUrl;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final BorderRadius? borderRadius;
+  final Widget? errorWidget;
+  final IconData placeholderIcon;
+
+  const AppNetworkImage({
+    super.key,
+    required this.imageUrl,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.borderRadius,
+    this.errorWidget,
+    this.placeholderIcon = Icons.meeting_room_rounded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final validUrl = imageUrl != null &&
+        (imageUrl!.startsWith('http://') || imageUrl!.startsWith('https://'));
+
+    Widget imageContent;
+
+    if (!validUrl) {
+      imageContent = _buildFallback();
+    } else {
+      imageContent = Image.network(
+        imageUrl!,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return errorWidget ?? _buildFallback();
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: width,
+            height: height,
+            color: AppColors.surface50,
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    if (borderRadius != null) {
+      return ClipRRect(
+        borderRadius: borderRadius!,
+        child: imageContent,
+      );
+    }
+
+    return imageContent;
+  }
+
+  Widget _buildFallback() {
+    return errorWidget ??
+        Container(
+          width: width,
+          height: height,
+          color: AppColors.primaryContainer,
+          child: Center(
+            child: Icon(
+              placeholderIcon,
+              size: (height != null && height! < 60) ? 24 : 48,
+              color: AppColors.primary,
+            ),
+          ),
+        );
+  }
+}
+

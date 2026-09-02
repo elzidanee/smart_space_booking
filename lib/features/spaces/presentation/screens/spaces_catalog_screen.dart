@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -285,17 +284,20 @@ class _SpaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        context.push('/spaces/${space.id}');
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface0,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-          border: Border.all(color: AppColors.border),
-          boxShadow: AppSpacing.cardShadow,
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          context.push('/spaces/${space.id}');
+        },
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface0,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+            border: Border.all(color: AppColors.border),
+            boxShadow: AppSpacing.cardShadow,
+          ),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,19 +305,11 @@ class _SpaceCard extends StatelessWidget {
             // ── Gambar Space & Category Pill Overlay ────────────────────────
             Stack(
               children: [
-                SizedBox(
+                AppNetworkImage(
+                  imageUrl: space.foto,
                   height: 155,
                   width: double.infinity,
-                  child: space.foto != null && space.foto!.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: space.foto!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const AppShimmer(
-                            height: 155,
-                          ),
-                          errorWidget: (context, url, error) => _defaultImagePlaceholder(),
-                        )
-                      : _defaultImagePlaceholder(),
+                  fit: BoxFit.cover,
                 ),
                 // Category Pill Badge
                 Positioned(
@@ -429,19 +423,7 @@ class _SpaceCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _defaultImagePlaceholder() {
-    return Container(
-      color: AppColors.surface50,
-      child: const Center(
-        child: Icon(
-          Icons.meeting_room_rounded,
-          color: AppColors.ink300,
-          size: 40,
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 }

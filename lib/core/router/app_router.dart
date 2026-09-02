@@ -112,6 +112,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 /// Listenable bridge untuk memicu evaluasi redirect GoRouter saat AuthController berubah
 class _ListenableAuth extends ChangeNotifier {
   _ListenableAuth(Ref ref) {
-    ref.listen(authControllerProvider, (previous, next) => notifyListeners());
+    ref.listen(authControllerProvider, (previous, next) {
+      if (previous != next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
+      }
+    });
   }
 }

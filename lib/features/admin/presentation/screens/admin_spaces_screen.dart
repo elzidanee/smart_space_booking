@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -264,25 +263,13 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
           // Image + Tipe Badge
           Stack(
             children: [
-              ClipRRect(
+              AppNetworkImage(
+                imageUrl: space.foto,
+                height: 140,
+                width: double.infinity,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: CachedNetworkImage(
-                  imageUrl: space.foto ?? '',
-                  height: 140,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => AppShimmer(
-                    child: Container(
-                      height: 140,
-                      color: Colors.white,
-                    ),
-                  ),
-                  errorWidget: (_, __, ___) => Container(
-                    height: 140,
-                    color: AppColors.secondaryContainer,
-                    child: const Icon(Icons.business, size: 48, color: AppColors.secondary),
-                  ),
-                ),
+                fit: BoxFit.cover,
+                placeholderIcon: Icons.business,
               ),
               Positioned(
                 top: 12,

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -218,7 +217,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
             radius: 26,
             backgroundColor: AppColors.secondaryContainer,
             backgroundImage: member.foto != null && member.foto!.startsWith('http')
-                ? CachedNetworkImageProvider(member.foto!)
+                ? NetworkImage(member.foto!)
                 : null,
             child: member.foto == null || !member.foto!.startsWith('http')
                 ? const Icon(Icons.person, color: AppColors.secondary, size: 28)

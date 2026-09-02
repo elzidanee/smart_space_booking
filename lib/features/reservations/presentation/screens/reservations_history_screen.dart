@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -330,27 +329,12 @@ class _HistoryItemCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Thumbnail Space
-          ClipRRect(
+          AppNetworkImage(
+            imageUrl: reservation.fotoSpace,
+            width: 56,
+            height: 56,
             borderRadius: BorderRadius.circular(AppSpacing.radiusField),
-            child: SizedBox(
-              width: 56,
-              height: 56,
-              child: reservation.fotoSpace != null && reservation.fotoSpace!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: reservation.fotoSpace!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => const AppShimmer(width: 56, height: 56),
-                      errorWidget: (context, url, error) => Container(
-                        color: AppColors.primaryContainer,
-                        child: const Icon(Icons.meeting_room, color: AppColors.primary),
-                      ),
-                    )
-                  : Container(
-                      color: AppColors.primaryContainer,
-                      child: const Icon(Icons.meeting_room, color: AppColors.primary),
-                    ),
-            ),
+            fit: BoxFit.cover,
           ),
           const SizedBox(width: AppSpacing.md12),
 
