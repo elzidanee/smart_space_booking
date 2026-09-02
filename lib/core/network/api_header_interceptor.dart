@@ -12,7 +12,13 @@ class ApiHeaderInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    // 1. Normalisasi URL path untuk baseUrl bersubfolder (misal: /coworking)
+    // 1. Periksa apakah ada custom Base URL di secure storage
+    final customBaseUrl = await storage.readBaseUrl();
+    if (customBaseUrl != null && customBaseUrl.trim().isNotEmpty) {
+      options.baseUrl = customBaseUrl.trim();
+    }
+
+    // Normalisasi URL path untuk baseUrl bersubfolder (misal: /coworking)
     if (options.baseUrl.isNotEmpty) {
       if (!options.baseUrl.endsWith('/')) {
         options.baseUrl = '${options.baseUrl}/';

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_photo_picker_field.dart';
 import '../../../../core/widgets/app_shimmer.dart';
+import '../../../../core/widgets/server_config_bottom_sheet.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/models/admin_models.dart';
 import '../providers/admin_controller.dart';
@@ -246,6 +247,24 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                           },
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        await ServerConfigBottomSheet.show(context);
+                        _loadAppKey();
+                      },
+                      icon: const Icon(Icons.tune, size: 16),
+                      label: const Text('Ubah Server URL & Maker Key'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.secondary,
+                        side: const BorderSide(color: AppColors.secondary),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],

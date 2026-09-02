@@ -13,10 +13,24 @@ class SecureStorageService {
 
   SecureStorageService(this._storage);
 
+  static const String _keyBaseUrl = 'base_url';
   static const String _keyAppKey = 'app_key';
   static const String _keyAccessToken = 'access_token';
   static const String _keyUserRole = 'user_role';
   static const String _keyUserData = 'user_data';
+
+  // --- Base URL Config ---
+  Future<void> saveBaseUrl(String url) async {
+    await _storage.write(key: _keyBaseUrl, value: url);
+  }
+
+  Future<String?> readBaseUrl() async {
+    return await _storage.read(key: _keyBaseUrl);
+  }
+
+  Future<void> deleteBaseUrl() async {
+    await _storage.delete(key: _keyBaseUrl);
+  }
 
   // --- App Maker Key ---
   Future<void> saveAppKey(String appKey) async {

@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/auth_illustration.dart';
+import '../../../../core/widgets/server_config_bottom_sheet.dart';
 import '../providers/auth_controller.dart';
 
 /// Layar Login dengan Role Toggle sesuai Stitch Screen 01 (dbf3107b63324e40804cecf2554c0c4b).
@@ -79,18 +80,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg16,
-              vertical: AppSpacing.xl24,
+        child: Stack(
+          children: [
+            // Tombol Pengaturan Server & Key di Pojok Kanan Atas
+            Positioned(
+              top: 8,
+              right: 12,
+              child: IconButton(
+                icon: const Icon(Icons.settings_ethernet, color: AppColors.ink600),
+                tooltip: 'Pengaturan Server & Maker Key',
+                onPressed: () => ServerConfigBottomSheet.show(context),
+              ),
             ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg16,
+                  vertical: AppSpacing.xl24,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
                   // --- Ilustrasi Header ---
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 350),
@@ -548,7 +561,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  ),
+);
 }
+}
+

@@ -14,10 +14,20 @@ import 'package:flutter_test/flutter_test.dart';
 // ── Mock Classes for Business Logic Testing ─────────────────────────────────
 
 class FakeSecureStorage implements SecureStorageService {
+  String? baseUrl;
   String? accessToken;
   String? role;
   String? userData;
   String? appKey = 'test-maker-key';
+
+  @override
+  Future<void> saveBaseUrl(String url) async => baseUrl = url;
+
+  @override
+  Future<String?> readBaseUrl() async => baseUrl;
+
+  @override
+  Future<void> deleteBaseUrl() async => baseUrl = null;
 
   @override
   Future<void> saveAccessToken(String token) async => accessToken = token;
