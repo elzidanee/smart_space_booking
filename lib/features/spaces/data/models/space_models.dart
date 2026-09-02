@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../../core/utils/app_url_helper.dart';
 
 /// Model Ruangan / Workstation sesuai PRD Bagian II §5.3 & Kontrak API.
 class SpaceModel {
@@ -59,7 +60,8 @@ class SpaceModel {
     }
 
     // foto_url (full URL dari server) diutamakan vs foto (nama file saja)
-    final foto = json['foto_url']?.toString() ?? json['foto']?.toString();
+    final rawFoto = json['foto_url']?.toString() ?? json['foto']?.toString();
+    final foto = AppUrlHelper.resolveImageUrl(rawFoto, defaultFolder: 'spaces');
 
     return SpaceModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,

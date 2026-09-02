@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_url_helper.dart';
 
 /// Reusable Skeleton Shimmer Loading sesuai PRD NFR §6 & Desain §6.
 class AppShimmer extends StatelessWidget {
@@ -150,6 +151,7 @@ class AppNetworkImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   final Widget? errorWidget;
   final IconData placeholderIcon;
+  final String defaultFolder;
 
   const AppNetworkImage({
     super.key,
@@ -160,6 +162,7 @@ class AppNetworkImage extends StatelessWidget {
     this.borderRadius,
     this.errorWidget,
     this.placeholderIcon = Icons.meeting_room_rounded,
+    this.defaultFolder = 'spaces',
   });
 
   @override
@@ -186,20 +189,7 @@ class AppNetworkImage extends StatelessWidget {
       } catch (_) {}
     }
 
-    String? fullUrl;
-    if (rawUrl != null && rawUrl.isNotEmpty) {
-      if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
-        fullUrl = rawUrl;
-      } else {
-        const base = 'https://learn.smktelkom-mlg.sch.id/coworking';
-        final cleanPath = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
-        if (!cleanPath.startsWith('/uploads/') && cleanPath.contains('.')) {
-          fullUrl = '$base/uploads/spaces$cleanPath';
-        } else {
-          fullUrl = '$base$cleanPath';
-        }
-      }
-    }
+    final fullUrl = AppUrlHelper.resolveImageUrl(rawUrl, defaultFolder: defaultFolder);
 
     Widget imageContent;
 

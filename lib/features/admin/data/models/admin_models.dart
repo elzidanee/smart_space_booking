@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/utils/app_url_helper.dart';
 
 /// Model Profil Lokasi Coworking (Admin Profile) sesuai GET/PUT /api/admin/profile
 @immutable
@@ -22,6 +23,7 @@ class AdminProfileModel {
   });
 
   factory AdminProfileModel.fromJson(Map<String, dynamic> json) {
+    final rawFoto = json['foto_url']?.toString() ?? json['foto']?.toString();
     return AdminProfileModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '1') ?? 1,
       // API mengembalikan nama_coworking, fallback ke nama_space (lama)
@@ -31,7 +33,7 @@ class AdminProfileModel {
       telepon: json['telp']?.toString() ?? json['telepon']?.toString() ?? json['no_telp']?.toString() ?? '',
       alamat: json['alamat']?.toString() ?? '',
       deskripsiFasilitas: json['deskripsi_fasilitas']?.toString() ?? json['deskripsi']?.toString() ?? '',
-      foto: json['foto_url']?.toString() ?? json['foto']?.toString(),
+      foto: AppUrlHelper.resolveImageUrl(rawFoto, defaultFolder: 'spaces'),
     );
   }
 
@@ -102,7 +104,10 @@ class AdminMemberModel {
       telepon: json['telp']?.toString() ?? json['telepon']?.toString() ?? json['no_telp']?.toString() ?? '',
       alamat: json['alamat']?.toString() ?? '',
       username: json['username']?.toString() ?? '',
-      foto: json['foto_url']?.toString() ?? json['foto']?.toString(),
+      foto: AppUrlHelper.resolveImageUrl(
+        json['foto_url']?.toString() ?? json['foto']?.toString(),
+        defaultFolder: 'members',
+      ),
       totalReservasi: json['total_reservasi'] is int
           ? json['total_reservasi']
           : int.tryParse(json['total_reservasi']?.toString() ?? '0') ?? 0,

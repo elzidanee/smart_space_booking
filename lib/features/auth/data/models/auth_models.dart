@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../../core/utils/app_url_helper.dart';
 
 /// Model Pengguna (Member atau Admin Pengelola) sesuai DTO Kontrak API endpoint.md.
 class UserModel {
@@ -47,8 +48,12 @@ class UserModel {
     final alamat = memberData?['alamat']?.toString() ??
         json['alamat']?.toString() ?? json['address']?.toString();
 
-    final foto = memberData?['foto']?.toString() ??
-        json['foto']?.toString() ?? json['avatar']?.toString();
+    final rawFoto = memberData?['foto_url']?.toString() ??
+        memberData?['foto']?.toString() ??
+        json['foto_url']?.toString() ??
+        json['foto']?.toString() ??
+        json['avatar']?.toString();
+    final foto = AppUrlHelper.resolveImageUrl(rawFoto, defaultFolder: 'members');
 
     final instansi = memberData?['instansi']?.toString() ??
         json['instansi']?.toString();
