@@ -270,18 +270,51 @@ class ReservationModel {
   });
 
   factory ReservationModel.fromJson(Map<String, dynamic> json) {
+    // Ambil nested space object jika ada
+    final spaceObj = json['space'] as Map<String, dynamic>?;
+    // Ambil nested member object jika ada
+    final memberObj = json['member'] as Map<String, dynamic>?;
+
+    // id_space bisa dari 'id_space', 'space_id', atau dari space.id
+    final rawSpaceId = json['id_space'] ?? json['space_id'] ?? spaceObj?['id'];
+    final parsedSpaceId = rawSpaceId is int ? rawSpaceId : int.tryParse(rawSpaceId?.toString() ?? '0') ?? 0;
+
+    // foto_url diutamakan vs foto dari space
+    final fotoSpaceRaw = json['foto_space']?.toString() ??
+        spaceObj?['foto_url']?.toString() ??
+        spaceObj?['foto']?.toString();
+
+    // tanggal: API pakai 'tanggal_reservasi', fallback ke 'tanggal'
+    final tanggalRaw = (json['tanggal_reservasi'] ?? json['tanggal'])?.toString() ?? '';
+
+    // durasi: API pakai 'durasi_jam', fallback ke 'durasi'
+    final durasiRaw = json['durasi_jam'] ?? json['durasi'];
+    final parsedDurasi = durasiRaw is int ? durasiRaw : int.tryParse(durasiRaw?.toString() ?? '1') ?? 1;
+
+    // subtotal: API pakai 'total_harga_awal', fallback ke 'subtotal'
+    final subtotalRaw = json['total_harga_awal'] ?? json['subtotal'];
+    final parsedSubtotal = subtotalRaw is int ? subtotalRaw : int.tryParse(subtotalRaw?.toString() ?? '0') ?? 0;
+
+    // member info
+    final namaMemberRaw = json['nama_member']?.toString() ??
+        memberObj?['nama_member']?.toString() ??
+        memberObj?['nama']?.toString();
+    final teleponMemberRaw = json['telepon_member']?.toString() ??
+        memberObj?['telp']?.toString() ??
+        memberObj?['telepon']?.toString();
+
     return ReservationModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       kodeBooking: json['kode_booking']?.toString() ?? json['booking_code']?.toString() ?? '',
-      spaceId: json['space_id'] is int ? json['space_id'] : int.tryParse(json['space_id']?.toString() ?? '0') ?? 0,
-      namaSpace: json['nama_space']?.toString() ?? json['space']?['nama']?.toString(),
-      tipeSpace: json['tipe_space']?.toString() ?? json['space']?['tipe']?.toString(),
-      fotoSpace: json['foto_space']?.toString() ?? json['space']?['foto']?.toString(),
-      tanggal: json['tanggal']?.toString() ?? '',
+      spaceId: parsedSpaceId,
+      namaSpace: json['nama_space']?.toString() ?? spaceObj?['nama_space']?.toString() ?? spaceObj?['nama']?.toString(),
+      tipeSpace: json['tipe_space']?.toString() ?? spaceObj?['tipe']?.toString(),
+      fotoSpace: fotoSpaceRaw,
+      tanggal: tanggalRaw,
       jamMulai: json['jam_mulai']?.toString() ?? '',
       jamSelesai: json['jam_selesai']?.toString() ?? '',
-      durasi: json['durasi'] is int ? json['durasi'] : int.tryParse(json['durasi']?.toString() ?? '1') ?? 1,
-      subtotal: json['subtotal'] is int ? json['subtotal'] : int.tryParse(json['subtotal']?.toString() ?? '0') ?? 0,
+      durasi: parsedDurasi,
+      subtotal: parsedSubtotal,
       potonganDiskon: json['potongan_diskon'] is int
           ? json['potongan_diskon']
           : int.tryParse(json['potongan_diskon']?.toString() ?? '0') ?? 0,
@@ -289,8 +322,8 @@ class ReservationModel {
           ? json['total_bayar']
           : int.tryParse(json['total_bayar']?.toString() ?? '0') ?? 0,
       status: json['status']?.toString() ?? 'belum_dikonfirm',
-      namaMember: json['nama_member']?.toString() ?? json['member']?['nama']?.toString(),
-      teleponMember: json['telepon_member']?.toString() ?? json['member']?['telepon']?.toString(),
+      namaMember: namaMemberRaw,
+      teleponMember: teleponMemberRaw,
       createdAt: json['created_at']?.toString(),
     );
   }

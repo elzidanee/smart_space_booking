@@ -132,7 +132,7 @@ void main() {
     expect(find.text('Total Bayar'), findsOneWidget);
 
     // Scroll down to reveal form and check availability button
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 

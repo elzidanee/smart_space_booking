@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
@@ -153,7 +154,9 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
         return SpaceModel.fromJson(data);
       }
       return _mockSpaces.firstWhere((s) => s.id == id, orElse: () => _mockSpaces.first);
-    } catch (_) {
+    } catch (e) {
+      // ignore: avoid_print
+      debugPrint('[SpacesDS] getSpaceById($id) fallback to mock: $e');
       return _mockSpaces.firstWhere((s) => s.id == id, orElse: () => _mockSpaces.first);
     }
   }

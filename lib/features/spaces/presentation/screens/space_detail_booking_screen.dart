@@ -315,520 +315,487 @@ class _SpaceDetailBookingScreenState
         final diskon = bookingState.calculateDiscount(subtotal);
         final total = bookingState.calculateTotal(space.hargaPerJam);
 
+        final validName = space.nama.isNotEmpty ? space.nama : 'Detail Ruangan';
+
         return Scaffold(
           backgroundColor: AppColors.surface50,
-          body: CustomScrollView(
-            slivers: [
-              // ── Header / Hero Image with Back Button ──────────────────────
-              SliverAppBar(
-                expandedHeight: 280,
-                pinned: true,
-                backgroundColor: AppColors.primary,
-                leading: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white.withValues(alpha: 0.9),
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.ink900, size: 20),
-                      onPressed: () => context.pop(),
+          appBar: AppBar(
+            backgroundColor: AppColors.surface0,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.ink900),
+              onPressed: () => context.pop(),
+            ),
+            title: Text(
+              'Detail Ruangan',
+              style: AppTypography.h3.copyWith(color: AppColors.ink900),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: _isFavorite ? AppColors.danger : AppColors.ink900,
+                ),
+                onPressed: () {
+                  setState(() => _isFavorite = !_isFavorite);
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(_isFavorite
+                          ? 'Disimpan ke daftar favorit'
+                          : 'Dihapus dari favorit'),
+                      duration: const Duration(seconds: 1),
                     ),
+                  );
+                },
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Hero Image Banner ──────────────────────────────────────
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                  child: AppNetworkImage(
+                    imageUrl: space.foto,
+                    fit: BoxFit.cover,
+                    height: 220,
+                    width: double.infinity,
                   ),
                 ),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white.withValues(alpha: 0.9),
-                      child: IconButton(
-                        icon: Icon(
-                          _isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: _isFavorite ? AppColors.danger : AppColors.ink900,
-                          size: 20,
+                const SizedBox(height: AppSpacing.md12),
+
+                // Category & Capacity Pill
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                      ),
+                      child: Text(
+                        space.tipeLabel,
+                        style: AppTypography.captionMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
                         ),
-                        onPressed: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(_isFavorite
-                                  ? 'Disimpan ke daftar favorit'
-                                  : 'Dihapus dari favorit'),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
                       ),
                     ),
-                  ),
-                ],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      AppNetworkImage(
-                        imageUrl: space.foto,
-                        fit: BoxFit.cover,
-                        height: 280,
-                        width: double.infinity,
-                      ),
-                      // Gradient overlay for better contrast
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 80,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.5),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
+                    const SizedBox(width: AppSpacing.sm8),
+                    Row(
+                      children: [
+                        const Icon(Icons.group_outlined, size: 18, color: AppColors.ink600),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${space.kapasitas > 0 ? space.kapasitas : 1} orang',
+                          style: AppTypography.caption.copyWith(color: AppColors.ink600),
                         ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm8),
+
+                // Nama Space
+                Text(validName, style: AppTypography.h1),
+                const SizedBox(height: 2),
+
+                // Harga
+                RichText(
+                  text: TextSpan(
+                    text: CurrencyFormatter.format(space.hargaPerJam),
+                    style: AppTypography.h2.copyWith(color: AppColors.primary),
+                    children: [
+                      TextSpan(
+                        text: ' / jam',
+                        style: AppTypography.bodyMedium.copyWith(color: AppColors.ink600),
                       ),
                     ],
                   ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.lg16),
 
-              // ── Main Content & Booking Form ────────────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg16),
+                // ── Fasilitas Termasuk ─────────────────────────────────
+                if (space.fasilitas.isNotEmpty) ...[
+                  Text('Fasilitas Termasuk', style: AppTypography.bodyEmphasis),
+                  const SizedBox(height: AppSpacing.sm8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: space.fasilitas.map((f) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface0,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_getFacilityIcon(f), size: 16, color: AppColors.primary),
+                            const SizedBox(width: 6),
+                            Text(f, style: AppTypography.captionMedium),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg16),
+                ],
+
+                // ── Deskripsi Ruangan ──────────────────────────────────
+                if (space.deskripsi != null && space.deskripsi!.trim().isNotEmpty) ...[
+                  Text('Deskripsi Ruangan', style: AppTypography.bodyEmphasis),
+                  const SizedBox(height: AppSpacing.xs4),
+                  Text(
+                    space.deskripsi!,
+                    style: AppTypography.bodyMedium.copyWith(color: AppColors.ink600, height: 1.5),
+                  ),
+                  const SizedBox(height: AppSpacing.xl24),
+                ],
+
+                // ── Booking Widget Card (Stitch Screen 06) ───────────────
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xl24),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface0,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppSpacing.cardShadow,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Category & Capacity Pill
+                      Text(
+                        'Atur Jadwal Reservasi',
+                        style: AppTypography.h2.copyWith(fontSize: 18),
+                      ),
+                      const SizedBox(height: AppSpacing.md12),
+
+                      // Tanggal Picker
+                      Text('Tanggal Sewa', style: AppTypography.bodyMedium),
+                      const SizedBox(height: AppSpacing.xs4),
+                      InkWell(
+                        onTap: () => _selectDate(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.ink600),
+                              const SizedBox(width: 10),
+                              Text(bookingState.displayDate, style: AppTypography.bodyMedium),
+                              const Spacer(),
+                              const Icon(Icons.arrow_drop_down, color: AppColors.ink600),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md12),
+
+                      // Grid Waktu Mulai & Durasi
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-                            ),
-                            child: Text(
-                              space.tipeLabel,
-                              style: AppTypography.captionMedium.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          // Waktu Mulai
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Waktu Mulai', style: AppTypography.bodyMedium),
+                                const SizedBox(height: AppSpacing.xs4),
+                                InkWell(
+                                  onTap: () => _selectTime(context),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: AppColors.border),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.schedule_outlined, size: 18, color: AppColors.ink600),
+                                        const SizedBox(width: 8),
+                                        Text(bookingState.formattedTime, style: AppTypography.bodyMedium),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: AppSpacing.sm8),
-                          Row(
-                            children: [
-                              const Icon(Icons.group_outlined, size: 18, color: AppColors.ink600),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${space.kapasitas} orang',
-                                style: AppTypography.caption.copyWith(color: AppColors.ink600),
-                              ),
-                            ],
+                          const SizedBox(width: AppSpacing.md12),
+
+                          // Durasi Stepper
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Durasi Sewa', style: AppTypography.bodyMedium),
+                                const SizedBox(height: AppSpacing.xs4),
+                                Container(
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface50,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove, size: 18),
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () {
+                                          ref.read(bookingControllerProvider.notifier).decrementDuration();
+                                        },
+                                      ),
+                                      Text(
+                                        '${bookingState.durationHours} Jam',
+                                        style: AppTypography.bodyEmphasis,
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add, size: 18),
+                                        padding: EdgeInsets.zero,
+                                        onPressed: () {
+                                          ref.read(bookingControllerProvider.notifier).incrementDuration();
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.sm8),
+                      const SizedBox(height: AppSpacing.md12),
 
-                      // Nama Space
-                      Text(space.nama, style: AppTypography.h1),
-                      const SizedBox(height: 2),
-
-                      // Harga
-                      RichText(
-                        text: TextSpan(
-                          text: CurrencyFormatter.format(space.hargaPerJam),
-                          style: AppTypography.h2.copyWith(color: AppColors.primary),
-                          children: [
-                            TextSpan(
-                              text: ' / jam',
-                              style: AppTypography.bodyMedium.copyWith(color: AppColors.ink600),
-                            ),
-                          ],
+                      // Tombol Cek Ketersediaan Real-Time
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed: bookingState.isCheckingAvailability
+                              ? null
+                              : () {
+                                  ref
+                                      .read(bookingControllerProvider.notifier)
+                                      .checkAvailability(space.id);
+                                },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.secondary, width: 1.5),
+                            foregroundColor: AppColors.secondary,
+                          ),
+                          icon: bookingState.isCheckingAvailability
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.search_rounded, size: 18),
+                          label: const Text('Cek Ketersediaan Slot'),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.lg16),
 
-                      // ── Fasilitas Termasuk ─────────────────────────────────
-                      Text('Fasilitas Termasuk', style: AppTypography.bodyEmphasis),
-                      const SizedBox(height: AppSpacing.sm8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: space.fasilitas.map((f) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      // Availability Status Badge
+                      if (bookingState.availabilityResult != null) ...[
+                        const SizedBox(height: AppSpacing.sm8),
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.surface0,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
+                              color: bookingState.availabilityResult!.isAvailable
+                                  ? const Color(0xFFD4E9DB)
+                                  : const Color(0xFFFFDAD6),
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(_getFacilityIcon(f), size: 16, color: AppColors.primary),
+                                Icon(
+                                  bookingState.availabilityResult!.isAvailable
+                                      ? Icons.check_circle
+                                      : Icons.cancel,
+                                  size: 16,
+                                  color: bookingState.availabilityResult!.isAvailable
+                                      ? const Color(0xFF2D6A4F)
+                                      : AppColors.danger,
+                                ),
                                 const SizedBox(width: 6),
-                                Text(f, style: AppTypography.captionMedium),
+                                Text(
+                                  bookingState.availabilityResult!.message,
+                                  style: AppTypography.captionMedium.copyWith(
+                                    color: bookingState.availabilityResult!.isAvailable
+                                        ? const Color(0xFF2D6A4F)
+                                        : AppColors.danger,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: AppSpacing.lg16),
-
-                      // ── Deskripsi Ruangan ──────────────────────────────────
-                      if (space.deskripsi != null && space.deskripsi!.isNotEmpty) ...[
-                        Text('Deskripsi Ruangan', style: AppTypography.bodyEmphasis),
-                        const SizedBox(height: AppSpacing.xs4),
-                        Text(
-                          space.deskripsi!,
-                          style: AppTypography.bodyMedium.copyWith(color: AppColors.ink600, height: 1.5),
+                          ),
                         ),
-                        const SizedBox(height: AppSpacing.xl24),
                       ],
 
-                      // ── Booking Widget Card (Stitch Screen 06) ───────────────
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.xl24),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface0,
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-                          border: Border.all(color: AppColors.border),
-                          boxShadow: AppSpacing.cardShadow,
+                      const Divider(height: 28),
+
+                      // ── Input Kode Promo ──────────────────────────────
+                      Text('Kode Promo (Opsional)', style: AppTypography.bodyMedium),
+                      const SizedBox(height: AppSpacing.xs4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _promoController,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: const InputDecoration(
+                                hintText: 'Cth: DISKONHEMAT20',
+                                prefixIcon: Icon(Icons.local_offer_outlined, size: 20),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm8),
+                          SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: bookingState.isCheckingPromo
+                                  ? null
+                              : () {
+                                      ref.read(bookingControllerProvider.notifier).applyPromo(
+                                            _promoController.text,
+                                            subtotal,
+                                          );
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.surface50,
+                                foregroundColor: AppColors.ink900,
+                                elevation: 0,
+                                side: const BorderSide(color: AppColors.border),
+                              ),
+                              child: bookingState.isCheckingPromo
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Text('Terapkan'),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Active Promo Chip
+                      if (bookingState.appliedPromo != null) ...[
+                        const SizedBox(height: AppSpacing.sm8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${bookingState.appliedPromo!.kode} (-${bookingState.appliedPromo!.persentase}%)',
+                                style: AppTypography.captionMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  ref.read(bookingControllerProvider.notifier).removePromo();
+                                  _promoController.clear();
+                                },
+                                child: const Icon(Icons.close, size: 16, color: AppColors.primary),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      ],
+
+                      // Promo Error Message
+                      if (bookingState.promoError != null) ...[
+                        const SizedBox(height: AppSpacing.xs4),
+                        Text(
+                          bookingState.promoError!,
+                          style: AppTypography.caption.copyWith(color: AppColors.danger),
+                        ),
+                      ],
+
+                      const Divider(height: 28),
+
+                      // ── Rincian Biaya ─────────────────────────────────
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Subtotal (${bookingState.durationHours} Jam)',
+                            style: AppTypography.caption.copyWith(color: AppColors.ink600),
+                          ),
+                          Text(
+                            CurrencyFormatter.format(subtotal),
+                            style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      if (diskon > 0) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Atur Jadwal Reservasi',
-                              style: AppTypography.h2.copyWith(fontSize: 18),
+                              'Potongan Diskon',
+                              style: AppTypography.caption.copyWith(color: AppColors.primary),
                             ),
-                            const SizedBox(height: AppSpacing.md12),
-
-                            // Tanggal Picker
-                            Text('Tanggal Sewa', style: AppTypography.bodyMedium),
-                            const SizedBox(height: AppSpacing.xs4),
-                            InkWell(
-                              onTap: () => _selectDate(context),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface50,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.ink600),
-                                    const SizedBox(width: 10),
-                                    Text(bookingState.displayDate, style: AppTypography.bodyMedium),
-                                    const Spacer(),
-                                    const Icon(Icons.arrow_drop_down, color: AppColors.ink600),
-                                  ],
-                                ),
+                            Text(
+                              '-${CurrencyFormatter.format(diskon)}',
+                              style: AppTypography.bodyMedium.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ),
-                            const SizedBox(height: AppSpacing.md12),
-
-                            // Grid Waktu Mulai & Durasi
-                            Row(
-                              children: [
-                                // Waktu Mulai
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Waktu Mulai', style: AppTypography.bodyMedium),
-                                      const SizedBox(height: AppSpacing.xs4),
-                                      InkWell(
-                                        onTap: () => _selectTime(context),
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.surface50,
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: AppColors.border),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.schedule_outlined, size: 18, color: AppColors.ink600),
-                                              const SizedBox(width: 8),
-                                              Text(bookingState.formattedTime, style: AppTypography.bodyMedium),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.md12),
-
-                                // Durasi Stepper
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Durasi Sewa', style: AppTypography.bodyMedium),
-                                      const SizedBox(height: AppSpacing.xs4),
-                                      Container(
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surface50,
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: AppColors.border),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.remove, size: 18),
-                                              padding: EdgeInsets.zero,
-                                              onPressed: () {
-                                                ref.read(bookingControllerProvider.notifier).decrementDuration();
-                                              },
-                                            ),
-                                            Text(
-                                              '${bookingState.durationHours} Jam',
-                                              style: AppTypography.bodyEmphasis,
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.add, size: 18),
-                                              padding: EdgeInsets.zero,
-                                              onPressed: () {
-                                                ref.read(bookingControllerProvider.notifier).incrementDuration();
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.md12),
-
-                            // Tombol Cek Ketersediaan Real-Time
-                            SizedBox(
-                              width: double.infinity,
-                              height: 44,
-                              child: OutlinedButton.icon(
-                                onPressed: bookingState.isCheckingAvailability
-                                    ? null
-                                    : () {
-                                        ref
-                                            .read(bookingControllerProvider.notifier)
-                                            .checkAvailability(space.id);
-                                      },
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: AppColors.secondary, width: 1.5),
-                                  foregroundColor: AppColors.secondary,
-                                ),
-                                icon: bookingState.isCheckingAvailability
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.search_rounded, size: 18),
-                                label: const Text('Cek Ketersediaan Slot'),
-                              ),
-                            ),
-
-                            // Availability Status Badge
-                            if (bookingState.availabilityResult != null) ...[
-                              const SizedBox(height: AppSpacing.sm8),
-                              Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: bookingState.availabilityResult!.isAvailable
-                                        ? const Color(0xFFD4E9DB)
-                                        : const Color(0xFFFFDAD6),
-                                    borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        bookingState.availabilityResult!.isAvailable
-                                            ? Icons.check_circle
-                                            : Icons.cancel,
-                                        size: 16,
-                                        color: bookingState.availabilityResult!.isAvailable
-                                            ? const Color(0xFF2D6A4F)
-                                            : AppColors.danger,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        bookingState.availabilityResult!.message,
-                                        style: AppTypography.captionMedium.copyWith(
-                                          color: bookingState.availabilityResult!.isAvailable
-                                              ? const Color(0xFF2D6A4F)
-                                              : AppColors.danger,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-
-                            const Divider(height: 28),
-
-                            // ── Input Kode Promo ──────────────────────────────
-                            Text('Kode Promo (Opsional)', style: AppTypography.bodyMedium),
-                            const SizedBox(height: AppSpacing.xs4),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _promoController,
-                                    textCapitalization: TextCapitalization.characters,
-                                    decoration: const InputDecoration(
-                                      hintText: 'Cth: DISKONHEMAT20',
-                                      prefixIcon: Icon(Icons.local_offer_outlined, size: 20),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm8),
-                                SizedBox(
-                                  height: 48,
-                                  child: ElevatedButton(
-                                    onPressed: bookingState.isCheckingPromo
-                                        ? null
-                                        : () {
-                                            ref.read(bookingControllerProvider.notifier).applyPromo(
-                                                  _promoController.text,
-                                                  subtotal,
-                                                );
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.surface50,
-                                      foregroundColor: AppColors.ink900,
-                                      elevation: 0,
-                                      side: const BorderSide(color: AppColors.border),
-                                    ),
-                                    child: bookingState.isCheckingPromo
-                                        ? const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : const Text('Terapkan'),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // Active Promo Chip
-                            if (bookingState.appliedPromo != null) ...[
-                              const SizedBox(height: AppSpacing.sm8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '${bookingState.appliedPromo!.kode} (-${bookingState.appliedPromo!.persentase}%)',
-                                      style: AppTypography.captionMedium.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GestureDetector(
-                                      onTap: () {
-                                        ref.read(bookingControllerProvider.notifier).removePromo();
-                                        _promoController.clear();
-                                      },
-                                      child: const Icon(Icons.close, size: 16, color: AppColors.primary),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-
-                            // Promo Error Message
-                            if (bookingState.promoError != null) ...[
-                              const SizedBox(height: AppSpacing.xs4),
-                              Text(
-                                bookingState.promoError!,
-                                style: AppTypography.caption.copyWith(color: AppColors.danger),
-                              ),
-                            ],
-
-                            const Divider(height: 28),
-
-                            // ── Rincian Biaya ─────────────────────────────────
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Subtotal (${bookingState.durationHours} Jam)',
-                                  style: AppTypography.caption.copyWith(color: AppColors.ink600),
-                                ),
-                                Text(
-                                  CurrencyFormatter.format(subtotal),
-                                  style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                            if (diskon > 0) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Potongan Diskon',
-                                    style: AppTypography.caption.copyWith(color: AppColors.primary),
-                                  ),
-                                  Text(
-                                    '-${CurrencyFormatter.format(diskon)}',
-                                    style: AppTypography.bodyMedium.copyWith(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 10),
-                            const Divider(height: 1, color: AppColors.border),
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Total Pembayaran', style: AppTypography.bodyEmphasis),
-                                Text(
-                                  CurrencyFormatter.format(total),
-                                  style: AppTypography.h2.copyWith(color: AppColors.ink900),
-                                ),
-                              ],
                             ),
                           ],
                         ),
+                      ],
+                      const SizedBox(height: 10),
+                      const Divider(height: 1, color: AppColors.border),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Pembayaran', style: AppTypography.bodyEmphasis),
+                          Text(
+                            CurrencyFormatter.format(total),
+                            style: AppTypography.h2.copyWith(color: AppColors.ink900),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 90), // Space for sticky bottom bar
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 90), // Space for sticky bottom bar
+              ],
+            ),
           ),
 
           // ── Sticky Bottom Bar CTA ──────────────────────────────────────────

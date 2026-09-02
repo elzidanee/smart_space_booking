@@ -163,16 +163,25 @@ class AppNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final validUrl = imageUrl != null &&
-        (imageUrl!.startsWith('http://') || imageUrl!.startsWith('https://'));
+    final rawUrl = imageUrl?.trim();
+    String? fullUrl;
+    if (rawUrl != null && rawUrl.isNotEmpty) {
+      if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+        fullUrl = rawUrl;
+      } else {
+        const base = 'https://learn.smktelkom-mlg.sch.id/coworking';
+        final cleanPath = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
+        fullUrl = '$base$cleanPath';
+      }
+    }
 
     Widget imageContent;
 
-    if (!validUrl) {
+    if (fullUrl == null || fullUrl.isEmpty) {
       imageContent = _buildFallback();
     } else {
       imageContent = Image.network(
-        imageUrl!,
+        fullUrl,
         width: width,
         height: height,
         fit: fit,
