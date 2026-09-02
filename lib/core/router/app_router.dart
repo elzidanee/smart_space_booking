@@ -78,8 +78,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/spaces/:id',
         builder: (context, state) {
-          final idStr = state.pathParameters['id'] ?? '1';
-          final id = int.tryParse(idStr) ?? 1;
+          // QA-019: Jangan fallback ke ID 1 — jika ID tidak valid tampilkan error.
+          final idStr = state.pathParameters['id'];
+          final id = int.tryParse(idStr ?? '');
+          if (id == null || id <= 0) {
+            // Redirect ke halaman member dengan pesan error
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Space tidak ditemukan. ID tidak valid.'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            });
+            return const MemberShellScreen();
+          }
           return SpaceDetailBookingScreen(spaceId: id);
         },
       ),
