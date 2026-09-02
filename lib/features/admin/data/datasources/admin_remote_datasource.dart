@@ -1,3 +1,4 @@
+import 'dart:developer' as dev;
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -426,6 +427,8 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       },
     );
     final dynamic data = response.data['data'] ?? response.data;
+    dev.log('[MONTHLY REPORT] raw keys: ${data is Map ? data.keys.toList() : "not a map"}', name: 'ADMIN');
+    dev.log('[MONTHLY REPORT] raw: $data', name: 'ADMIN');
     if (data is Map<String, dynamic>) {
       return AdminMonthlyReportModel.fromJson(data);
     }

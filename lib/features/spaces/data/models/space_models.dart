@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as dev;
 import '../../../../core/utils/app_url_helper.dart';
 
 int _parseInt(dynamic value, {int defaultValue = 0}) {
@@ -394,63 +395,139 @@ class ReservationModel {
   });
 
   factory ReservationModel.fromJson(Map<String, dynamic> json) {
-    // Ambil nested space object jika ada
-    final spaceObj = json['space'] is Map ? Map<String, dynamic>.from(json['space'] as Map) : null;
-    // Ambil nested member object jika ada
-    final memberObj = json['member'] is Map ? Map<String, dynamic>.from(json['member'] as Map) : null;
-    // Ambil nested rincian pembayaran jika ada
-    final rincianObj = json['rincian_pembayaran'] is Map ? Map<String, dynamic>.from(json['rincian_pembayaran'] as Map) : null;
+    // ── Nested objects ──────────────────────────────────────────────────────
+    final memberObj  = json['member']  is Map ? Map<String, dynamic>.from(json['member']  as Map) : null;
+    final jadwalObj  = json['jadwal']  is Map ? Map<String, dynamic>.from(json['jadwal']  as Map) : null;
+    final rincianObj = json['rincian_pembayaran'] is Map
+        ? Map<String, dynamic>.from(json['rincian_pembayaran'] as Map)
+        : null;
 
-    // id_space bisa dari 'id_space', 'space_id', atau dari space.id
-    final rawSpaceId = json['id_space'] ?? json['space_id'] ?? spaceObj?['id'];
+    // ── STRUKTUR UTAMA API: detail_reservasi[] ─────────────────────────────
+    // API mengembalikan array detail_reservasi yang berisi space, diskon, total_harga
+    Map<String, dynamic>? detailObj;
+    Map<String, dynamic>? detailSpaceObj;
+    Map<String, dynamic>? detailDiskonObj;
+    final rawDetailList = json['detail_reservasi'];
+    if (rawDetailList is List && rawDetailList.isNotEmpty && rawDetailList.first is Map) {
+      detailObj      = Map<String, dynamic>.from(rawDetailList.first as Map);
+      detailSpaceObj = detailObj['space']  is Map ? Map<String, dynamic>.from(detailObj['space']  as Map) : null;
+      detailDiskonObj= detailObj['diskon'] is Map ? Map<String, dynamic>.from(detailObj['diskon'] as Map) : null;
+    }
+
+    // ── Fallback: 'space' langsung di root (format lain) ───────────────────
+    final rootSpaceObj = json['space'] is Map ? Map<String, dynamic>.from(json['space'] as Map) : null;
+    // Gabungkan: detailSpaceObj lebih diprioritaskan
+    final spaceObj = detailSpaceObj ?? rootSpaceObj;
+
+    dev.log('[ReservationModel.fromJson] keys=${json.keys.toList()} '
+        'detail_reservasi=$detailObj space=$spaceObj diskon=$detailDiskonObj', name: 'MODEL');
+
+    // ── id_space ──────────────────────────────────────────────────────────
+    final rawSpaceId = detailObj?['id_space'] ?? json['id_space'] ?? json['space_id'] ?? spaceObj?['id'];
     final parsedSpaceId = _parseInt(rawSpaceId, defaultValue: 0);
 
-    // foto_url diutamakan vs foto dari space
+    // ── namaSpace & foto ──────────────────────────────────────────────────
+    final namaSpaceRaw = json['nama_space']?.toString() ??
+        spaceObj?['nama_space']?.toString() ??
+        spaceObj?['nama']?.toString();
+
     final fotoSpaceRaw = json['foto_space']?.toString() ??
         spaceObj?['foto_url']?.toString() ??
         spaceObj?['foto']?.toString();
 
-    // tanggal: API pakai 'tanggal_reservasi', fallback ke 'tanggal'
-    var tanggalRaw = (json['tanggal_reservasi'] ?? json['tanggal'] ?? json['tgl_reservasi'] ?? json['created_at'])?.toString() ?? '';
+    final tipeSpaceRaw = json['tipe_space']?.toString() ?? spaceObj?['tipe']?.toString();
+
+    // ── tanggal ───────────────────────────────────────────────────────────
+    var tanggalRaw = (
+      json['tanggal_reservasi'] ??
+      jadwalObj?['tanggal_reservasi'] ??
+      json['tanggal'] ??
+      json['tgl_reservasi'] ??
+      json['created_at']
+    )?.toString() ?? '';
     if (tanggalRaw.contains('T')) {
       tanggalRaw = tanggalRaw.split('T').first;
     } else if (tanggalRaw.contains(' ')) {
       tanggalRaw = tanggalRaw.split(' ').first;
     }
 
-    // durasi: API pakai 'durasi_jam', fallback ke 'durasi'
-    final parsedDurasi = _parseInt(json['durasi_jam'] ?? json['durasi'] ?? json['durasi_sewa'], defaultValue: 1);
+    // ── durasi & jam ──────────────────────────────────────────────────────
+    final parsedDurasi = _parseInt(
+      json['durasi_jam'] ?? jadwalObj?['durasi_jam'] ?? json['durasi'] ?? json['durasi_sewa'],
+      defaultValue: 1,
+    );
 
+    final jamMulaiRaw = (json['jam_mulai'] ?? jadwalObj?['jam_mulai'])?.toString() ?? '';
+
+    // jam_selesai: ambil dari response, atau hitung dari jam_mulai + durasi_jam
+    String jamSelesaiRaw = (json['jam_selesai'] ?? jadwalObj?['jam_selesai'])?.toString() ?? '';
+    if (jamSelesaiRaw.isEmpty && jamMulaiRaw.isNotEmpty && parsedDurasi > 0) {
+      try {
+        final parts = jamMulaiRaw.split(':');
+        final startHour   = int.parse(parts[0]);
+        final startMinute = int.parse(parts.length > 1 ? parts[1] : '0');
+        final endMinutes  = startHour * 60 + startMinute + parsedDurasi * 60;
+        final endHour     = (endMinutes ~/ 60) % 24;
+        final endMin      = endMinutes % 60;
+        jamSelesaiRaw = '${endHour.toString().padLeft(2, '0')}:${endMin.toString().padLeft(2, '0')}';
+      } catch (_) {}
+    }
+
+    // ── harga per jam (dari detail_reservasi.space atau root) ─────────────
     final spaceHarga = _parseInt(
-      spaceObj?['harga_per_jam'] ?? spaceObj?['harga'] ?? spaceObj?['tarif'] ?? json['harga_per_jam'] ?? json['harga'] ?? json['price'] ?? json['tarif'],
+      spaceObj?['harga_per_jam'] ?? spaceObj?['harga'] ?? spaceObj?['tarif'] ??
+      json['harga_per_jam'] ?? json['harga'] ?? json['price'] ?? json['tarif'],
       defaultValue: 0,
     );
 
-    // subtotal: API pakai 'total_harga_awal', fallback ke 'subtotal', 'total_biaya'
+    // ── diskon persentase → hitung potongan ───────────────────────────────
+    // Subtotal = harga_per_jam × durasi_jam
     int parsedSubtotal = _parseInt(
-      json['total_harga_awal'] ?? json['subtotal'] ?? json['sub_total'] ?? json['total_biaya'] ?? json['biaya'] ?? json['total_harga'] ?? rincianObj?['total_harga_awal'] ?? rincianObj?['subtotal'],
+      rincianObj?['total_harga_awal'] ?? rincianObj?['subtotal'] ??
+      json['total_harga_awal'] ?? json['subtotal'] ?? json['sub_total'] ??
+      json['total_biaya'] ?? json['biaya'],
       defaultValue: 0,
     );
-    if (parsedSubtotal == 0 && spaceHarga > 0) {
+    if (parsedSubtotal == 0 && spaceHarga > 0 && parsedDurasi > 0) {
       parsedSubtotal = spaceHarga * parsedDurasi;
     }
 
-    final parsedPotongan = _parseInt(
-      json['potongan_diskon'] ?? json['diskon'] ?? json['potongan'] ?? json['discount'] ?? rincianObj?['potongan_diskon'],
+    // Potongan diskon: coba field eksplisit dulu, fallback hitung dari persentase
+    int parsedPotongan = _parseInt(
+      rincianObj?['potongan_diskon'] ??
+      json['potongan_diskon'] ?? json['potongan'] ?? json['discount'],
+      defaultValue: 0,
+    );
+    if (parsedPotongan == 0 && detailDiskonObj != null && parsedSubtotal > 0) {
+      final persen = _parseInt(
+        detailDiskonObj['persentase_diskon'] ?? detailDiskonObj['persentase'],
+        defaultValue: 0,
+      );
+      if (persen > 0) {
+        parsedPotongan = (parsedSubtotal * persen / 100).round();
+      }
+    }
+
+    // ── total_bayar: ambil dari detail_reservasi.total_harga ─────────────
+    // API: detail_reservasi[0].total_harga = total setelah diskon
+    int parsedTotalBayar = _parseInt(
+      detailObj?['total_harga'] ??          // ← FIELD UTAMA dari API
+      rincianObj?['total_bayar'] ??
+      json['total_bayar'] ?? json['total'] ?? json['tagihan'] ??
+      json['total_tagihan'] ?? json['grand_total'] ?? json['net_total'] ?? json['amount'],
       defaultValue: 0,
     );
 
-    int parsedTotalBayar = _parseInt(
-      json['total_bayar'] ?? json['total_biaya'] ?? json['total_harga'] ?? json['total'] ?? json['tagihan'] ?? json['total_tagihan'] ?? json['grand_total'] ?? json['net_total'] ?? json['amount'] ?? rincianObj?['total_bayar'],
-      defaultValue: 0,
-    );
+    // Saling-isi jika salah satu masih 0
     if (parsedTotalBayar == 0 && parsedSubtotal > 0) {
-      parsedTotalBayar = (parsedSubtotal - parsedPotongan) > 0 ? (parsedSubtotal - parsedPotongan) : parsedSubtotal;
+      parsedTotalBayar = parsedSubtotal - parsedPotongan > 0
+          ? parsedSubtotal - parsedPotongan
+          : parsedSubtotal;
     } else if (parsedSubtotal == 0 && parsedTotalBayar > 0) {
       parsedSubtotal = parsedTotalBayar + parsedPotongan;
     }
 
-    // member info
+    // ── member info ───────────────────────────────────────────────────────
     final namaMemberRaw = json['nama_member']?.toString() ??
         memberObj?['nama_member']?.toString() ??
         memberObj?['nama']?.toString();
@@ -458,16 +535,20 @@ class ReservationModel {
         memberObj?['telp']?.toString() ??
         memberObj?['telepon']?.toString();
 
+    dev.log('[ReservationModel.fromJson] RESULT: subtotal=$parsedSubtotal '
+        'potongan=$parsedPotongan totalBayar=$parsedTotalBayar '
+        'jamMulai=$jamMulaiRaw jamSelesai=$jamSelesaiRaw', name: 'MODEL');
+
     return ReservationModel(
       id: _parseInt(json['id'], defaultValue: 0),
       kodeBooking: json['kode_booking']?.toString() ?? json['booking_code']?.toString() ?? '',
       spaceId: parsedSpaceId,
-      namaSpace: json['nama_space']?.toString() ?? spaceObj?['nama_space']?.toString() ?? spaceObj?['nama']?.toString(),
-      tipeSpace: json['tipe_space']?.toString() ?? spaceObj?['tipe']?.toString(),
+      namaSpace: namaSpaceRaw,
+      tipeSpace: tipeSpaceRaw,
       fotoSpace: fotoSpaceRaw,
       tanggal: tanggalRaw,
-      jamMulai: json['jam_mulai']?.toString() ?? '',
-      jamSelesai: json['jam_selesai']?.toString() ?? '',
+      jamMulai: jamMulaiRaw,
+      jamSelesai: jamSelesaiRaw,
       durasi: parsedDurasi,
       subtotal: parsedSubtotal,
       potonganDiskon: parsedPotongan,

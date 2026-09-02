@@ -327,21 +327,28 @@ class SpaceTypeDistribution {
   });
 
   factory SpaceTypeDistribution.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is num) return v.round();
+      return int.tryParse(v.toString().trim()) ?? double.tryParse(v.toString().trim())?.round() ?? 0;
+    }
+
     return SpaceTypeDistribution(
-      tipe: json['tipe'] ?? 'personal_desk',
-      namaTipe: json['nama_tipe'] ?? 'Personal Desk',
-      totalBooking: json['total_booking'] is int
-          ? json['total_booking']
-          : int.tryParse(json['total_booking']?.toString() ?? '0') ?? 0,
-      totalJam: json['total_jam'] is int
-          ? json['total_jam']
-          : int.tryParse(json['total_jam']?.toString() ?? '0') ?? 0,
-      totalPendapatan: json['total_pendapatan'] is int
-          ? json['total_pendapatan']
-          : int.tryParse(json['total_pendapatan']?.toString() ?? '0') ?? 0,
-      persentase: json['persentase'] is num
-          ? (json['persentase'] as num).toDouble()
-          : double.tryParse(json['persentase']?.toString() ?? '0.0') ?? 0.0,
+      tipe: (json['tipe'] ?? json['tipe_space'] ?? json['type'] ?? 'personal_desk').toString(),
+      namaTipe: (json['nama_tipe'] ?? json['nama'] ?? json['label'] ?? json['tipe'] ?? 'Space').toString(),
+      totalBooking: parseInt(json['total_booking'] ?? json['booking'] ?? json['jumlah_booking'] ?? json['count']),
+      totalJam: parseInt(json['total_jam'] ?? json['jam'] ?? json['durasi'] ?? json['total_durasi']),
+      totalPendapatan: parseInt(
+        json['total_pendapatan'] ?? json['pendapatan'] ?? json['total_harga'] ??
+        json['total_bayar'] ?? json['income'] ?? json['revenue'],
+      ),
+      persentase: () {
+        final v = json['persentase'] ?? json['percentage'] ?? json['persen'];
+        if (v == null) return 0.0;
+        if (v is num) return v.toDouble();
+        return double.tryParse(v.toString().trim()) ?? 0.0;
+      }(),
     );
   }
 }
@@ -372,42 +379,109 @@ class AdminMonthlyReportModel {
   });
 
   factory AdminMonthlyReportModel.fromJson(Map<String, dynamic> json) {
-    // API mengembalikan rincian_per_tipe_space atau per_tipe_space
-    final listDistribusi = json['rincian_per_tipe_space'] ?? json['per_tipe_space'] ?? json['distribusi_space'] ?? [];
-    final items = (listDistribusi as List)
-        .map((e) => SpaceTypeDistribution.fromJson(e as Map<String, dynamic>))
-        .toList();
+    int parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is num) return v.round();
+      return int.tryParse(v.toString().trim()) ?? double.tryParse(v.toString().trim())?.round() ?? 0;
+    }
+
+    String tipeLabel(String tipe) {
+      switch (tipe.toLowerCase()) {
+        case 'desk':
+        case 'personal_desk': return 'Personal Desk';
+        case 'meeting_room':  return 'Meeting Room';
+        case 'private_office': return 'Private Office';
+        default: return tipe;
+      }
+    }
+
+    // ── Nested: periode { bulan, nama_bulan, tahun } ──────────────────────
+    final periodeObj = json['periode'] is Map
+        ? Map<String, dynamic>.from(json['periode'] as Map)
+        : null;
+
+    // ── Nested: ringkasan { total_reservasi, estimasi_pendapatan_total,
+    //            realisasi_pendapatan, status_reservasi } ──────────────────
+    final ringkasanObj = json['ringkasan'] is Map
+        ? Map<String, dynamic>.from(json['ringkasan'] as Map)
+        : null;
+
+    // ── Pendapatan ────────────────────────────────────────────────────────
+    // Kotor = estimasi_pendapatan_total (sebelum diskon)
+    final kotor = parseInt(
+      ringkasanObj?['estimasi_pendapatan_total'] ??
+      ringkasanObj?['estimasi_pendapatan_kotor'] ??
+      json['estimasi_pendapatan_total'] ??
+      json['estimasi_pendapatan_kotor'] ??
+      json['pendapatan_kotor'],
+    );
+    // Bersih = realisasi_pendapatan (setelah diskon)
+    final bersih = parseInt(
+      ringkasanObj?['realisasi_pendapatan'] ??
+      ringkasanObj?['realisasi_pendapatan_bersih'] ??
+      json['realisasi_pendapatan'] ??
+      json['realisasi_pendapatan_bersih'] ??
+      json['pendapatan_bersih'],
+    );
+    // Potongan tidak ada di response → hitung: kotor - bersih
+    final potongan = (kotor - bersih) > 0 ? (kotor - bersih) : parseInt(
+      json['total_potongan_diskon'] ?? json['potongan_diskon'],
+    );
+
+    // ── Total transaksi & jam ─────────────────────────────────────────────
+    final totalTx = parseInt(
+      ringkasanObj?['total_reservasi'] ??
+      json['total_reservasi'] ??
+      json['total_transaksi'],
+    );
+    final totalJam = parseInt(
+      ringkasanObj?['total_jam'] ??
+      json['total_jam_terpakai'] ??
+      json['total_jam'],
+    );
+
+    // ── pendapatan_per_tipe_space: MAP { desk: {count, total_income}, ... }
+    // Format BERBEDA dari ekspektasi — ini adalah object, bukan array!
+    List<SpaceTypeDistribution> items = [];
+    final perTipeRaw = json['pendapatan_per_tipe_space'] ?? json['per_tipe_space'] ?? json['rincian_per_tipe_space'];
+    if (perTipeRaw is Map) {
+      // Format baru: { "desk": { count, total_income }, "meeting_room": {...}, ... }
+      perTipeRaw.forEach((key, value) {
+        if (value is Map) {
+          final m = Map<String, dynamic>.from(value);
+          final income    = parseInt(m['total_income'] ?? m['income'] ?? m['total_pendapatan']);
+          final booking   = parseInt(m['count'] ?? m['total_booking'] ?? m['booking']);
+          final jam       = parseInt(m['total_jam'] ?? m['jam']);
+          final pct       = bersih > 0 && income > 0 ? (income / bersih * 100) : 0.0;
+          items.add(SpaceTypeDistribution(
+            tipe: key.toString(),
+            namaTipe: tipeLabel(key.toString()),
+            totalBooking: booking,
+            totalJam: jam,
+            totalPendapatan: income,
+            persentase: pct,
+          ));
+        }
+      });
+    } else if (perTipeRaw is List) {
+      // Format lama: array of objects
+      items = perTipeRaw
+          .whereType<Map>()
+          .map((e) => SpaceTypeDistribution.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
 
     return AdminMonthlyReportModel(
-      bulan: json['bulan'] is int ? json['bulan'] : int.tryParse(json['bulan']?.toString() ?? '8') ?? 8,
-      tahun: json['tahun'] is int ? json['tahun'] : int.tryParse(json['tahun']?.toString() ?? '2026') ?? 2026,
-      // API mengembalikan estimasi_pendapatan_kotor
-      pendapatanKotor: json['estimasi_pendapatan_kotor'] is int
-          ? json['estimasi_pendapatan_kotor']
-          : json['pendapatan_kotor'] is int
-              ? json['pendapatan_kotor']
-              : int.tryParse((json['estimasi_pendapatan_kotor'] ?? json['pendapatan_kotor'])?.toString() ?? '0') ?? 0,
-      // API mengembalikan total_potongan_diskon
-      potonganDiskon: json['total_potongan_diskon'] is int
-          ? json['total_potongan_diskon']
-          : json['potongan_diskon'] is int
-              ? json['potongan_diskon']
-              : int.tryParse((json['total_potongan_diskon'] ?? json['potongan_diskon'])?.toString() ?? '0') ?? 0,
-      // API mengembalikan realisasi_pendapatan_bersih
-      pendapatanBersih: json['realisasi_pendapatan_bersih'] is int
-          ? json['realisasi_pendapatan_bersih']
-          : json['pendapatan_bersih'] is int
-              ? json['pendapatan_bersih']
-              : int.tryParse((json['realisasi_pendapatan_bersih'] ?? json['pendapatan_bersih'])?.toString() ?? '0') ?? 0,
-      totalTransaksi: json['total_reservasi'] is int
-          ? json['total_reservasi']
-          : json['total_transaksi'] is int
-              ? json['total_transaksi']
-              : int.tryParse((json['total_reservasi'] ?? json['total_transaksi'])?.toString() ?? '0') ?? 0,
-      totalJamTerpakai: json['total_jam_terpakai'] is int
-          ? json['total_jam_terpakai']
-          : int.tryParse(json['total_jam_terpakai']?.toString() ?? '0') ?? 0,
-      perTipeSpace: items,
+      bulan: parseInt(periodeObj?['bulan'] ?? json['bulan'] ?? json['month'] ?? DateTime.now().month),
+      tahun: parseInt(periodeObj?['tahun'] ?? json['tahun'] ?? json['year'] ?? DateTime.now().year),
+      pendapatanKotor:  kotor,
+      potonganDiskon:   potongan,
+      pendapatanBersih: bersih,
+      totalTransaksi:   totalTx,
+      totalJamTerpakai: totalJam,
+      perTipeSpace:     items,
     );
   }
+
 }

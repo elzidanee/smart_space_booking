@@ -118,8 +118,10 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
     if (list.any((r) => r.totalBayar <= 0)) {
       final enriched = await Future.wait(list.map((r) async {
         if (r.totalBayar > 0) return r;
+        dev.log('[ENRICH] id=${r.id} totalBayar=${r.totalBayar} subtotal=${r.subtotal} → fetching detail...', name: 'API');
         try {
           final detail = await getReservationById(r.id);
+          dev.log('[ENRICH] id=${r.id} detail.totalBayar=${detail.totalBayar} detail.subtotal=${detail.subtotal}', name: 'API');
           // Pertahankan field yang ada di list tapi tidak di detail (nama_member dsb.)
           final totalBayar = detail.totalBayar > 0 ? detail.totalBayar : r.totalBayar;
           final subtotal   = detail.subtotal   > 0 ? detail.subtotal   : r.subtotal;
@@ -135,7 +137,8 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
             jamSelesai: r.jamSelesai.isEmpty ? detail.jamSelesai : r.jamSelesai,
             durasi:     r.durasi > 0 ? r.durasi : detail.durasi,
           );
-        } catch (_) {
+        } catch (e) {
+          dev.log('[ENRICH] id=${r.id} GAGAL enrich: $e', name: 'API');
           return r;
         }
       }));
@@ -157,21 +160,59 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
     );
 
     final dynamic data = response.data['data'] ?? response.data;
+    dev.log('[HISTORY] raw keys: ${data is Map ? data.keys.toList() : "not a map"}', name: 'API');
+    dev.log('[HISTORY] raw data: $data', name: 'API');
+
     if (data is Map<String, dynamic>) {
-      // API mengembalikan: { month, year, total_reservasi, total_pengeluaran, items: [...] }
-      final listData = data['items'] ?? data['reservasi'] ?? [];
-      final items = (listData as List)
-          .map((json) => ReservationModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      // API mengembalikan: { month, year, total_reservasi, total_pengeluaran, items/reservasi: [...] }
+      final listData = data['items'] ?? data['reservasi'] ?? data['data'] ?? [];
+      dev.log('[HISTORY] listData type=${listData.runtimeType} length=${listData is List ? listData.length : "?"}', name: 'API');
+
+      List<ReservationModel> items = [];
+      if (listData is List) {
+        for (final json in listData) {
+          if (json is Map) {
+            final map = Map<String, dynamic>.from(json);
+            dev.log('[HISTORY ITEM] keys=${map.keys.toList()} detail_reservasi=${map["detail_reservasi"]} total_bayar=${map["total_bayar"]}', name: 'API');
+            items.add(ReservationModel.fromJson(map));
+          }
+        }
+      }
+
+      // Enrichment: jika item dari history tidak punya harga, fetch detail
+      if (items.any((r) => r.totalBayar <= 0)) {
+        items = await Future.wait(items.map((r) async {
+          if (r.totalBayar > 0) return r;
+          dev.log('[HISTORY ENRICH] id=${r.id} totalBayar=0 → fetching detail...', name: 'API');
+          try {
+            final detail = await getReservationById(r.id);
+            dev.log('[HISTORY ENRICH] id=${r.id} detail.totalBayar=${detail.totalBayar}', name: 'API');
+            return r.copyWith(
+              totalBayar:     detail.totalBayar     > 0 ? detail.totalBayar     : r.totalBayar,
+              subtotal:       detail.subtotal        > 0 ? detail.subtotal        : r.subtotal,
+              potonganDiskon: detail.potonganDiskon  > 0 ? detail.potonganDiskon  : r.potonganDiskon,
+              namaSpace:  r.namaSpace  ?? detail.namaSpace,
+              tipeSpace:  r.tipeSpace  ?? detail.tipeSpace,
+              fotoSpace:  r.fotoSpace  ?? detail.fotoSpace,
+              jamMulai:   r.jamMulai.isEmpty   ? detail.jamMulai   : r.jamMulai,
+              jamSelesai: r.jamSelesai.isEmpty  ? detail.jamSelesai  : r.jamSelesai,
+              durasi:     r.durasi > 0 ? r.durasi : detail.durasi,
+            );
+          } catch (e) {
+            dev.log('[HISTORY ENRICH] id=${r.id} GAGAL: $e', name: 'API');
+            return r;
+          }
+        }));
+      }
 
       final totalBayar = data['total_pengeluaran'] is int
-          ? data['total_pengeluaran']
+          ? data['total_pengeluaran'] as int
           : int.tryParse(data['total_pengeluaran']?.toString() ?? '0') ?? 0;
       final totalJam = data['total_jam'] is int
-          ? data['total_jam']
+          ? data['total_jam'] as int
           : int.tryParse(data['total_jam']?.toString() ?? '0') ?? 0;
       final totalTx = data['total_reservasi'] is int
-          ? data['total_reservasi']
+          ? data['total_reservasi'] as int
           : items.length;
 
       return ReservationHistorySummary(
@@ -188,6 +229,7 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
       totalTransaksi: 0,
     );
   }
+
 
   @override
   Future<ReservationModel> getReservationById(int id) async {
