@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../reservations/presentation/screens/e_ticket_screen.dart';
 import '../../../reservations/presentation/screens/reservations_status_screen.dart';
 import '../../../spaces/presentation/screens/spaces_catalog_screen.dart';
+import 'member_profile_screen.dart';
 
 /// Shell Navigasi Member 4-tab sesuai PRD Bagian III §3 (Information Architecture).
 class MemberShellScreen extends ConsumerStatefulWidget {
@@ -20,18 +19,15 @@ class _MemberShellScreenState extends ConsumerState<MemberShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final user = authState.value?.user;
-
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(
           index: _currentIndex,
-          children: [
-            const SpacesCatalogScreen(),
-            const ReservationsStatusScreen(),
-            const ETicketScreen(),
-            _buildAccountTab(user),
+          children: const [
+            SpacesCatalogScreen(),
+            ReservationsStatusScreen(),
+            ETicketScreen(),
+            MemberProfileScreen(),
           ],
         ),
       ),
@@ -66,37 +62,6 @@ class _MemberShellScreenState extends ConsumerState<MemberShellScreen> {
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person, color: AppColors.primary),
               label: 'Akun',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccountTab(dynamic user) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.primaryContainer,
-              child: Icon(Icons.person, size: 48, color: AppColors.primary),
-            ),
-            const SizedBox(height: 16),
-            Text(user?.nama ?? 'Member', style: AppTypography.h2),
-            Text('@${user?.username ?? "user"}', style: AppTypography.caption),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-              icon: const Icon(Icons.logout),
-              label: const Text('Keluar dari Akun'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.danger,
-                foregroundColor: Colors.white,
-              ),
             ),
           ],
         ),

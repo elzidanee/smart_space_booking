@@ -19,18 +19,21 @@ abstract class AdminRemoteDataSource {
 
   // 2. Master Data Member
   Future<List<AdminMemberModel>> getMembers({String? query});
+  Future<AdminMemberModel> getMemberById(int id);
   Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password});
   Future<AdminMemberModel> updateMember(AdminMemberModel member, {File? photoFile, String? password});
   Future<bool> deleteMember(int id);
 
   // 3. Master Data Space
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
+  Future<SpaceModel> getSpaceById(int id);
   Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile});
   Future<SpaceModel> updateSpace(SpaceModel space, {File? photoFile});
   Future<bool> deleteSpace(int id);
 
   // 4. Master Data Diskon
   Future<List<AdminDiscountModel>> getDiscounts();
+  Future<AdminDiscountModel> getDiscountById(int id);
   Future<AdminDiscountModel> createDiscount(AdminDiscountModel discount);
   Future<AdminDiscountModel> updateDiscount(AdminDiscountModel discount);
   Future<bool> deleteDiscount(int id);
@@ -108,6 +111,16 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       return data.map((e) => AdminMemberModel.fromJson(e as Map<String, dynamic>)).toList();
     }
     return [];
+  }
+
+  @override
+  Future<AdminMemberModel> getMemberById(int id) async {
+    final response = await _dio.get(ApiEndpoints.adminMemberDetail(id));
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return AdminMemberModel.fromJson(data);
+    }
+    throw Exception('Detail member dengan ID $id tidak ditemukan.');
   }
 
   @override
@@ -199,6 +212,16 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       return data.map((e) => SpaceModel.fromJson(e as Map<String, dynamic>)).toList();
     }
     return [];
+  }
+
+  @override
+  Future<SpaceModel> getSpaceById(int id) async {
+    final response = await _dio.get(ApiEndpoints.adminSpaceDetail(id));
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return SpaceModel.fromJson(data);
+    }
+    throw Exception('Detail space dengan ID $id tidak ditemukan.');
   }
 
   @override
@@ -304,6 +327,16 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       return data.map((e) => AdminDiscountModel.fromJson(e as Map<String, dynamic>)).toList();
     }
     return [];
+  }
+
+  @override
+  Future<AdminDiscountModel> getDiscountById(int id) async {
+    final response = await _dio.get(ApiEndpoints.adminDiskonDetail(id));
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return AdminDiscountModel.fromJson(data);
+    }
+    throw Exception('Detail diskon dengan ID $id tidak ditemukan.');
   }
 
   @override
@@ -430,7 +463,72 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
     dev.log('[MONTHLY REPORT] raw keys: ${data is Map ? data.keys.toList() : "not a map"}', name: 'ADMIN');
     dev.log('[MONTHLY REPORT] raw: $data', name: 'ADMIN');
     if (data is Map<String, dynamic>) {
-      return AdminMonthlyReportModel.fromJson(data);
+      var report = AdminMonthlyReportModel.fromJson(data);
+      try {
+        final reservations = await getReservations(month: targetMonth, year: targetYear);
+        if (reservations.isNotEmpty) {
+          final hoursMap = <String, int>{};
+          for (final r in reservations) {
+            if (r.status.toLowerCase() == 'dibatalkan') continue;
+            final tipe = r.tipeSpace?.toLowerCase().replaceAll(' ', '_') ?? '';
+            final durasi = r.durasi > 0 ? r.durasi : 1;
+
+            String normKey = tipe;
+            if (tipe.contains('desk')) {
+              normKey = 'desk';
+            } else if (tipe.contains('meeting')) {
+              normKey = 'meeting_room';
+            } else if (tipe.contains('office') || tipe.contains('private')) {
+              normKey = 'private_office';
+            }
+
+            hoursMap[normKey] = (hoursMap[normKey] ?? 0) + durasi;
+          }
+
+          if (hoursMap.isNotEmpty) {
+            final updatedItems = report.perTipeSpace.map((item) {
+              final key = item.tipe.toLowerCase();
+              String normKey = key;
+              if (key.contains('desk')) {
+                normKey = 'desk';
+              } else if (key.contains('meeting')) {
+                normKey = 'meeting_room';
+              } else if (key.contains('office') || key.contains('private')) {
+                normKey = 'private_office';
+              }
+
+              final realJam = hoursMap[normKey];
+              if (realJam != null && realJam > 0) {
+                return SpaceTypeDistribution(
+                  tipe: item.tipe,
+                  namaTipe: item.namaTipe,
+                  totalBooking: item.totalBooking,
+                  totalJam: realJam,
+                  totalPendapatan: item.totalPendapatan,
+                  persentase: item.persentase,
+                );
+              }
+              return item;
+            }).toList();
+
+            final totalCalculatedJam = updatedItems.fold<int>(0, (sum, i) => sum + i.totalJam);
+
+            report = AdminMonthlyReportModel(
+              bulan: report.bulan,
+              tahun: report.tahun,
+              pendapatanKotor: report.pendapatanKotor,
+              potonganDiskon: report.potonganDiskon,
+              pendapatanBersih: report.pendapatanBersih,
+              totalTransaksi: report.totalTransaksi,
+              totalJamTerpakai: totalCalculatedJam > 0 ? totalCalculatedJam : report.totalJamTerpakai,
+              perTipeSpace: updatedItems,
+            );
+          }
+        }
+      } catch (e) {
+        dev.log('[MONTHLY REPORT] Gagal enrich real hours: $e', name: 'ADMIN');
+      }
+      return report;
     }
     return AdminMonthlyReportModel(
       bulan: targetMonth,

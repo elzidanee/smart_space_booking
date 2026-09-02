@@ -205,15 +205,27 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
         }));
       }
 
-      final totalBayar = data['total_pengeluaran'] is int
+      int totalBayar = data['total_pengeluaran'] is int
           ? data['total_pengeluaran'] as int
           : int.tryParse(data['total_pengeluaran']?.toString() ?? '0') ?? 0;
-      final totalJam = data['total_jam'] is int
+      int totalJam = data['total_jam'] is int
           ? data['total_jam'] as int
           : int.tryParse(data['total_jam']?.toString() ?? '0') ?? 0;
-      final totalTx = data['total_reservasi'] is int
+      int totalTx = data['total_reservasi'] is int
           ? data['total_reservasi'] as int
           : items.length;
+
+      // Fallback: hitung dari items jika dari API 0 tapi items ada
+      if (totalBayar == 0 && items.isNotEmpty) {
+        totalBayar = items
+            .where((r) => r.status.toLowerCase() != 'dibatalkan')
+            .fold(0, (sum, r) => sum + r.totalBayar);
+      }
+      if (totalJam == 0 && items.isNotEmpty) {
+        totalJam = items
+            .where((r) => r.status.toLowerCase() != 'dibatalkan')
+            .fold(0, (sum, r) => sum + (r.durasi > 0 ? r.durasi : 1));
+      }
 
       return ReservationHistorySummary(
         items: items,

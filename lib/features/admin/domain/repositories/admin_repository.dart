@@ -16,18 +16,21 @@ abstract class AdminRepository {
 
   // Members CRUD
   Future<List<AdminMemberModel>> getMembers({String? query});
+  Future<AdminMemberModel> getMemberById(int id);
   Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password});
   Future<AdminMemberModel> updateMember(AdminMemberModel member, {File? photoFile, String? password});
   Future<bool> deleteMember(int id);
 
   // Spaces CRUD
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe});
+  Future<SpaceModel> getSpaceById(int id);
   Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile});
   Future<SpaceModel> updateSpace(SpaceModel space, {File? photoFile});
   Future<bool> deleteSpace(int id);
 
   // Discounts CRUD
   Future<List<AdminDiscountModel>> getDiscounts();
+  Future<AdminDiscountModel> getDiscountById(int id);
   Future<AdminDiscountModel> createDiscount(AdminDiscountModel discount);
   Future<AdminDiscountModel> updateDiscount(AdminDiscountModel discount);
   Future<bool> deleteDiscount(int id);
@@ -75,6 +78,9 @@ class AdminRepositoryImpl implements AdminRepository {
       _dataSource.getMembers(query: query);
 
   @override
+  Future<AdminMemberModel> getMemberById(int id) => _dataSource.getMemberById(id);
+
+  @override
   Future<AdminMemberModel> createMember(AdminMemberModel member, {File? photoFile, String? password}) =>
       _dataSource.createMember(member, photoFile: photoFile, password: password);
 
@@ -90,6 +96,9 @@ class AdminRepositoryImpl implements AdminRepository {
       _dataSource.getSpaces(query: query, tipe: tipe);
 
   @override
+  Future<SpaceModel> getSpaceById(int id) => _dataSource.getSpaceById(id);
+
+  @override
   Future<SpaceModel> createSpace(SpaceModel space, {File? photoFile}) =>
       _dataSource.createSpace(space, photoFile: photoFile);
 
@@ -102,6 +111,9 @@ class AdminRepositoryImpl implements AdminRepository {
 
   @override
   Future<List<AdminDiscountModel>> getDiscounts() => _dataSource.getDiscounts();
+
+  @override
+  Future<AdminDiscountModel> getDiscountById(int id) => _dataSource.getDiscountById(id);
 
   @override
   Future<AdminDiscountModel> createDiscount(AdminDiscountModel discount) =>

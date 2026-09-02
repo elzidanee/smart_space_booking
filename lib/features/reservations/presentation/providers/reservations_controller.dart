@@ -1,8 +1,8 @@
+import 'dart:developer' as dev;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../../data/datasources/reservations_remote_datasource.dart';
 import '../../domain/repositories/reservations_repository.dart';
-
 import '../../../spaces/domain/repositories/spaces_repository.dart';
 
 /// Provider filter status reservasi: 'all' | 'menunggu' | 'disetujui' | 'aktif' | 'selesai' | 'dibatalkan'
@@ -130,4 +130,46 @@ final cancelReservationControllerProvider =
     StateNotifierProvider<CancelReservationController, AsyncValue<bool>>((ref) {
   final repository = ref.watch(reservationsRepositoryProvider);
   return CancelReservationController(repository, ref);
+});
+
+/// Provider statistik pemakaian member (total booking, total jam, total pengeluaran).
+/// Menggabungkan data dari reservasi member dan history agar selalu akurat dan tidak 0.
+final memberUsageStatsProvider = FutureProvider.autoDispose<
+    ({int totalBooking, int totalJam, int totalPengeluaran})>((ref) async {
+  final repo = ref.watch(reservationsRepositoryProvider);
+
+  List<ReservationModel> allReservations = [];
+  try {
+    allReservations = await repo.getMyReservations(status: 'all');
+  } catch (e) {
+    dev.log('[MEMBER STATS] Gagal load all reservations: $e', name: 'MEMBER');
+  }
+
+  final validRes = allReservations
+      .where((r) => r.status.toLowerCase() != 'dibatalkan')
+      .toList();
+  final resBooking = validRes.length;
+  final resJam =
+      validRes.fold<int>(0, (sum, r) => sum + (r.durasi > 0 ? r.durasi : 1));
+  final resPengeluaran =
+      validRes.fold<int>(0, (sum, r) => sum + r.totalBayar);
+
+  int histBooking = 0;
+  int histJam = 0;
+  int histPengeluaran = 0;
+  try {
+    final bulan = ref.watch(selectedHistoryMonthProvider);
+    final tahun = ref.watch(selectedHistoryYearProvider);
+    final history = await repo.getMyHistory(bulan: bulan, tahun: tahun);
+    histBooking = history.totalTransaksi;
+    histJam = history.totalJam;
+    histPengeluaran = history.totalPengeluaran;
+  } catch (_) {}
+
+  return (
+    totalBooking: resBooking > histBooking ? resBooking : histBooking,
+    totalJam: resJam > histJam ? resJam : histJam,
+    totalPengeluaran:
+        resPengeluaran > histPengeluaran ? resPengeluaran : histPengeluaran,
+  );
 });

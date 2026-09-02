@@ -181,14 +181,21 @@ class _AdminMonthlyReportScreenState
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'PENDAPATAN BERSIH BULAN INI',
-                    style: AppTypography.sectionLabel.copyWith(
-                      color: AppColors.secondaryContainer,
-                      letterSpacing: 1,
+                  Expanded(
+                    child: Text(
+                      'PENDAPATAN BERSIH',
+                      style: AppTypography.sectionLabel.copyWith(
+                        color: AppColors.secondaryContainer,
+                        letterSpacing: 0.8,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
@@ -200,6 +207,7 @@ class _AdminMonthlyReportScreenState
                       style: AppTypography.captionMedium.copyWith(
                         color: Colors.white,
                         fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -333,10 +341,11 @@ class _AdminMonthlyReportScreenState
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
-                        width: 12,
-                        height: 12,
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
                           color: color,
                           shape: BoxShape.circle,
@@ -347,24 +356,38 @@ class _AdminMonthlyReportScreenState
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(item.namaTipe, style: AppTypography.captionMedium),
+                            Text(
+                              item.namaTipe,
+                              style: AppTypography.captionMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             Text(
                               '${item.totalBooking} Booking • ${item.totalJam} Jam',
                               style: AppTypography.caption.copyWith(color: AppColors.ink600, fontSize: 11),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             CurrencyFormatter.formatRupiah(item.totalPendapatan),
-                            style: AppTypography.captionMedium.copyWith(fontWeight: FontWeight.bold),
+                            style: AppTypography.captionMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             '${item.persentase.toStringAsFixed(1)}%',
-                            style: AppTypography.caption.copyWith(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                            style: AppTypography.caption.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
                           ),
                         ],
                       ),
@@ -372,6 +395,7 @@ class _AdminMonthlyReportScreenState
                   ),
                 );
               }),
+
             ],
           ),
         ),

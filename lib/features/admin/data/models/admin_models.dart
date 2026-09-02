@@ -453,8 +453,12 @@ class AdminMonthlyReportModel {
           final m = Map<String, dynamic>.from(value);
           final income    = parseInt(m['total_income'] ?? m['income'] ?? m['total_pendapatan']);
           final booking   = parseInt(m['count'] ?? m['total_booking'] ?? m['booking']);
-          final jam       = parseInt(m['total_jam'] ?? m['jam']);
-          final pct       = bersih > 0 && income > 0 ? (income / bersih * 100) : 0.0;
+          int jam = parseInt(m['total_jam'] ?? m['jam'] ?? m['durasi'] ?? m['total_durasi']);
+          if (jam == 0 && booking > 0) {
+            // Jika backend tidak menyediakan jam per tipe di ringkasan, minimal 1 jam per booking
+            jam = booking;
+          }
+          final pct = bersih > 0 && income > 0 ? (income / bersih * 100) : 0.0;
           items.add(SpaceTypeDistribution(
             tipe: key.toString(),
             namaTipe: tipeLabel(key.toString()),
