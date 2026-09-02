@@ -16,8 +16,8 @@ abstract class AdminRepository {
 
   // Members CRUD
   Future<List<AdminMemberModel>> getMembers({String? query});
-  Future<AdminMemberModel> createMember(AdminMemberModel member);
-  Future<AdminMemberModel> updateMember(AdminMemberModel member);
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password});
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password});
   Future<bool> deleteMember(int id);
 
   // Spaces CRUD
@@ -75,12 +75,12 @@ class AdminRepositoryImpl implements AdminRepository {
       _dataSource.getMembers(query: query);
 
   @override
-  Future<AdminMemberModel> createMember(AdminMemberModel member) =>
-      _dataSource.createMember(member);
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password}) =>
+      _dataSource.createMember(member, password: password);
 
   @override
-  Future<AdminMemberModel> updateMember(AdminMemberModel member) =>
-      _dataSource.updateMember(member);
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password}) =>
+      _dataSource.updateMember(member, password: password);
 
   @override
   Future<bool> deleteMember(int id) => _dataSource.deleteMember(id);

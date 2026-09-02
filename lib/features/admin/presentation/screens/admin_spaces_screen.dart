@@ -190,8 +190,8 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
               loading: () => ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: 3,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (_, __) => AppShimmer(
+                separatorBuilder: (context, _) => const SizedBox(height: 16),
+                itemBuilder: (context, _) => AppShimmer(
                   child: Container(
                     height: 200,
                     decoration: BoxDecoration(
@@ -229,7 +229,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: spaces.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    separatorBuilder: (context, _) => const SizedBox(height: 16),
                     itemBuilder: (context, index) {
                       final item = spaces[index];
                       return _buildSpaceCard(item);

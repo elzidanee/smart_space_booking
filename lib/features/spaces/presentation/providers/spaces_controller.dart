@@ -221,6 +221,26 @@ class BookingController extends StateNotifier<BookingFormState> {
   Future<ReservationModel?> submitBooking(int spaceId) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
+      // 1. Re-check ketersediaan slot real-time tepat sebelum submit (QA-004 / PRD §9)
+      final avail = await _repository.checkAvailability(
+        spaceId: spaceId,
+        tanggal: state.formattedDate,
+        jamMulai: state.formattedTime,
+        durasi: state.durationHours,
+      );
+
+      if (!avail.isAvailable) {
+        state = state.copyWith(
+          isSubmitting: false,
+          availabilityResult: avail,
+          errorMessage: avail.message.isNotEmpty
+              ? avail.message
+              : 'Slot ruangan pada jadwal ini sudah terisi oleh pemesan lain.',
+        );
+        return null;
+      }
+
+      // 2. Submit Pemesanan ke POST /api/reservasi
       final request = CreateReservationRequest(
         spaceId: spaceId,
         tanggal: state.formattedDate,
@@ -236,9 +256,10 @@ class BookingController extends StateNotifier<BookingFormState> {
       );
       return reservation;
     } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', '');
       state = state.copyWith(
         isSubmitting: false,
-        errorMessage: 'Gagal membuat reservasi: ${e.toString()}',
+        errorMessage: msg.isNotEmpty ? msg : 'Gagal membuat reservasi.',
       );
       return null;
     }

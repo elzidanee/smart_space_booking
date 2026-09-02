@@ -59,4 +59,9 @@ class AuthController extends AsyncNotifier<UserSession?> {
     await repository.logout();
     state = const AsyncValue.data(null);
   }
+
+  /// Dipanggil otomatis oleh HTTP interceptor saat menerima 401 Unauthorized (QA-003)
+  void forceLogout() {
+    state = const AsyncValue.data(null);
+  }
 }

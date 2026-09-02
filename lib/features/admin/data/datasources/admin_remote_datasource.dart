@@ -18,8 +18,8 @@ abstract class AdminRemoteDataSource {
 
   // 2. Master Data Member
   Future<List<AdminMemberModel>> getMembers({String? query});
-  Future<AdminMemberModel> createMember(AdminMemberModel member);
-  Future<AdminMemberModel> updateMember(AdminMemberModel member);
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password});
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password});
   Future<bool> deleteMember(int id);
 
   // 3. Master Data Space
@@ -372,47 +372,36 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   }
 
   @override
-  Future<AdminMemberModel> createMember(AdminMemberModel member) async {
-    try {
-      final response = await _dio.post(
-        ApiEndpoints.adminMembers,
-        data: member.toJson(),
-      );
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        final newMember = AdminMemberModel.fromJson(data);
-        _mockMembers.insert(0, newMember);
-        return newMember;
-      }
-      final newMember = member.copyWith(id: DateTime.now().millisecondsSinceEpoch % 10000);
-      _mockMembers.insert(0, newMember);
-      return newMember;
-    } catch (_) {
-      final newMember = member.copyWith(id: DateTime.now().millisecondsSinceEpoch % 10000);
+  Future<AdminMemberModel> createMember(AdminMemberModel member, {String? password}) async {
+    final response = await _dio.post(
+      ApiEndpoints.adminMembers,
+      data: member.toJson(password: password),
+    );
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      final newMember = AdminMemberModel.fromJson(data);
       _mockMembers.insert(0, newMember);
       return newMember;
     }
+    final newMember = member.copyWith(id: DateTime.now().millisecondsSinceEpoch % 10000);
+    _mockMembers.insert(0, newMember);
+    return newMember;
   }
 
   @override
-  Future<AdminMemberModel> updateMember(AdminMemberModel member) async {
-    try {
-      final response = await _dio.put(
-        ApiEndpoints.adminMemberDetail(member.id),
-        data: member.toJson(),
-      );
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        final updated = AdminMemberModel.fromJson(data);
-        _updateLocalMember(updated);
-        return updated;
-      }
-      _updateLocalMember(member);
-      return member;
-    } catch (_) {
-      _updateLocalMember(member);
-      return member;
+  Future<AdminMemberModel> updateMember(AdminMemberModel member, {String? password}) async {
+    final response = await _dio.put(
+      ApiEndpoints.adminMemberDetail(member.id),
+      data: member.toJson(password: password),
+    );
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      final updated = AdminMemberModel.fromJson(data);
+      _updateLocalMember(updated);
+      return updated;
     }
+    _updateLocalMember(member);
+    return member;
   }
 
   void _updateLocalMember(AdminMemberModel member) {
@@ -424,14 +413,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
 
   @override
   Future<bool> deleteMember(int id) async {
-    try {
-      await _dio.delete(ApiEndpoints.adminMemberDetail(id));
-      _mockMembers.removeWhere((m) => m.id == id);
-      return true;
-    } catch (_) {
-      _mockMembers.removeWhere((m) => m.id == id);
-      return true;
-    }
+    await _dio.delete(ApiEndpoints.adminMemberDetail(id));
+    _mockMembers.removeWhere((m) => m.id == id);
+    return true;
   }
 
   // ==========================================
@@ -643,9 +627,9 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
         ApiEndpoints.adminReservasi,
         queryParameters: {
           if (status != null && status.isNotEmpty && status != 'all') 'status': status,
-          if (month != null) 'month': month,
-          if (year != null) 'year': year,
-          if (idSpace != null) 'id_space': idSpace,
+          'month': ?month,
+          'year': ?year,
+          'id_space': ?idSpace,
           if (tanggal != null && tanggal.isNotEmpty) 'tanggal': tanggal,
           if (query != null && query.trim().isNotEmpty) 'search': query.trim(),
         },
@@ -951,8 +935,8 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
       final response = await _dio.get(
         ApiEndpoints.adminIncomeReport,
         queryParameters: {
-          if (month != null) 'month': month,
-          if (year != null) 'year': year,
+          'month': ?month,
+          'year': ?year,
         },
       );
       final dynamic data = response.data['data'] ?? response.data;
@@ -985,68 +969,60 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
   @override
   Future<String> uploadSpacePhoto(File file) async {
     final fileName = file.path.split(Platform.pathSeparator).last;
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: fileName,
-        ),
-      });
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        file.path,
+        filename: fileName,
+      ),
+    });
 
-      final response = await _dio.post(
-        ApiEndpoints.uploadSpace,
-        data: formData,
-      );
+    final response = await _dio.post(
+      ApiEndpoints.uploadSpace,
+      data: formData,
+    );
 
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        if (data['data'] != null && data['data']['filename'] != null) {
-          return data['data']['filename'].toString();
-        }
-        if (data['data'] != null && data['data']['foto_url'] != null) {
-          return data['data']['foto_url'].toString();
-        }
-        if (data['filename'] != null) {
-          return data['filename'].toString();
-        }
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      if (data['data'] != null && data['data']['filename'] != null) {
+        return data['data']['filename'].toString();
       }
-      return file.path;
-    } catch (_) {
-      return file.path;
+      if (data['data'] != null && data['data']['foto_url'] != null) {
+        return data['data']['foto_url'].toString();
+      }
+      if (data['filename'] != null) {
+        return data['filename'].toString();
+      }
     }
+    throw Exception('Gagal mengunggah foto ruangan: Respon server tidak valid.');
   }
 
   @override
   Future<String> uploadMemberPhoto(File file) async {
     final fileName = file.path.split(Platform.pathSeparator).last;
-    try {
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(
-          file.path,
-          filename: fileName,
-        ),
-      });
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        file.path,
+        filename: fileName,
+      ),
+    });
 
-      final response = await _dio.post(
-        ApiEndpoints.uploadMember,
-        data: formData,
-      );
+    final response = await _dio.post(
+      ApiEndpoints.uploadMember,
+      data: formData,
+    );
 
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        if (data['data'] != null && data['data']['filename'] != null) {
-          return data['data']['filename'].toString();
-        }
-        if (data['data'] != null && data['data']['foto_url'] != null) {
-          return data['data']['foto_url'].toString();
-        }
-        if (data['filename'] != null) {
-          return data['filename'].toString();
-        }
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      if (data['data'] != null && data['data']['filename'] != null) {
+        return data['data']['filename'].toString();
       }
-      return file.path;
-    } catch (_) {
-      return file.path;
+      if (data['data'] != null && data['data']['foto_url'] != null) {
+        return data['data']['foto_url'].toString();
+      }
+      if (data['filename'] != null) {
+        return data['filename'].toString();
+      }
     }
+    throw Exception('Gagal mengunggah foto member: Respon server tidak valid.');
   }
 }

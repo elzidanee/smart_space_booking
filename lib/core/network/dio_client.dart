@@ -2,12 +2,18 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/secure_storage_service.dart';
+import '../../features/auth/presentation/providers/auth_controller.dart';
 import 'api_endpoints.dart';
 import 'api_header_interceptor.dart';
 
 final dioClientProvider = Provider<Dio>((ref) {
   final storage = ref.watch(secureStorageServiceProvider);
-  return DioClient.createDio(storage);
+  return DioClient.createDio(
+    storage,
+    onSessionExpired: () {
+      ref.read(authControllerProvider.notifier).forceLogout();
+    },
+  );
 });
 
 /// Client konfigurasi Dio dengan interceptor terpusat dan timeout 15 detik.

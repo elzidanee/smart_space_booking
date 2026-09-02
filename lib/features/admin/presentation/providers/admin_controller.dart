@@ -56,7 +56,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
     ref.read(adminMembersSearchQueryProvider.notifier).state = query;
   }
 
-  Future<void> createMember(AdminMemberModel member, {File? photoFile}) async {
+  Future<void> createMember(AdminMemberModel member, {File? photoFile, String? password}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
@@ -65,13 +65,13 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
         photoUrl = await repo.uploadMemberPhoto(photoFile);
       }
       final newMember = member.copyWith(foto: photoUrl ?? photoFile?.path ?? member.foto);
-      await repo.createMember(newMember);
+      await repo.createMember(newMember, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
   }
 
-  Future<void> updateMember(AdminMemberModel member, {File? photoFile}) async {
+  Future<void> updateMember(AdminMemberModel member, {File? photoFile, String? password}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
@@ -80,7 +80,7 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
         photoUrl = await repo.uploadMemberPhoto(photoFile);
       }
       final updatedMember = member.copyWith(foto: photoUrl ?? photoFile?.path ?? member.foto);
-      await repo.updateMember(updatedMember);
+      await repo.updateMember(updatedMember, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
@@ -368,7 +368,7 @@ final adminDashboardSummaryProvider =
       "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
   final todayList = allReservations.where((r) {
-    return r.tanggal == todayString || r.tanggal.startsWith('2026-09-01');
+    return r.tanggal == todayString;
   }).toList();
 
   final pendingList =
@@ -379,7 +379,7 @@ final adminDashboardSummaryProvider =
       allReservations.where((r) => r.status == 'selesai').toList();
 
   return AdminDashboardData(
-    todayReservations: todayList.isNotEmpty ? todayList : allReservations.take(4).toList(),
+    todayReservations: todayList,
     pendingReservations: pendingList,
     activeReservations: activeList,
     totalReservationsCount: allReservations.length,

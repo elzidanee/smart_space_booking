@@ -91,8 +91,8 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
         loading: () => ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: 3,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, __) => const AppShimmer(
+          separatorBuilder: (context, _) => const SizedBox(height: 12),
+          itemBuilder: (context, _) => const AppShimmer(
             child: ShimmerPlaceholder(height: 100, borderRadius: 16),
           ),
         ),
@@ -124,7 +124,7 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: discounts.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (context, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final item = discounts[index];
                 return _buildDiscountCard(item);

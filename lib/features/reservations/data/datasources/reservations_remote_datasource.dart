@@ -37,281 +37,113 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
 
   ReservationsRemoteDataSourceImpl(this._dio);
 
-  // In-memory mock list untuk testing & fallback offline
-  static final List<ReservationModel> _mockReservations = [
-    const ReservationModel(
-      id: 101,
-      kodeBooking: '#BOOK-20260830-0012',
-      spaceId: 1,
-      namaSpace: 'Flexi Desk 01 (Sora Med)',
-      tipeSpace: 'personal_desk',
-      fotoSpace: 'https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?w=800&q=80',
-      tanggal: '2026-08-30',
-      jamMulai: '09:00',
-      jamSelesai: '12:00',
-      durasi: 3,
-      subtotal: 60000,
-      potonganDiskon: 0,
-      totalBayar: 60000,
-      status: 'belum_dikonfirm',
-      namaMember: 'Ahmad Fauzi',
-      teleponMember: '081234567890',
-      createdAt: '2026-08-29T10:00:00.000Z',
-    ),
-    const ReservationModel(
-      id: 102,
-      kodeBooking: '#BOOK-20260825-0045',
-      spaceId: 2,
-      namaSpace: 'Meeting Room Alpha',
-      tipeSpace: 'meeting_room',
-      fotoSpace: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
-      tanggal: '2026-08-25',
-      jamMulai: '13:00',
-      jamSelesai: '15:00',
-      durasi: 2,
-      subtotal: 200000,
-      potonganDiskon: 40000,
-      totalBayar: 160000,
-      status: 'disetujui',
-      namaMember: 'Ahmad Fauzi',
-      teleponMember: '081234567890',
-      createdAt: '2026-08-24T08:30:00.000Z',
-    ),
-    const ReservationModel(
-      id: 103,
-      kodeBooking: '#BOOK-20260824-0010',
-      spaceId: 3,
-      namaSpace: 'Private Office Suite B',
-      tipeSpace: 'private_office',
-      fotoSpace: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
-      tanggal: '2026-08-24',
-      jamMulai: '14:00',
-      jamSelesai: '17:00',
-      durasi: 3,
-      subtotal: 450000,
-      potonganDiskon: 90000,
-      totalBayar: 360000,
-      status: 'aktif',
-      namaMember: 'Ahmad Fauzi',
-      teleponMember: '081234567890',
-      createdAt: '2026-08-23T14:15:00.000Z',
-    ),
-    const ReservationModel(
-      id: 104,
-      kodeBooking: '#BOOK-20260515-0088',
-      spaceId: 2,
-      namaSpace: 'Ruang Rapat Utama Alpha',
-      tipeSpace: 'meeting_room',
-      fotoSpace: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=800&q=80',
-      tanggal: '2026-05-15',
-      jamMulai: '09:00',
-      jamSelesai: '14:00',
-      durasi: 5,
-      subtotal: 500000,
-      potonganDiskon: 0,
-      totalBayar: 500000,
-      status: 'selesai',
-      namaMember: 'Ahmad Fauzi',
-      teleponMember: '081234567890',
-      createdAt: '2026-05-14T09:00:00.000Z',
-    ),
-    const ReservationModel(
-      id: 105,
-      kodeBooking: '#BOOK-20260510-0033',
-      spaceId: 4,
-      namaSpace: 'Private Pod B',
-      tipeSpace: 'personal_desk',
-      fotoSpace: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
-      tanggal: '2026-05-10',
-      jamMulai: '10:00',
-      jamSelesai: '14:00',
-      durasi: 4,
-      subtotal: 100000,
-      potonganDiskon: 0,
-      totalBayar: 100000,
-      status: 'dibatalkan',
-      namaMember: 'Ahmad Fauzi',
-      teleponMember: '081234567890',
-      createdAt: '2026-05-09T11:00:00.000Z',
-    ),
-  ];
-
   @override
   Future<List<ReservationModel>> getMyReservations({String? status}) async {
-    try {
-      final response = await _dio.get(
-        ApiEndpoints.reservasiMy,
-        queryParameters: {
-          if (status != null && status.isNotEmpty && status != 'all') 'status': status,
-        },
-      );
+    final response = await _dio.get(
+      ApiEndpoints.reservasiMy,
+      queryParameters: {
+        if (status != null && status.isNotEmpty && status != 'all') 'status': status,
+      },
+    );
 
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is List) {
-        return data.map((json) => ReservationModel.fromJson(json as Map<String, dynamic>)).toList();
-      }
-      return _filterMockReservations(status);
-    } catch (_) {
-      return _filterMockReservations(status);
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is List) {
+      return data.map((json) => ReservationModel.fromJson(json as Map<String, dynamic>)).toList();
     }
-  }
-
-  List<ReservationModel> _filterMockReservations(String? status) {
-    if (status == null || status.isEmpty || status == 'all') {
-      return List.from(_mockReservations);
-    }
-    return _mockReservations.where((r) {
-      if (status == 'menunggu') return r.status == 'belum_dikonfirm';
-      return r.status.toLowerCase() == status.toLowerCase();
-    }).toList();
+    return [];
   }
 
   @override
   Future<ReservationHistorySummary> getMyHistory({int? bulan, int? tahun}) async {
-    try {
-      final response = await _dio.get(
-        ApiEndpoints.reservasiMyHistory,
-        queryParameters: {
-          // API panitia memakai 'month' dan 'year' (bukan bulan/tahun)
-          if (bulan != null) 'month': bulan,
-          if (tahun != null) 'year': tahun,
-        },
+    final response = await _dio.get(
+      ApiEndpoints.reservasiMyHistory,
+      queryParameters: {
+        // API panitia memakai 'month' dan 'year' (bukan bulan/tahun)
+        'month': ?bulan,
+        'year': ?tahun,
+      },
+    );
+
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      // API mengembalikan: { month, year, total_reservasi, total_pengeluaran, items: [...] }
+      final listData = data['items'] ?? data['reservasi'] ?? [];
+      final items = (listData as List)
+          .map((json) => ReservationModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      final totalBayar = data['total_pengeluaran'] is int
+          ? data['total_pengeluaran']
+          : int.tryParse(data['total_pengeluaran']?.toString() ?? '0') ?? 0;
+      final totalJam = data['total_jam'] is int
+          ? data['total_jam']
+          : int.tryParse(data['total_jam']?.toString() ?? '0') ?? 0;
+      final totalTx = data['total_reservasi'] is int
+          ? data['total_reservasi']
+          : items.length;
+
+      return ReservationHistorySummary(
+        items: items,
+        totalPengeluaran: totalBayar,
+        totalJam: totalJam,
+        totalTransaksi: totalTx,
       );
-
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        // API mengembalikan: { month, year, total_reservasi, total_pengeluaran, items: [...] }
-        final listData = data['items'] ?? data['reservasi'] ?? [];
-        final items = (listData as List)
-            .map((json) => ReservationModel.fromJson(json as Map<String, dynamic>))
-            .toList();
-
-        final totalBayar = data['total_pengeluaran'] is int
-            ? data['total_pengeluaran']
-            : int.tryParse(data['total_pengeluaran']?.toString() ?? '0') ?? 0;
-        final totalJam = data['total_jam'] is int
-            ? data['total_jam']
-            : int.tryParse(data['total_jam']?.toString() ?? '0') ?? 0;
-        final totalTx = data['total_reservasi'] is int
-            ? data['total_reservasi']
-            : items.length;
-
-        return ReservationHistorySummary(
-          items: items,
-          totalPengeluaran: totalBayar,
-          totalJam: totalJam,
-          totalTransaksi: totalTx,
-        );
-      }
-      return _filterMockHistory(bulan, tahun);
-    } catch (_) {
-      return _filterMockHistory(bulan, tahun);
     }
-  }
-
-  ReservationHistorySummary _filterMockHistory(int? bulan, int? tahun) {
-    final filtered = _mockReservations.where((r) {
-      if (bulan != null) {
-        try {
-          final dt = DateTime.parse(r.tanggal);
-          if (dt.month != bulan) return false;
-          if (tahun != null && dt.year != tahun) return false;
-        } catch (_) {}
-      }
-      return true;
-    }).toList();
-
-    int totalPengeluaran = 0;
-    int totalJam = 0;
-
-    for (final item in filtered) {
-      if (item.status != 'dibatalkan') {
-        totalPengeluaran += item.totalBayar;
-        totalJam += item.durasi;
-      }
-    }
-
-    return ReservationHistorySummary(
-      items: filtered,
-      totalPengeluaran: totalPengeluaran,
-      totalJam: totalJam,
-      totalTransaksi: filtered.length,
+    return const ReservationHistorySummary(
+      items: [],
+      totalPengeluaran: 0,
+      totalJam: 0,
+      totalTransaksi: 0,
     );
   }
 
   @override
   Future<ReservationModel> getReservationById(int id) async {
-    try {
-      final response = await _dio.get(ApiEndpoints.reservasiDetail(id));
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        return ReservationModel.fromJson(data);
-      }
-      return _mockReservations.firstWhere((r) => r.id == id,
-          orElse: () => _mockReservations.first);
-    } catch (_) {
-      return _mockReservations.firstWhere((r) => r.id == id,
-          orElse: () => _mockReservations.first);
+    final response = await _dio.get(ApiEndpoints.reservasiDetail(id));
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return ReservationModel.fromJson(data);
     }
+    throw Exception('Data reservasi #$id tidak ditemukan.');
   }
 
   @override
   Future<bool> cancelReservation(int id) async {
-    try {
-      // PATCH /api/reservasi/{id}/cancel (sesuai kontrak endpoint.md)
-      await _dio.patch(ApiEndpoints.cancelReservasi(id));
-      // Update mock in-memory
-      final index = _mockReservations.indexWhere((r) => r.id == id);
-      if (index != -1) {
-        _mockReservations[index] = _mockReservations[index].copyWith(status: 'dibatalkan');
-      }
-      return true;
-    } catch (_) {
-      // Mock cancel fallback
-      final index = _mockReservations.indexWhere((r) => r.id == id);
-      if (index != -1) {
-        _mockReservations[index] = _mockReservations[index].copyWith(status: 'dibatalkan');
-      }
-      return true;
-    }
+    await _dio.patch(ApiEndpoints.cancelReservasi(id));
+    return true;
   }
 
   @override
   Future<ReservationModel> getETicket(int id) async {
-    try {
-      final response = await _dio.get(ApiEndpoints.eTicket(id));
-      final dynamic raw = response.data['data'] ?? response.data;
-      if (raw is Map<String, dynamic>) {
-        // API e-ticket mengembalikan struktur berbeda:
-        // { e_ticket_number, kode_booking, coworking_space, member, space, jadwal, rincian_pembayaran, status_reservasi, qr_code_payload }
-        // Map ke ReservationModel untuk konsistensi UI
-        final jadwal = raw['jadwal'] as Map<String, dynamic>? ?? {};
-        final space = raw['space'] as Map<String, dynamic>? ?? {};
-        final rincian = raw['rincian_pembayaran'] as Map<String, dynamic>? ?? {};
-        final member = raw['member'] as Map<String, dynamic>? ?? {};
+    final response = await _dio.get(ApiEndpoints.eTicket(id));
+    final dynamic raw = response.data['data'] ?? response.data;
+    if (raw is Map<String, dynamic>) {
+      // API e-ticket mengembalikan struktur:
+      // { e_ticket_number, kode_booking, coworking_space, member, space, jadwal, rincian_pembayaran, status_reservasi, qr_code_payload }
+      final jadwal = raw['jadwal'] as Map<String, dynamic>? ?? {};
+      final space = raw['space'] as Map<String, dynamic>? ?? {};
+      final rincian = raw['rincian_pembayaran'] as Map<String, dynamic>? ?? {};
+      final member = raw['member'] as Map<String, dynamic>? ?? {};
 
-        return ReservationModel(
-          id: id,
-          kodeBooking: raw['kode_booking']?.toString() ?? '',
-          spaceId: space['id'] is int ? space['id'] : int.tryParse(space['id']?.toString() ?? '$id') ?? id,
-          namaSpace: space['nama_space']?.toString() ?? space['nama']?.toString(),
-          tipeSpace: space['tipe']?.toString(),
-          fotoSpace: space['foto_url']?.toString() ?? space['foto']?.toString(),
-          tanggal: jadwal['tanggal_reservasi']?.toString() ?? '',
-          jamMulai: jadwal['jam_mulai']?.toString() ?? '',
-          jamSelesai: jadwal['jam_selesai']?.toString() ?? '',
-          durasi: jadwal['durasi_jam'] is int ? jadwal['durasi_jam'] : int.tryParse(jadwal['durasi_jam']?.toString() ?? '1') ?? 1,
-          subtotal: rincian['total_harga_awal'] is int ? rincian['total_harga_awal'] : int.tryParse(rincian['total_harga_awal']?.toString() ?? '0') ?? 0,
-          potonganDiskon: rincian['potongan_diskon'] is int ? rincian['potongan_diskon'] : int.tryParse(rincian['potongan_diskon']?.toString() ?? '0') ?? 0,
-          totalBayar: rincian['total_bayar'] is int ? rincian['total_bayar'] : int.tryParse(rincian['total_bayar']?.toString() ?? '0') ?? 0,
-          status: raw['status_reservasi']?.toString() ?? 'disetujui',
-          namaMember: member['nama_member']?.toString(),
-          teleponMember: member['telp']?.toString(),
-        );
-      }
-      return getReservationById(id);
-    } catch (_) {
-      return getReservationById(id);
+      return ReservationModel(
+        id: id,
+        kodeBooking: raw['kode_booking']?.toString() ?? '',
+        spaceId: space['id'] is int ? space['id'] : int.tryParse(space['id']?.toString() ?? '$id') ?? id,
+        namaSpace: space['nama_space']?.toString() ?? space['nama']?.toString(),
+        tipeSpace: space['tipe']?.toString(),
+        fotoSpace: space['foto_url']?.toString() ?? space['foto']?.toString(),
+        tanggal: jadwal['tanggal_reservasi']?.toString() ?? '',
+        jamMulai: jadwal['jam_mulai']?.toString() ?? '',
+        jamSelesai: jadwal['jam_selesai']?.toString() ?? '',
+        durasi: jadwal['durasi_jam'] is int ? jadwal['durasi_jam'] : int.tryParse(jadwal['durasi_jam']?.toString() ?? '1') ?? 1,
+        subtotal: rincian['total_harga_awal'] is int ? rincian['total_harga_awal'] : int.tryParse(rincian['total_harga_awal']?.toString() ?? '0') ?? 0,
+        potonganDiskon: rincian['potongan_diskon'] is int ? rincian['potongan_diskon'] : int.tryParse(rincian['potongan_diskon']?.toString() ?? '0') ?? 0,
+        totalBayar: rincian['total_bayar'] is int ? rincian['total_bayar'] : int.tryParse(rincian['total_bayar']?.toString() ?? '0') ?? 0,
+        status: raw['status_reservasi']?.toString() ?? 'disetujui',
+        namaMember: member['nama_member']?.toString(),
+        teleponMember: member['telp']?.toString(),
+      );
     }
+    return getReservationById(id);
   }
 }

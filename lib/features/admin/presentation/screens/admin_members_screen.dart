@@ -36,11 +36,12 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
       ),
       builder: (context) => _MemberFormBottomSheet(
         member: member,
-        onSave: (savedMember, photoFile) {
+        onSave: (savedMember, photoFile, password) {
           if (member == null) {
             ref.read(adminMembersControllerProvider.notifier).createMember(
                   savedMember,
                   photoFile: photoFile,
+                  password: password,
                 );
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -52,6 +53,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
             ref.read(adminMembersControllerProvider.notifier).updateMember(
                   savedMember,
                   photoFile: photoFile,
+                  password: password,
                 );
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -147,8 +149,8 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
               loading: () => ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: 4,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, __) => const AppShimmer(
+                separatorBuilder: (context, _) => const SizedBox(height: 12),
+                itemBuilder: (context, _) => const AppShimmer(
                   child: ShimmerPlaceholder(height: 90, borderRadius: 16),
                 ),
               ),
@@ -180,7 +182,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: members.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = members[index];
                       return _buildMemberCard(item);
@@ -322,7 +324,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
 
 class _MemberFormBottomSheet extends StatefulWidget {
   final AdminMemberModel? member;
-  final void Function(AdminMemberModel member, File? photoFile) onSave;
+  final void Function(AdminMemberModel member, File? photoFile, String? password) onSave;
 
   const _MemberFormBottomSheet({
     this.member,
@@ -337,9 +339,11 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _namaCtrl;
   late TextEditingController _usernameCtrl;
+  late TextEditingController _passwordCtrl;
   late TextEditingController _instansiCtrl;
   late TextEditingController _teleponCtrl;
   late TextEditingController _alamatCtrl;
+  bool _obscurePassword = true;
   File? _selectedPhotoFile;
   String? _existingFotoUrl;
 
@@ -348,6 +352,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
     super.initState();
     _namaCtrl = TextEditingController(text: widget.member?.nama ?? '');
     _usernameCtrl = TextEditingController(text: widget.member?.username ?? '');
+    _passwordCtrl = TextEditingController();
     _instansiCtrl = TextEditingController(text: widget.member?.instansi ?? '');
     _teleponCtrl = TextEditingController(text: widget.member?.telepon ?? '');
     _alamatCtrl = TextEditingController(text: widget.member?.alamat ?? '');
@@ -358,6 +363,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
   void dispose() {
     _namaCtrl.dispose();
     _usernameCtrl.dispose();
+    _passwordCtrl.dispose();
     _instansiCtrl.dispose();
     _teleponCtrl.dispose();
     _alamatCtrl.dispose();
@@ -379,7 +385,8 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
       createdAt: widget.member?.createdAt ?? DateTime.now().toIso8601String(),
     );
 
-    widget.onSave(member, _selectedPhotoFile);
+    final pass = _passwordCtrl.text.trim().isNotEmpty ? _passwordCtrl.text.trim() : null;
+    widget.onSave(member, _selectedPhotoFile, pass);
     Navigator.of(context).pop();
   }
 
@@ -452,6 +459,30 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
                 ),
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Username wajib diisi' : null,
+              ),
+              const SizedBox(height: 12),
+
+              // Password field (wajib saat create member, opsional saat edit) (QA-005, QA-006)
+              TextFormField(
+                controller: _passwordCtrl,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: isEdit ? 'Password Baru (Opsional)' : 'Password Akun *',
+                  hintText: isEdit ? 'Kosongkan bila tidak ingin diubah' : 'Minimal 6 karakter',
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+                validator: (v) {
+                  if (!isEdit && (v == null || v.trim().length < 6)) {
+                    return 'Password minimal 6 karakter';
+                  }
+                  if (isEdit && v != null && v.isNotEmpty && v.length < 6) {
+                    return 'Password minimal 6 karakter';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
 

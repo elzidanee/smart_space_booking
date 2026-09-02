@@ -32,6 +32,11 @@ class _AdminReservationsScreenState
     (label: 'Dibatalkan', value: 'dibatalkan'),
   ];
 
+  final List<String> _monthNames = const [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -50,6 +55,185 @@ class _AdminReservationsScreenState
     ref
         .read(adminReservationsControllerProvider.notifier)
         .updateFilter(currentFilter.copyWith(status: status));
+  }
+
+  void _showFilterModal(BuildContext context) {
+    final currentFilter = ref.read(adminReservationsFilterProvider);
+    final spacesAsync = ref.read(adminSpacesControllerProvider);
+
+    int? selectedMonth = currentFilter.month;
+    int? selectedYear = currentFilter.year ?? DateTime.now().year;
+    int? selectedSpaceId = currentFilter.idSpace;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Filter Reservasi Lengkap', style: AppTypography.h2),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Filter Ruangan / Space
+                  Text('Filter Berdasarkan Ruangan:', style: AppTypography.captionMedium),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int?>(
+                    initialValue: selectedSpaceId,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('Semua Ruangan (All Spaces)')),
+                      if (spacesAsync.value != null)
+                        ...spacesAsync.value!.map(
+                          (s) => DropdownMenuItem(
+                            value: s.id,
+                            child: Text('${s.nama} (${s.tipe})'),
+                          ),
+                        ),
+                    ],
+                    onChanged: (val) => setModalState(() => selectedSpaceId = val),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Filter Periode Bulan & Tahun
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Bulan:', style: AppTypography.captionMedium),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<int?>(
+                              initialValue: selectedMonth,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              items: [
+                                const DropdownMenuItem(value: null, child: Text('Semua Bulan')),
+                                ...List.generate(
+                                  12,
+                                  (i) => DropdownMenuItem(
+                                    value: i + 1,
+                                    child: Text(_monthNames[i]),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (val) => setModalState(() => selectedMonth = val),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Tahun:', style: AppTypography.captionMedium),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<int>(
+                              initialValue: selectedYear,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              items: [2025, 2026, 2027, 2028, 2029, 2030].map(
+                                (y) => DropdownMenuItem(value: y, child: Text('$y')),
+                              ).toList(),
+                              onChanged: (val) {
+                                if (val != null) setModalState(() => selectedYear = val);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            ref.read(adminReservationsControllerProvider.notifier).updateFilter(
+                              AdminReservationsFilterState(
+                                status: currentFilter.status,
+                                query: currentFilter.query,
+                              ),
+                            );
+                            Navigator.of(ctx).pop();
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Reset Filter'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            ref.read(adminReservationsControllerProvider.notifier).updateFilter(
+                              currentFilter.copyWith(
+                                idSpace: selectedSpaceId,
+                                clearSpace: selectedSpaceId == null,
+                                month: selectedMonth,
+                                clearMonth: selectedMonth == null,
+                                year: selectedYear,
+                              ),
+                            );
+                            Navigator.of(ctx).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Terapkan'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -90,10 +274,31 @@ class _AdminReservationsScreenState
         .updateFilter(currentFilter.copyWith(clearTanggal: true));
   }
 
+  void _clearSpaceFilter() {
+    final currentFilter = ref.read(adminReservationsFilterProvider);
+    ref
+        .read(adminReservationsControllerProvider.notifier)
+        .updateFilter(currentFilter.copyWith(clearSpace: true));
+  }
+
+  void _clearMonthFilter() {
+    final currentFilter = ref.read(adminReservationsFilterProvider);
+    ref
+        .read(adminReservationsControllerProvider.notifier)
+        .updateFilter(currentFilter.copyWith(clearMonth: true));
+  }
+
   @override
   Widget build(BuildContext context) {
     final filter = ref.watch(adminReservationsFilterProvider);
     final reservationsAsync = ref.watch(adminReservationsControllerProvider);
+    final spacesAsync = ref.watch(adminSpacesControllerProvider);
+
+    String? selectedSpaceName;
+    if (filter.idSpace != null && spacesAsync.value != null) {
+      final found = spacesAsync.value!.where((s) => s.id == filter.idSpace).firstOrNull;
+      selectedSpaceName = found?.nama;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.surface50,
@@ -105,6 +310,18 @@ class _AdminReservationsScreenState
         actions: [
           IconButton(
             icon: Icon(
+              (filter.idSpace != null || filter.month != null)
+                  ? Icons.filter_alt
+                  : Icons.filter_alt_outlined,
+              color: (filter.idSpace != null || filter.month != null)
+                  ? AppColors.secondary
+                  : AppColors.ink600,
+            ),
+            tooltip: 'Filter Ruangan & Periode',
+            onPressed: () => _showFilterModal(context),
+          ),
+          IconButton(
+            icon: Icon(
               filter.tanggal != null
                   ? Icons.event_available_rounded
                   : Icons.calendar_month_outlined,
@@ -112,15 +329,9 @@ class _AdminReservationsScreenState
                   ? AppColors.secondary
                   : AppColors.ink600,
             ),
-            tooltip: 'Filter Tanggal',
+            tooltip: 'Filter Tanggal Spesifik',
             onPressed: () => _selectDate(context),
           ),
-          if (filter.tanggal != null)
-            IconButton(
-              icon: const Icon(Icons.clear, color: AppColors.danger),
-              tooltip: 'Hapus Filter Tanggal',
-              onPressed: _clearDateFilter,
-            ),
         ],
       ),
       body: Column(
@@ -165,34 +376,49 @@ class _AdminReservationsScreenState
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
-                // Active Date Filter Badge if Selected
-                if (filter.tanggal != null) ...[
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.event, size: 14, color: AppColors.secondary),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Tanggal: ${filter.tanggal}',
-                              style: AppTypography.captionMedium.copyWith(
-                                color: AppColors.secondary,
-                                fontSize: 12,
-                              ),
+                // Active Filter Badges (Space, Bulan/Tahun, Tanggal)
+                if (filter.tanggal != null || filter.idSpace != null || filter.month != null) ...[
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        if (filter.tanggal != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Chip(
+                              backgroundColor: AppColors.secondaryContainer,
+                              avatar: const Icon(Icons.event, size: 14, color: AppColors.secondary),
+                              label: Text('Tgl: ${filter.tanggal}', style: const TextStyle(fontSize: 12, color: AppColors.secondary)),
+                              deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.secondary),
+                              onDeleted: _clearDateFilter,
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ),
+                        if (selectedSpaceName != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Chip(
+                              backgroundColor: AppColors.surface50,
+                              avatar: const Icon(Icons.meeting_room_outlined, size: 14, color: AppColors.ink900),
+                              label: Text('Space: $selectedSpaceName', style: const TextStyle(fontSize: 12, color: AppColors.ink900)),
+                              deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.ink900),
+                              onDeleted: _clearSpaceFilter,
+                            ),
+                          ),
+                        if (filter.month != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Chip(
+                              backgroundColor: AppColors.surface50,
+                              avatar: const Icon(Icons.calendar_view_month, size: 14, color: AppColors.ink900),
+                              label: Text('Bulan: ${_monthNames[filter.month! - 1]} ${filter.year ?? ''}', style: const TextStyle(fontSize: 12, color: AppColors.ink900)),
+                              deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.ink900),
+                              onDeleted: _clearMonthFilter,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -235,8 +461,8 @@ class _AdminReservationsScreenState
               loading: () => ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: 4,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (_, __) => const AppShimmer(
+                separatorBuilder: (context, _) => const SizedBox(height: 12),
+                itemBuilder: (context, _) => const AppShimmer(
                   child: ShimmerPlaceholder(height: 140, borderRadius: 16),
                 ),
               ),
@@ -269,7 +495,7 @@ class _AdminReservationsScreenState
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: reservations.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = reservations[index];
                       return _buildReservationCard(context, item);

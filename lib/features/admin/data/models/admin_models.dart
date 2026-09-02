@@ -40,9 +40,9 @@ class AdminProfileModel {
       'nama_coworking': namaSpace,   // API field: nama_coworking
       'nama_pemilik': namaPemilik,
       'telp': telepon,               // API field: telp (bukan telepon)
-      'alamat': alamat,
-      'deskripsi_fasilitas': deskripsiFasilitas,
-      if (foto != null) 'foto': foto,
+      if (alamat.isNotEmpty) 'alamat': alamat,
+      if (deskripsiFasilitas.isNotEmpty) 'deskripsi_fasilitas': deskripsiFasilitas,
+      if (foto != null && foto!.isNotEmpty) 'foto': foto,
     };
   }
 
@@ -110,14 +110,15 @@ class AdminMemberModel {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({String? password}) {
     return {
       'nama_member': nama,   // API field: nama_member
       'instansi': instansi,
       'telp': telepon,       // API field: telp (bukan telepon)
       'alamat': alamat,
       'username': username,
-      if (foto != null) 'foto': foto,
+      if (password != null && password.isNotEmpty) 'password': password,
+      if (foto != null && foto!.isNotEmpty) 'foto': foto,
     };
   }
 
@@ -143,6 +144,74 @@ class AdminMemberModel {
       totalReservasi: totalReservasi ?? this.totalReservasi,
       createdAt: createdAt ?? this.createdAt,
     );
+  }
+}
+
+/// Model Request Tambah Member Baru oleh Admin (POST /api/admin/members) (QA-005)
+class AdminMemberCreateRequest {
+  final String nama;
+  final String instansi;
+  final String telepon;
+  final String alamat;
+  final String username;
+  final String password;
+  final String? foto;
+
+  const AdminMemberCreateRequest({
+    required this.nama,
+    required this.instansi,
+    required this.telepon,
+    required this.alamat,
+    required this.username,
+    required this.password,
+    this.foto,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'nama_member': nama,
+      'instansi': instansi,
+      'telp': telepon,
+      'alamat': alamat,
+      'username': username,
+      'password': password,
+      if (foto != null && foto!.isNotEmpty) 'foto': foto,
+    };
+  }
+}
+
+/// Model Request Update Member oleh Admin (PUT /api/admin/members/{id}) (QA-006)
+class AdminMemberUpdateRequest {
+  final int id;
+  final String? nama;
+  final String? instansi;
+  final String? telepon;
+  final String? alamat;
+  final String? username;
+  final String? password;
+  final String? foto;
+
+  const AdminMemberUpdateRequest({
+    required this.id,
+    this.nama,
+    this.instansi,
+    this.telepon,
+    this.alamat,
+    this.username,
+    this.password,
+    this.foto,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (nama != null) 'nama_member': nama,
+      if (instansi != null) 'instansi': instansi,
+      if (telepon != null) 'telp': telepon,
+      if (alamat != null) 'alamat': alamat,
+      if (username != null) 'username': username,
+      if (password != null && password!.isNotEmpty) 'password': password,
+      if (foto != null && foto!.isNotEmpty) 'foto': foto,
+    };
   }
 }
 

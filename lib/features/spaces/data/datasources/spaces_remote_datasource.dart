@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
@@ -170,36 +169,22 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
 
   @override
   Future<SpaceModel> getSpaceById(int id) async {
-    try {
-      final response = await _dio.get('${ApiEndpoints.spaces}/$id');
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        return SpaceModel.fromJson(data);
-      }
-      return _mockSpaces.firstWhere((s) => s.id == id, orElse: () => _mockSpaces.first);
-    } catch (e) {
-      // ignore: avoid_print
-      debugPrint('[SpacesDS] getSpaceById($id) fallback to mock: $e');
-      return _mockSpaces.firstWhere((s) => s.id == id, orElse: () => _mockSpaces.first);
+    final response = await _dio.get('${ApiEndpoints.spaces}/$id');
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return SpaceModel.fromJson(data);
     }
+    throw Exception('Detail ruangan dengan ID $id tidak ditemukan.');
   }
 
   @override
   Future<List<Map<String, dynamic>>> getActiveDiscounts() async {
-    try {
-      final response = await _dio.get(ApiEndpoints.diskonActive);
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is List) {
-        return data.cast<Map<String, dynamic>>();
-      }
-      return [];
-    } catch (_) {
-      // Fallback mock: tampilkan promo aktif default
-      return [
-        {'id': 1, 'nama_diskon': 'DISKONHEMAT20', 'persentase_diskon': 20, 'tanggal_awal': '2026-08-01', 'tanggal_akhir': '2026-12-31'},
-        {'id': 2, 'nama_diskon': 'DISKONMEMBER10', 'persentase_diskon': 10, 'tanggal_awal': '2026-01-01', 'tanggal_akhir': '2026-12-31'},
-      ];
+    final response = await _dio.get(ApiEndpoints.diskonActive);
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is List) {
+      return data.cast<Map<String, dynamic>>();
     }
+    return [];
   }
 
   @override
@@ -232,25 +217,26 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
         jamMulai: jamMulai,
         durasi: durasi,
       );
-    } catch (e) {
-      // Jika error 400 berarti sudah terisi
-      final errMsg = e.toString().toLowerCase();
-      if (errMsg.contains('400') || errMsg.contains('tidak tersedia') || errMsg.contains('sudah terisi')) {
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final responseData = e.response?.data;
+      String message = 'Space tidak tersedia pada jadwal yang dipilih.';
+      if (responseData is Map<String, dynamic> && responseData['message'] != null) {
+        message = responseData['message'].toString();
+      }
+      if (statusCode == 400 ||
+          statusCode == 409 ||
+          message.toLowerCase().contains('tidak tersedia') ||
+          message.toLowerCase().contains('sudah terisi')) {
         return AvailabilityCheckResult(
           isAvailable: false,
-          message: 'Space sudah terisi pada jadwal yang dipilih.',
+          message: message,
           tanggal: tanggal,
           jamMulai: jamMulai,
           durasi: durasi,
         );
       }
-      return AvailabilityCheckResult(
-        isAvailable: true,
-        message: 'Space tersedia (Verified Offline)',
-        tanggal: tanggal,
-        jamMulai: jamMulai,
-        durasi: durasi,
-      );
+      rethrow;
     }
   }
 
@@ -258,108 +244,30 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
   Future<PromoCheckResult> checkPromo(String kodePromo, {int subtotal = 0}) async {
     final cleanKode = kodePromo.trim().toUpperCase();
 
-    try {
-      // POST /api/diskon/check — body: { nama_diskon } sesuai kontrak API
-      final response = await _dio.post(
-        ApiEndpoints.checkDiskon,
-        data: {'nama_diskon': cleanKode}, // API memakai nama_diskon bukan kode
-      );
+    // POST /api/diskon/check — body: { nama_diskon } sesuai kontrak API
+    final response = await _dio.post(
+      ApiEndpoints.checkDiskon,
+      data: {'nama_diskon': cleanKode}, // API memakai nama_diskon bukan kode
+    );
 
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        return PromoCheckResult.fromJson(data, subtotal: subtotal);
-      }
-      throw Exception('Kode promo tidak valid atau telah kedaluwarsa.');
-    } catch (e) {
-      // Fallback mock untuk demo/offline
-      if (cleanKode == 'DISKONHEMAT20' || cleanKode == 'HEMAT20') {
-        final potongan = (subtotal * 0.20).round();
-        return PromoCheckResult(
-          id: 1,
-          kode: cleanKode,
-          persentase: 20,
-          potongan: potongan,
-          pesan: 'Diskon 20% Berhasil Diterapkan!',
-        );
-      } else if (cleanKode == 'DISKONMEMBER10' || cleanKode == 'MEMBER10') {
-        final potongan = (subtotal * 0.10).round();
-        return PromoCheckResult(
-          id: 2,
-          kode: cleanKode,
-          persentase: 10,
-          potongan: potongan,
-          pesan: 'Diskon Member 10% Berhasil!',
-        );
-      }
-      if (cleanKode.isNotEmpty) {
-        throw Exception('Kode promo "$cleanKode" tidak ditemukan atau telah kedaluwarsa.');
-      }
-      rethrow;
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return PromoCheckResult.fromJson(data, subtotal: subtotal);
     }
+    throw Exception('Kode promo tidak valid atau telah kedaluwarsa.');
   }
 
   @override
   Future<ReservationModel> createReservation(CreateReservationRequest request) async {
-    try {
-      final response = await _dio.post(
-        ApiEndpoints.reservasi,
-        data: request.toJson(),
-      );
-
-      final dynamic data = response.data['data'] ?? response.data;
-      if (data is Map<String, dynamic>) {
-        return ReservationModel.fromJson(data);
-      }
-      return _generateMockReservation(request);
-    } catch (_) {
-      return _generateMockReservation(request);
-    }
-  }
-
-  ReservationModel _generateMockReservation(CreateReservationRequest request) {
-    final space = _mockSpaces.firstWhere(
-      (s) => s.id == request.spaceId,
-      orElse: () => _mockSpaces.first,
+    final response = await _dio.post(
+      ApiEndpoints.reservasi,
+      data: request.toJson(),
     );
 
-    final subtotal = space.hargaPerJam * request.durasi;
-    int diskon = 0;
-    if (request.kodePromo != null && request.kodePromo!.isNotEmpty) {
-      final code = request.kodePromo!.toUpperCase();
-      if (code.contains('20')) {
-        diskon = (subtotal * 0.2).round();
-      } else {
-        diskon = (subtotal * 0.1).round();
-      }
+    final dynamic data = response.data['data'] ?? response.data;
+    if (data is Map<String, dynamic>) {
+      return ReservationModel.fromJson(data);
     }
-    final total = subtotal - diskon;
-
-    // Calculate end time
-    final parts = request.jamMulai.split(':');
-    final startHour = int.tryParse(parts[0]) ?? 9;
-    final startMin = parts.length > 1 ? parts[1] : '00';
-    final endHour = (startHour + request.durasi).toString().padLeft(2, '0');
-    final jamSelesai = '$endHour:$startMin';
-
-    final nowMillis = DateTime.now().millisecondsSinceEpoch.toString();
-    final bookingCode = 'BK-${nowMillis.substring(nowMillis.length - 6)}';
-
-    return ReservationModel(
-      id: DateTime.now().millisecondsSinceEpoch % 100000,
-      kodeBooking: bookingCode,
-      spaceId: space.id,
-      namaSpace: space.nama,
-      tipeSpace: space.tipe,
-      fotoSpace: space.foto,
-      tanggal: request.tanggal,
-      jamMulai: request.jamMulai,
-      jamSelesai: jamSelesai,
-      durasi: request.durasi,
-      subtotal: subtotal,
-      potonganDiskon: diskon,
-      totalBayar: total,
-      status: 'belum_dikonfirm',
-      createdAt: DateTime.now().toIso8601String(),
-    );
+    throw Exception('Gagal membuat reservasi: format respon server tidak valid.');
   }
 }
