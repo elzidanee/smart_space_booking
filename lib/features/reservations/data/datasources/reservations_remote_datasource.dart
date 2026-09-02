@@ -1,3 +1,4 @@
+import 'dart:developer' as dev;
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_endpoints.dart';
@@ -56,6 +57,7 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
       }
     }
 
+    List<ReservationModel> list = [];
     try {
       final response = await _dio.get(
         ApiEndpoints.reservasiMy,
@@ -65,73 +67,82 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
       );
 
       final data = _extractData(response.data);
-      List<ReservationModel> list = [];
       if (data is List) {
         list = data
             .whereType<Map>()
             .map((json) => ReservationModel.fromJson(Map<String, dynamic>.from(json)))
             .toList();
       }
-
-      // Client-side filtering ensures exact match regardless of backend filtering support
-      if (status != null && status.isNotEmpty && status != 'all') {
-        final filterLower = status.toLowerCase();
-        list = list.where((r) {
-          final s = r.status.toLowerCase();
-          if (filterLower == 'menunggu' || filterLower == 'belum_dikonfirm') {
-            return s == 'belum_dikonfirm' || s == 'menunggu' || s == 'pending';
-          }
-          if (filterLower == 'disetujui') {
-            return s == 'disetujui' || s == 'approved' || s == 'confirmed';
-          }
-          if (filterLower == 'aktif') {
-            return s == 'aktif' || s == 'active';
-          }
-          if (filterLower == 'selesai') {
-            return s == 'selesai' || s == 'completed';
-          }
-          if (filterLower == 'dibatalkan') {
-            return s == 'dibatalkan' || s == 'cancelled' || s == 'canceled';
-          }
-          return s == filterLower;
-        }).toList();
-      }
-
-      return list;
     } on DioException catch (_) {
       // Fallback: fetch without status param and filter locally
       if (apiStatus != null) {
-        final fallbackResponse = await _dio.get(ApiEndpoints.reservasiMy);
-        final fallbackData = _extractData(fallbackResponse.data);
-        if (fallbackData is List) {
-          final allList = fallbackData
-              .whereType<Map>()
-              .map((json) => ReservationModel.fromJson(Map<String, dynamic>.from(json)))
-              .toList();
-          final filterLower = status!.toLowerCase();
-          return allList.where((r) {
-            final s = r.status.toLowerCase();
-            if (filterLower == 'menunggu' || filterLower == 'belum_dikonfirm') {
-              return s == 'belum_dikonfirm' || s == 'menunggu' || s == 'pending';
-            }
-            if (filterLower == 'disetujui') {
-              return s == 'disetujui' || s == 'approved' || s == 'confirmed';
-            }
-            if (filterLower == 'aktif') {
-              return s == 'aktif' || s == 'active';
-            }
-            if (filterLower == 'selesai') {
-              return s == 'selesai' || s == 'completed';
-            }
-            if (filterLower == 'dibatalkan') {
-              return s == 'dibatalkan' || s == 'cancelled' || s == 'canceled';
-            }
-            return s == filterLower;
-          }).toList();
+        try {
+          final fallbackResponse = await _dio.get(ApiEndpoints.reservasiMy);
+          final fallbackData = _extractData(fallbackResponse.data);
+          if (fallbackData is List) {
+            list = fallbackData
+                .whereType<Map>()
+                .map((json) => ReservationModel.fromJson(Map<String, dynamic>.from(json)))
+                .toList();
+          }
+        } catch (_) {
+          rethrow;
         }
+      } else {
+        rethrow;
       }
-      rethrow;
     }
+
+    // Client-side filtering
+    if (status != null && status.isNotEmpty && status != 'all') {
+      final filterLower = status.toLowerCase();
+      list = list.where((r) {
+        final s = r.status.toLowerCase();
+        if (filterLower == 'menunggu' || filterLower == 'belum_dikonfirm') {
+          return s == 'belum_dikonfirm' || s == 'menunggu' || s == 'pending';
+        }
+        if (filterLower == 'disetujui') {
+          return s == 'disetujui' || s == 'approved' || s == 'confirmed';
+        }
+        if (filterLower == 'aktif') return s == 'aktif' || s == 'active';
+        if (filterLower == 'selesai') return s == 'selesai' || s == 'completed';
+        if (filterLower == 'dibatalkan') {
+          return s == 'dibatalkan' || s == 'cancelled' || s == 'canceled';
+        }
+        return s == filterLower;
+      }).toList();
+    }
+
+    // GET /api/reservasi/my hanya mengembalikan total_bayar tanpa harga_per_jam.
+    // Untuk item yang total_bayar=0, fetch detail individual yang punya data pricing lengkap.
+    if (list.any((r) => r.totalBayar <= 0)) {
+      final enriched = await Future.wait(list.map((r) async {
+        if (r.totalBayar > 0) return r;
+        try {
+          final detail = await getReservationById(r.id);
+          // Pertahankan field yang ada di list tapi tidak di detail (nama_member dsb.)
+          final totalBayar = detail.totalBayar > 0 ? detail.totalBayar : r.totalBayar;
+          final subtotal   = detail.subtotal   > 0 ? detail.subtotal   : r.subtotal;
+          final potongan   = detail.potonganDiskon > 0 ? detail.potonganDiskon : r.potonganDiskon;
+          return r.copyWith(
+            totalBayar:    totalBayar,
+            subtotal:      subtotal,
+            potonganDiskon: potongan,
+            namaSpace:  r.namaSpace  ?? detail.namaSpace,
+            tipeSpace:  r.tipeSpace  ?? detail.tipeSpace,
+            fotoSpace:  r.fotoSpace  ?? detail.fotoSpace,
+            jamMulai:   r.jamMulai.isEmpty  ? detail.jamMulai  : r.jamMulai,
+            jamSelesai: r.jamSelesai.isEmpty ? detail.jamSelesai : r.jamSelesai,
+            durasi:     r.durasi > 0 ? r.durasi : detail.durasi,
+          );
+        } catch (_) {
+          return r;
+        }
+      }));
+      return enriched;
+    }
+
+    return list;
   }
 
   @override
@@ -182,8 +193,11 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
   Future<ReservationModel> getReservationById(int id) async {
     final response = await _dio.get(ApiEndpoints.reservasiDetail(id));
     final dynamic data = response.data['data'] ?? response.data;
+    dev.log('[RESERVASI DETAIL #$id] raw: $data', name: 'API');
     if (data is Map<String, dynamic>) {
-      return ReservationModel.fromJson(data);
+      final model = ReservationModel.fromJson(data);
+      dev.log('[RESERVASI DETAIL #$id] totalBayar=${model.totalBayar} subtotal=${model.subtotal} durasi=${model.durasi}', name: 'API');
+      return model;
     }
     throw Exception('Data reservasi #$id tidak ditemukan.');
   }

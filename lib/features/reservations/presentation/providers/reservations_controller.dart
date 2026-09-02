@@ -105,9 +105,11 @@ class CancelReservationController extends StateNotifier<AsyncValue<bool>> {
       : super(const AsyncValue.data(false));
 
   Future<bool> cancel(int id) async {
+    if (!mounted) return false;
     state = const AsyncValue.loading();
     try {
       final success = await _repository.cancelReservation(id);
+      if (!mounted) return success;
       state = AsyncValue.data(success);
       if (success) {
         _ref.invalidate(myReservationsProvider);
@@ -116,14 +118,16 @@ class CancelReservationController extends StateNotifier<AsyncValue<bool>> {
       }
       return success;
     } catch (e, stack) {
+      if (!mounted) return false;
       state = AsyncValue.error(e, stack);
       return false;
     }
   }
 }
 
+// Tidak pakai autoDispose agar tidak ter-dispose di tengah operasi async cancel
 final cancelReservationControllerProvider =
-    StateNotifierProvider.autoDispose<CancelReservationController, AsyncValue<bool>>((ref) {
+    StateNotifierProvider<CancelReservationController, AsyncValue<bool>>((ref) {
   final repository = ref.watch(reservationsRepositoryProvider);
   return CancelReservationController(repository, ref);
 });
