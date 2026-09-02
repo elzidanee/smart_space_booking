@@ -350,6 +350,27 @@ class AdminDashboardData {
   });
 }
 
+bool _isSameDay(String? dateStr, DateTime target) {
+  if (dateStr == null || dateStr.trim().isEmpty) return false;
+  final clean = dateStr.trim();
+  final yyyyMmDd =
+      "${target.year.toString().padLeft(4, '0')}-${target.month.toString().padLeft(2, '0')}-${target.day.toString().padLeft(2, '0')}";
+  if (clean.startsWith(yyyyMmDd) || clean.contains(yyyyMmDd)) return true;
+
+  try {
+    final parsed = DateTime.parse(clean);
+    return parsed.year == target.year &&
+        parsed.month == target.month &&
+        parsed.day == target.day;
+  } catch (_) {}
+
+  final ddMmYyyy =
+      "${target.day.toString().padLeft(2, '0')}-${target.month.toString().padLeft(2, '0')}-${target.year}";
+  if (clean.startsWith(ddMmYyyy) || clean.contains(ddMmYyyy)) return true;
+
+  return false;
+}
+
 final adminDashboardSummaryProvider =
     FutureProvider<AdminDashboardData>((ref) async {
   final repo = ref.watch(adminRepositoryProvider);
@@ -358,11 +379,8 @@ final adminDashboardSummaryProvider =
   final allReservations = await repo.getReservations();
   final monthly = await repo.getMonthlyReport(month: now.month, year: now.year);
 
-  final todayString =
-      "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-
   final todayList = allReservations.where((r) {
-    return r.tanggal == todayString;
+    return _isSameDay(r.tanggal, now) || _isSameDay(r.createdAt, now);
   }).toList();
 
   final pendingList =

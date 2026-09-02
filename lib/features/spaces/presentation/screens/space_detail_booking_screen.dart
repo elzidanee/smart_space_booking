@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../providers/spaces_controller.dart';
 import '../../data/models/space_models.dart';
@@ -325,7 +326,13 @@ class _SpaceDetailBookingScreenState
             scrolledUnderElevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: AppColors.ink900),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/member');
+                }
+              },
             ),
             title: Text(
               'Detail Ruangan',
@@ -656,6 +663,7 @@ class _SpaceDetailBookingScreenState
                       Text('Kode Promo (Opsional)', style: AppTypography.bodyMedium),
                       const SizedBox(height: AppSpacing.xs4),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: TextField(
@@ -669,31 +677,30 @@ class _SpaceDetailBookingScreenState
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm8),
-                          SizedBox(
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: bookingState.isCheckingPromo
-                                  ? null
-                              : () {
-                                      ref.read(bookingControllerProvider.notifier).applyPromo(
-                                            _promoController.text,
-                                            subtotal,
-                                          );
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.surface50,
-                                foregroundColor: AppColors.ink900,
-                                elevation: 0,
-                                side: const BorderSide(color: AppColors.border),
-                              ),
-                              child: bookingState.isCheckingPromo
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Text('Terapkan'),
+                          ElevatedButton(
+                            onPressed: bookingState.isCheckingPromo
+                                ? null
+                                : () {
+                                    ref.read(bookingControllerProvider.notifier).applyPromo(
+                                          _promoController.text,
+                                          subtotal,
+                                        );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.surface50,
+                              foregroundColor: AppColors.ink900,
+                              elevation: 0,
+                              side: const BorderSide(color: AppColors.border),
+                              minimumSize: const Size(88, 48),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                             ),
+                            child: bookingState.isCheckingPromo
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Terapkan'),
                           ),
                         ],
                       ),
@@ -862,23 +869,25 @@ class _SpaceDetailBookingScreenState
         ),
       ),
       error: (err, _) => Scaffold(
-        appBar: AppBar(title: const Text('Detail Space')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 40, color: AppColors.danger),
-              const SizedBox(height: 8),
-              Text('Gagal memuat detail space', style: AppTypography.h3),
-              const SizedBox(height: 4),
-              Text(err.toString(), style: AppTypography.caption),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () => ref.invalidate(spaceDetailProvider(widget.spaceId)),
-                child: const Text('Coba Lagi'),
-              ),
-            ],
+        appBar: AppBar(
+          title: const Text('Detail Space'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/member');
+              }
+            },
           ),
+        ),
+        body: AppEmptyState(
+          illustration: const NetworkErrorIllustration(size: 160),
+          title: 'Gagal Memuat Detail Space',
+          message: err.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
+          actionLabel: 'Coba Lagi',
+          onAction: () => ref.invalidate(spaceDetailProvider(widget.spaceId)),
         ),
       ),
     );

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
+import 'package:intl/date_symbol_data_local.dart';
+
 class AppHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -12,9 +14,12 @@ class AppHttpOverrides extends HttpOverrides {
   }
 }
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   HttpOverrides.global = AppHttpOverrides();
+  try {
+    await initializeDateFormatting('id_ID', null);
+  } catch (_) {}
   runApp(
     const ProviderScope(
       child: SmartSpaceApp(),

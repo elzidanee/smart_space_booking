@@ -143,159 +143,165 @@ class _ServerConfigBottomSheetState extends ConsumerState<ServerConfigBottomShee
       );
     }
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.settings_ethernet, color: AppColors.secondary, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Text('Konfigurasi Server & Key', style: AppTypography.h3),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Sesuaikan URL server API atau kunci Maker (x-maker-key) saat ujian.',
-            style: AppTypography.caption.copyWith(color: AppColors.ink600),
-          ),
-          const SizedBox(height: 16),
-
-          // API Base URL Field
-          Text('API Server Base URL:', style: AppTypography.captionMedium),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _urlController,
-            decoration: InputDecoration(
-              hintText: 'https://learn.smktelkom-mlg.sch.id/coworking',
-              filled: true,
-              fillColor: AppColors.surface50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Maker App Key Field
-          Text('Maker App Key (x-maker-key):', style: AppTypography.captionMedium),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _keyController,
-            decoration: InputDecoration(
-              hintText: 'Masukkan kunci maker Anda...',
-              filled: true,
-              fillColor: AppColors.surface50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Test Status Banner
-          if (_testResult != null) ...[
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _testSuccess ? AppColors.secondaryContainer : const Color(0xFFFDE8E8),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: _testSuccess ? AppColors.secondary : AppColors.danger,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _testSuccess ? Icons.check_circle : Icons.error_outline,
-                    color: _testSuccess ? AppColors.secondary : AppColors.danger,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _testResult!,
-                      style: AppTypography.captionMedium.copyWith(
-                        color: _testSuccess ? AppColors.secondary : AppColors.danger,
-                        fontSize: 12,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer,
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      child: const Icon(Icons.settings_ethernet, color: AppColors.secondary, size: 20),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Text('Konfigurasi Server & Key', style: AppTypography.h3),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sesuaikan URL server API atau kunci Maker (x-maker-key) saat ujian.',
+              style: AppTypography.caption.copyWith(color: AppColors.ink600),
+            ),
+            const SizedBox(height: 16),
+
+            // API Base URL Field
+            Text('API Server Base URL:', style: AppTypography.captionMedium),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _urlController,
+              decoration: InputDecoration(
+                hintText: 'https://learn.smktelkom-mlg.sch.id/coworking',
+                filled: true,
+                fillColor: AppColors.surface50,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Maker App Key Field
+            Text('Maker App Key (x-maker-key):', style: AppTypography.captionMedium),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _keyController,
+              decoration: InputDecoration(
+                hintText: 'Masukkan kunci maker Anda...',
+                filled: true,
+                fillColor: AppColors.surface50,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 12),
-          ],
 
-          // Test Connection & Reset Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _isTesting ? null : _testConnection,
-                  icon: _isTesting
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.network_check, size: 16),
-                  label: const Text('Tes Koneksi'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            // Test Status Banner
+            if (_testResult != null) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _testSuccess ? AppColors.secondaryContainer : const Color(0xFFFDE8E8),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _testSuccess ? AppColors.secondary : AppColors.danger,
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton(
-                onPressed: _resetToDefault,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Row(
+                  children: [
+                    Icon(
+                      _testSuccess ? Icons.check_circle : Icons.error_outline,
+                      color: _testSuccess ? AppColors.secondary : AppColors.danger,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _testResult!,
+                        style: AppTypography.captionMedium.copyWith(
+                          color: _testSuccess ? AppColors.secondary : AppColors.danger,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: const Text('Reset Default'),
               ),
+              const SizedBox(height: 12),
             ],
-          ),
-          const SizedBox(height: 16),
 
-          // Save Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saveSettings,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Simpan Pengaturan'),
+            // Test Connection & Reset Buttons
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: OutlinedButton.icon(
+                    onPressed: _isTesting ? null : _testConnection,
+                    icon: _isTesting
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.network_check, size: 16),
+                    label: const Text('Tes Koneksi'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton(
+                    onPressed: _resetToDefault,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('Reset Default'),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // Save Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saveSettings,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Simpan Pengaturan'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

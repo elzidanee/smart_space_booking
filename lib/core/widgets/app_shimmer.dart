@@ -172,19 +172,22 @@ class AppNetworkImage extends StatelessWidget {
     if (rawUrl != null && rawUrl.isNotEmpty) {
       // 1. Cek apakah ini path file lokal (hasil jepretan kamera / galeri lokal)
       try {
-        final localFile = File(rawUrl);
-        if (localFile.existsSync()) {
-          final img = Image.file(
-            localFile,
-            width: width,
-            height: height,
-            fit: fit,
-            errorBuilder: (context, error, stackTrace) => _buildFallback(),
-          );
-          if (borderRadius != null) {
-            return ClipRRect(borderRadius: borderRadius!, child: img);
+        if (rawUrl.startsWith('/') || rawUrl.contains(RegExp(r'^[a-zA-Z]:[/\\]')) || rawUrl.startsWith('file://')) {
+          final cleanPath = rawUrl.startsWith('file://') ? rawUrl.replaceFirst('file://', '') : rawUrl;
+          final localFile = File(cleanPath);
+          if (localFile.existsSync()) {
+            final img = Image.file(
+              localFile,
+              width: width,
+              height: height,
+              fit: fit,
+              errorBuilder: (context, error, stackTrace) => _buildFallback(),
+            );
+            if (borderRadius != null) {
+              return ClipRRect(borderRadius: borderRadius!, child: img);
+            }
+            return img;
           }
-          return img;
         }
       } catch (_) {}
     }
@@ -193,11 +196,17 @@ class AppNetworkImage extends StatelessWidget {
 
     Widget imageContent;
 
-    if (fullUrl == null || fullUrl.isEmpty) {
+    // Verifikasi apakah fullUrl adalah HTTP/HTTPS URL yang valid dan memiliki host
+    final uri = fullUrl != null ? Uri.tryParse(fullUrl) : null;
+    final isValidHttp = uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+
+    if (!isValidHttp) {
       imageContent = _buildFallback();
     } else {
       imageContent = Image.network(
-        fullUrl,
+        fullUrl!,
         width: width,
         height: height,
         fit: fit,

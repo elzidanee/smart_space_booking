@@ -82,10 +82,10 @@ class BookingFormState {
 
   int calculateDiscount(int subtotal) {
     if (appliedPromo == null) return 0;
-    if (appliedPromo!.potongan > 0) return appliedPromo!.potongan;
-    if (appliedPromo!.persentase > 0) {
+    if (appliedPromo!.persentase > 0 && subtotal > 0) {
       return (subtotal * appliedPromo!.persentase / 100).round();
     }
+    if (appliedPromo!.potongan > 0) return appliedPromo!.potongan;
     return 0;
   }
 
@@ -247,6 +247,9 @@ class BookingController extends StateNotifier<BookingFormState> {
         jamMulai: state.formattedTime,
         durasi: state.durationHours,
         kodePromo: state.appliedPromo?.kode,
+        idDiskon: (state.appliedPromo?.id != null && state.appliedPromo!.id > 0)
+            ? state.appliedPromo!.id
+            : null,
       );
 
       final reservation = await _repository.createReservation(request);

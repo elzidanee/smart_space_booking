@@ -10,6 +10,7 @@ import '../../features/member/presentation/screens/member_shell_screen.dart';
 import '../../features/reservations/presentation/screens/e_ticket_screen.dart';
 import '../../features/reservations/presentation/screens/reservations_history_screen.dart';
 import '../../features/spaces/presentation/screens/space_detail_booking_screen.dart';
+import '../widgets/app_illustrations.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -78,22 +79,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/spaces/:id',
         builder: (context, state) {
-          // QA-019: Jangan fallback ke ID 1 — jika ID tidak valid tampilkan error.
+          // QA-019: Jangan fallback ke ID 1 — jika ID tidak valid tampilkan error state.
           final idStr = state.pathParameters['id'];
           final id = int.tryParse(idStr ?? '');
           if (id == null || id <= 0) {
-            // Redirect ke halaman member dengan pesan error
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Space tidak ditemukan. ID tidak valid.'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            });
-            return const MemberShellScreen();
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Detail Space'),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/member');
+                    }
+                  },
+                ),
+              ),
+              body: AppEmptyState(
+                illustration: const NetworkErrorIllustration(size: 160),
+                title: 'Space Tidak Ditemukan',
+                message: 'ID ruangan "$idStr" tidak valid atau format URL salah.',
+                actionLabel: 'Kembali ke Katalog',
+                onAction: () => context.go('/member'),
+              ),
+            );
           }
           return SpaceDetailBookingScreen(spaceId: id);
         },

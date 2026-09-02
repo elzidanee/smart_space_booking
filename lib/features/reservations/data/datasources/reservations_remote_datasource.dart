@@ -37,20 +37,101 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
 
   ReservationsRemoteDataSourceImpl(this._dio);
 
+  dynamic _extractData(dynamic responseData) {
+    if (responseData == null) return null;
+    if (responseData is Map && responseData.containsKey('data') && responseData['data'] != null) {
+      return responseData['data'];
+    }
+    return responseData;
+  }
+
   @override
   Future<List<ReservationModel>> getMyReservations({String? status}) async {
-    final response = await _dio.get(
-      ApiEndpoints.reservasiMy,
-      queryParameters: {
-        if (status != null && status.isNotEmpty && status != 'all') 'status': status,
-      },
-    );
-
-    final dynamic data = response.data['data'] ?? response.data;
-    if (data is List) {
-      return data.map((json) => ReservationModel.fromJson(json as Map<String, dynamic>)).toList();
+    String? apiStatus;
+    if (status != null && status.isNotEmpty && status != 'all') {
+      if (status == 'menunggu' || status == 'pending') {
+        apiStatus = 'belum_dikonfirm';
+      } else {
+        apiStatus = status;
+      }
     }
-    return [];
+
+    try {
+      final response = await _dio.get(
+        ApiEndpoints.reservasiMy,
+        queryParameters: {
+          'status': ?apiStatus,
+        },
+      );
+
+      final data = _extractData(response.data);
+      List<ReservationModel> list = [];
+      if (data is List) {
+        list = data
+            .whereType<Map>()
+            .map((json) => ReservationModel.fromJson(Map<String, dynamic>.from(json)))
+            .toList();
+      }
+
+      // Client-side filtering ensures exact match regardless of backend filtering support
+      if (status != null && status.isNotEmpty && status != 'all') {
+        final filterLower = status.toLowerCase();
+        list = list.where((r) {
+          final s = r.status.toLowerCase();
+          if (filterLower == 'menunggu' || filterLower == 'belum_dikonfirm') {
+            return s == 'belum_dikonfirm' || s == 'menunggu' || s == 'pending';
+          }
+          if (filterLower == 'disetujui') {
+            return s == 'disetujui' || s == 'approved' || s == 'confirmed';
+          }
+          if (filterLower == 'aktif') {
+            return s == 'aktif' || s == 'active';
+          }
+          if (filterLower == 'selesai') {
+            return s == 'selesai' || s == 'completed';
+          }
+          if (filterLower == 'dibatalkan') {
+            return s == 'dibatalkan' || s == 'cancelled' || s == 'canceled';
+          }
+          return s == filterLower;
+        }).toList();
+      }
+
+      return list;
+    } on DioException catch (_) {
+      // Fallback: fetch without status param and filter locally
+      if (apiStatus != null) {
+        final fallbackResponse = await _dio.get(ApiEndpoints.reservasiMy);
+        final fallbackData = _extractData(fallbackResponse.data);
+        if (fallbackData is List) {
+          final allList = fallbackData
+              .whereType<Map>()
+              .map((json) => ReservationModel.fromJson(Map<String, dynamic>.from(json)))
+              .toList();
+          final filterLower = status!.toLowerCase();
+          return allList.where((r) {
+            final s = r.status.toLowerCase();
+            if (filterLower == 'menunggu' || filterLower == 'belum_dikonfirm') {
+              return s == 'belum_dikonfirm' || s == 'menunggu' || s == 'pending';
+            }
+            if (filterLower == 'disetujui') {
+              return s == 'disetujui' || s == 'approved' || s == 'confirmed';
+            }
+            if (filterLower == 'aktif') {
+              return s == 'aktif' || s == 'active';
+            }
+            if (filterLower == 'selesai') {
+              return s == 'selesai' || s == 'completed';
+            }
+            if (filterLower == 'dibatalkan') {
+              return s == 'dibatalkan' || s == 'cancelled' || s == 'canceled';
+            }
+            return s == filterLower;
+          }).toList();
+        }
+      }
+      rethrow;
+    }
   }
 
   @override

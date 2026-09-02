@@ -1,6 +1,17 @@
 import 'dart:convert';
 import '../../../../core/utils/app_url_helper.dart';
 
+int _parseInt(dynamic value, {int defaultValue = 0}) {
+  if (value == null) return defaultValue;
+  if (value is int) return value;
+  if (value is num) return value.round();
+  if (value is String) {
+    final trimmed = value.trim();
+    return int.tryParse(trimmed) ?? double.tryParse(trimmed)?.round() ?? defaultValue;
+  }
+  return defaultValue;
+}
+
 /// Model Ruangan / Workstation sesuai PRD Bagian II §5.3 & Kontrak API.
 class SpaceModel {
   final int id;
@@ -42,20 +53,35 @@ class SpaceModel {
 
   factory SpaceModel.fromJson(Map<String, dynamic> json) {
     List<String> parsedFasilitas = [];
-    if (json['fasilitas'] is List) {
-      parsedFasilitas = (json['fasilitas'] as List)
-          .map((e) => e.toString())
+    final rawFasilitas = json['fasilitas'];
+    if (rawFasilitas is List) {
+      parsedFasilitas = rawFasilitas
+          .where((e) => e != null)
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
           .toList();
-    } else if (json['fasilitas'] is String && (json['fasilitas'] as String).isNotEmpty) {
+    } else if (rawFasilitas is String && rawFasilitas.trim().isNotEmpty) {
       try {
-        final decoded = jsonDecode(json['fasilitas'] as String);
+        final decoded = jsonDecode(rawFasilitas);
         if (decoded is List) {
-          parsedFasilitas = decoded.map((e) => e.toString()).toList();
+          parsedFasilitas = decoded
+              .where((e) => e != null)
+              .map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
         } else {
-          parsedFasilitas = (json['fasilitas'] as String).split(',').map((e) => e.trim()).toList();
+          parsedFasilitas = rawFasilitas
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
         }
       } catch (_) {
-        parsedFasilitas = (json['fasilitas'] as String).split(',').map((e) => e.trim()).toList();
+        parsedFasilitas = rawFasilitas
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
     }
 
@@ -63,20 +89,38 @@ class SpaceModel {
     final rawFoto = json['foto_url']?.toString() ?? json['foto']?.toString();
     final foto = AppUrlHelper.resolveImageUrl(rawFoto, defaultFolder: 'spaces');
 
+    final rawId = json['id'] ?? json['id_space'];
+    final id = _parseInt(rawId, defaultValue: 0);
+
+    final nama = json['nama_space']?.toString() ??
+        json['nama']?.toString() ??
+        json['name']?.toString() ??
+        'Space';
+
+    final tipe = json['tipe']?.toString() ??
+        json['type']?.toString() ??
+        json['kategori']?.toString() ??
+        'desk';
+
+    final rawKapasitas = json['kapasitas'] ?? json['capacity'];
+    final kapasitas = _parseInt(rawKapasitas, defaultValue: 1);
+
+    final rawHarga = json['harga_per_jam'] ?? json['harga'] ?? json['price'];
+    final hargaPerJam = _parseInt(rawHarga, defaultValue: 0);
+
+    final deskripsi = json['deskripsi']?.toString() ?? json['description']?.toString();
+    final status = json['status']?.toString() ?? 'tersedia';
+
     return SpaceModel(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      nama: json['nama_space']?.toString() ?? json['nama']?.toString() ?? 'Space',
-      tipe: json['tipe']?.toString() ?? 'desk',
-      kapasitas: json['kapasitas'] is int
-          ? json['kapasitas']
-          : int.tryParse(json['kapasitas']?.toString() ?? '1') ?? 1,
-      hargaPerJam: json['harga_per_jam'] is int
-          ? json['harga_per_jam']
-          : int.tryParse(json['harga_per_jam']?.toString() ?? '0') ?? 0,
+      id: id,
+      nama: nama,
+      tipe: tipe,
+      kapasitas: kapasitas > 0 ? kapasitas : 1,
+      hargaPerJam: hargaPerJam >= 0 ? hargaPerJam : 0,
       fasilitas: parsedFasilitas,
       foto: foto,
-      deskripsi: json['deskripsi']?.toString(),
-      status: json['status']?.toString() ?? 'tersedia',
+      deskripsi: deskripsi,
+      status: status,
     );
   }
 
@@ -145,7 +189,7 @@ class AvailabilityCheckResult {
       message: json['message']?.toString() ?? (available ? 'Space tersedia' : 'Space sudah terisi'),
       tanggal: json['tanggal']?.toString(),
       jamMulai: json['jam_mulai']?.toString(),
-      durasi: json['durasi'] is int ? json['durasi'] : int.tryParse(json['durasi']?.toString() ?? '1'),
+      durasi: _parseInt(json['durasi'] ?? json['durasi_jam'], defaultValue: 1),
     );
   }
 }
@@ -167,30 +211,74 @@ class PromoCheckResult {
   });
 
   factory PromoCheckResult.fromJson(Map<String, dynamic> json, {int subtotal = 0}) {
-    // API /api/diskon/check mengembalikan: persentase_diskon, nama_diskon, is_active
-    final persentaseVal = json['persentase_diskon'] is int
-        ? json['persentase_diskon']
-        : json['persentase'] is int
-            ? json['persentase']
-            : int.tryParse((json['persentase_diskon'] ?? json['persentase'])?.toString() ?? '0') ?? 0;
+    // Unpack nested map if returned under 'data', 'diskon', or 'promo'
+    final rawData = json['data'] is Map
+        ? (json['data'] as Map)
+        : (json['diskon'] is Map
+            ? (json['diskon'] as Map)
+            : (json['promo'] is Map ? (json['promo'] as Map) : json));
+    final map = Map<String, dynamic>.from(rawData);
 
-    int potonganVal = json['potongan'] is int
-        ? json['potongan']
-        : int.tryParse(json['potongan']?.toString() ?? '0') ?? 0;
+    // Parse percentage safely (supports 50, 0.5, "50%", "50.00")
+    final rawPersen = map['persentase_diskon'] ??
+        map['persentase'] ??
+        map['diskon'] ??
+        map['persen'] ??
+        map['discount'] ??
+        map['discount_percentage'] ??
+        map['nilai_diskon'] ??
+        map['potongan_persen'];
+
+    int persentaseVal = 0;
+    if (rawPersen != null) {
+      if (rawPersen is num) {
+        if (rawPersen > 0 && rawPersen <= 1) {
+          persentaseVal = (rawPersen * 100).round();
+        } else {
+          persentaseVal = rawPersen.round();
+        }
+      } else if (rawPersen is String) {
+        final clean = rawPersen.replaceAll('%', '').trim();
+        final parsed = double.tryParse(clean);
+        if (parsed != null) {
+          if (parsed > 0 && parsed <= 1) {
+            persentaseVal = (parsed * 100).round();
+          } else {
+            persentaseVal = parsed.round();
+          }
+        }
+      }
+    }
+
+    int potonganVal = _parseInt(
+      map['potongan'] ??
+          map['potongan_diskon'] ??
+          map['discount_amount'] ??
+          map['total_potongan'] ??
+          map['nilai_potongan'],
+      defaultValue: 0,
+    );
 
     if (potonganVal == 0 && persentaseVal > 0 && subtotal > 0) {
       potonganVal = (subtotal * persentaseVal / 100).round();
+    } else if (potonganVal > 0 && persentaseVal == 0 && subtotal > 0) {
+      persentaseVal = ((potonganVal / subtotal) * 100).round();
     }
 
-    // API mengembalikan nama_diskon sebagai nama/kode voucher
-    final kode = json['nama_diskon']?.toString() ?? json['kode']?.toString() ?? '';
+    // API mengembalikan nama_diskon / kode_promo sebagai nama/kode voucher
+    final kode = map['nama_diskon']?.toString() ??
+        map['kode_promo']?.toString() ??
+        map['kode_diskon']?.toString() ??
+        map['kode']?.toString() ??
+        map['name']?.toString() ??
+        '';
 
     return PromoCheckResult(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: _parseInt(map['id'] ?? map['id_diskon'] ?? map['diskon_id'], defaultValue: 0),
       kode: kode,
       persentase: persentaseVal,
       potongan: potonganVal,
-      pesan: json['message']?.toString() ?? 'Promo berhasil diterapkan',
+      pesan: map['message']?.toString() ?? json['message']?.toString() ?? 'Promo berhasil diterapkan',
     );
   }
 }
@@ -217,16 +305,24 @@ class CreateReservationRequest {
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
-      'id_space': spaceId,           // API: id_space (bukan space_id)
-      'tanggal_reservasi': tanggal,  // API: tanggal_reservasi
+      'id_space': spaceId,
+      'space_id': spaceId,
+      'tanggal_reservasi': tanggal,
+      'tanggal': tanggal,
       'jam_mulai': jamMulai,
-      'durasi_jam': durasi,          // API: durasi_jam (bukan durasi)
+      'durasi_jam': durasi,
+      'durasi': durasi,
     };
-    if (idDiskon != null) {
+    if (idDiskon != null && idDiskon! > 0) {
       map['id_diskon'] = idDiskon;
+      map['diskon_id'] = idDiskon;
     }
     if (kodePromo != null && kodePromo!.trim().isNotEmpty) {
-      map['kode_promo'] = kodePromo!.trim();
+      final clean = kodePromo!.trim();
+      map['kode_promo'] = clean;
+      map['nama_diskon'] = clean;
+      map['kode'] = clean;
+      map['kode_diskon'] = clean;
     }
     return map;
   }
@@ -274,13 +370,15 @@ class ReservationModel {
 
   factory ReservationModel.fromJson(Map<String, dynamic> json) {
     // Ambil nested space object jika ada
-    final spaceObj = json['space'] as Map<String, dynamic>?;
+    final spaceObj = json['space'] is Map ? Map<String, dynamic>.from(json['space'] as Map) : null;
     // Ambil nested member object jika ada
-    final memberObj = json['member'] as Map<String, dynamic>?;
+    final memberObj = json['member'] is Map ? Map<String, dynamic>.from(json['member'] as Map) : null;
+    // Ambil nested rincian pembayaran jika ada
+    final rincianObj = json['rincian_pembayaran'] is Map ? Map<String, dynamic>.from(json['rincian_pembayaran'] as Map) : null;
 
     // id_space bisa dari 'id_space', 'space_id', atau dari space.id
     final rawSpaceId = json['id_space'] ?? json['space_id'] ?? spaceObj?['id'];
-    final parsedSpaceId = rawSpaceId is int ? rawSpaceId : int.tryParse(rawSpaceId?.toString() ?? '0') ?? 0;
+    final parsedSpaceId = _parseInt(rawSpaceId, defaultValue: 0);
 
     // foto_url diutamakan vs foto dari space
     final fotoSpaceRaw = json['foto_space']?.toString() ??
@@ -288,15 +386,42 @@ class ReservationModel {
         spaceObj?['foto']?.toString();
 
     // tanggal: API pakai 'tanggal_reservasi', fallback ke 'tanggal'
-    final tanggalRaw = (json['tanggal_reservasi'] ?? json['tanggal'])?.toString() ?? '';
+    var tanggalRaw = (json['tanggal_reservasi'] ?? json['tanggal'] ?? json['tgl_reservasi'] ?? json['created_at'])?.toString() ?? '';
+    if (tanggalRaw.contains('T')) {
+      tanggalRaw = tanggalRaw.split('T').first;
+    } else if (tanggalRaw.contains(' ')) {
+      tanggalRaw = tanggalRaw.split(' ').first;
+    }
 
     // durasi: API pakai 'durasi_jam', fallback ke 'durasi'
-    final durasiRaw = json['durasi_jam'] ?? json['durasi'];
-    final parsedDurasi = durasiRaw is int ? durasiRaw : int.tryParse(durasiRaw?.toString() ?? '1') ?? 1;
+    final parsedDurasi = _parseInt(json['durasi_jam'] ?? json['durasi'] ?? json['durasi_sewa'], defaultValue: 1);
+
+    final spaceHarga = _parseInt(
+      spaceObj?['harga_per_jam'] ?? spaceObj?['harga'] ?? json['harga_per_jam'] ?? json['harga'],
+      defaultValue: 0,
+    );
 
     // subtotal: API pakai 'total_harga_awal', fallback ke 'subtotal'
-    final subtotalRaw = json['total_harga_awal'] ?? json['subtotal'];
-    final parsedSubtotal = subtotalRaw is int ? subtotalRaw : int.tryParse(subtotalRaw?.toString() ?? '0') ?? 0;
+    int parsedSubtotal = _parseInt(
+      json['total_harga_awal'] ?? json['subtotal'] ?? json['total_biaya'] ?? json['total_harga'] ?? rincianObj?['total_harga_awal'] ?? rincianObj?['subtotal'],
+      defaultValue: 0,
+    );
+    if (parsedSubtotal == 0 && spaceHarga > 0) {
+      parsedSubtotal = spaceHarga * parsedDurasi;
+    }
+
+    final parsedPotongan = _parseInt(
+      json['potongan_diskon'] ?? json['diskon'] ?? json['potongan'] ?? rincianObj?['potongan_diskon'],
+      defaultValue: 0,
+    );
+
+    int parsedTotalBayar = _parseInt(
+      json['total_bayar'] ?? json['total_biaya'] ?? json['total_harga'] ?? json['total'] ?? json['tagihan'] ?? json['amount'] ?? rincianObj?['total_bayar'],
+      defaultValue: 0,
+    );
+    if (parsedTotalBayar == 0 && parsedSubtotal > 0) {
+      parsedTotalBayar = (parsedSubtotal - parsedPotongan) > 0 ? (parsedSubtotal - parsedPotongan) : parsedSubtotal;
+    }
 
     // member info
     final namaMemberRaw = json['nama_member']?.toString() ??
@@ -307,7 +432,7 @@ class ReservationModel {
         memberObj?['telepon']?.toString();
 
     return ReservationModel(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      id: _parseInt(json['id'], defaultValue: 0),
       kodeBooking: json['kode_booking']?.toString() ?? json['booking_code']?.toString() ?? '',
       spaceId: parsedSpaceId,
       namaSpace: json['nama_space']?.toString() ?? spaceObj?['nama_space']?.toString() ?? spaceObj?['nama']?.toString(),
@@ -318,12 +443,8 @@ class ReservationModel {
       jamSelesai: json['jam_selesai']?.toString() ?? '',
       durasi: parsedDurasi,
       subtotal: parsedSubtotal,
-      potonganDiskon: json['potongan_diskon'] is int
-          ? json['potongan_diskon']
-          : int.tryParse(json['potongan_diskon']?.toString() ?? '0') ?? 0,
-      totalBayar: json['total_bayar'] is int
-          ? json['total_bayar']
-          : int.tryParse(json['total_bayar']?.toString() ?? '0') ?? 0,
+      potonganDiskon: parsedPotongan,
+      totalBayar: parsedTotalBayar,
       status: json['status']?.toString() ?? 'belum_dikonfirm',
       namaMember: namaMemberRaw,
       teleponMember: teleponMemberRaw,

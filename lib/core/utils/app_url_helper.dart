@@ -24,7 +24,15 @@ class AppUrlHelper {
 
     final base = baseDomain;
 
-    // 2. Normalisasi domain learn.smktelkom-mlg.sch.id yang kekurangan prefix /coworking
+    // 2. Normalisasi domain localhost / emulator / IP address
+    if (trimmed.contains(RegExp(r'https?://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?/uploads/'))) {
+      return trimmed.replaceFirst(
+        RegExp(r'https?://(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?/uploads/'),
+        '$base/uploads/',
+      );
+    }
+
+    // 3. Normalisasi domain learn.smktelkom-mlg.sch.id yang kekurangan prefix /coworking
     if (trimmed.startsWith('http://learn.smktelkom-mlg.sch.id/uploads/')) {
       return trimmed.replaceFirst(
         'http://learn.smktelkom-mlg.sch.id/uploads/',
@@ -37,14 +45,8 @@ class AppUrlHelper {
         '$base/uploads/',
       );
     }
-    if (trimmed.startsWith('http://localhost:3000/uploads/')) {
-      return trimmed.replaceFirst(
-        'http://localhost:3000/uploads/',
-        '$base/uploads/',
-      );
-    }
 
-    // 3. Jika URL sudah diawali http:// atau https://
+    // 4. Jika URL sudah diawali http:// atau https://
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       if (trimmed.contains('learn.smktelkom-mlg.sch.id') && !trimmed.contains('/coworking/')) {
         return trimmed
@@ -54,7 +56,15 @@ class AppUrlHelper {
       return trimmed;
     }
 
-    // 4. Jika URL berupa path relatif
+    // 5. Jika URL diawali dengan /coworking/
+    if (trimmed.startsWith('/coworking/')) {
+      final domainOnly = base.endsWith('/coworking')
+          ? base.substring(0, base.length - '/coworking'.length)
+          : base;
+      return '$domainOnly$trimmed';
+    }
+
+    // 6. Jika URL berupa path relatif
     if (trimmed.startsWith('/uploads/')) {
       return '$base$trimmed';
     }
@@ -62,7 +72,7 @@ class AppUrlHelper {
       return '$base/$trimmed';
     }
 
-    // 5. Jika hanya berupa nama file (misal "1788319712456-985097890.png")
+    // 7. Jika hanya berupa nama file (misal "1788319712456-985097890.png")
     final filename = trimmed.split(RegExp(r'[/\\]')).last;
     if (filename.contains('.')) {
       return '$base/uploads/$defaultFolder/$filename';
