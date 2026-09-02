@@ -23,19 +23,18 @@ class _MemberShellScreenState extends ConsumerState<MemberShellScreen> {
     final authState = ref.watch(authControllerProvider);
     final user = authState.value?.user;
 
-    final pages = [
-      // Tab 1: Beranda (Katalog Space Stitch 05)
-      const SpacesCatalogScreen(),
-      // Tab 2: Reservasi (Status & Histori Stitch 07)
-      const ReservationsStatusScreen(),
-      // Tab 3: Tiket (E-Ticket QR Stitch 09)
-      const ETicketScreen(),
-      // Tab 4: Akun (Profil Member)
-      _buildAccountTab(user),
-    ];
-
     return Scaffold(
-      body: SafeArea(child: pages[_currentIndex]),
+      body: SafeArea(
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            const SpacesCatalogScreen(),
+            const ReservationsStatusScreen(),
+            const ETicketScreen(),
+            _buildAccountTab(user),
+          ],
+        ),
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.border)),

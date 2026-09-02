@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_illustrations.dart';
+import '../../../../core/widgets/app_photo_picker_field.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../data/models/admin_models.dart';
 import '../providers/admin_controller.dart';
@@ -34,9 +36,12 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
       ),
       builder: (context) => _MemberFormBottomSheet(
         member: member,
-        onSave: (savedMember) {
+        onSave: (savedMember, photoFile) {
           if (member == null) {
-            ref.read(adminMembersControllerProvider.notifier).createMember(savedMember);
+            ref.read(adminMembersControllerProvider.notifier).createMember(
+                  savedMember,
+                  photoFile: photoFile,
+                );
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Member baru berhasil didaftarkan!'),
@@ -44,7 +49,10 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
               ),
             );
           } else {
-            ref.read(adminMembersControllerProvider.notifier).updateMember(savedMember);
+            ref.read(adminMembersControllerProvider.notifier).updateMember(
+                  savedMember,
+                  photoFile: photoFile,
+                );
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Data member berhasil diperbarui!'),
@@ -314,7 +322,7 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
 
 class _MemberFormBottomSheet extends StatefulWidget {
   final AdminMemberModel? member;
-  final ValueChanged<AdminMemberModel> onSave;
+  final void Function(AdminMemberModel member, File? photoFile) onSave;
 
   const _MemberFormBottomSheet({
     this.member,
@@ -332,7 +340,8 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
   late TextEditingController _instansiCtrl;
   late TextEditingController _teleponCtrl;
   late TextEditingController _alamatCtrl;
-  late TextEditingController _fotoCtrl;
+  File? _selectedPhotoFile;
+  String? _existingFotoUrl;
 
   @override
   void initState() {
@@ -342,7 +351,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
     _instansiCtrl = TextEditingController(text: widget.member?.instansi ?? '');
     _teleponCtrl = TextEditingController(text: widget.member?.telepon ?? '');
     _alamatCtrl = TextEditingController(text: widget.member?.alamat ?? '');
-    _fotoCtrl = TextEditingController(text: widget.member?.foto ?? '');
+    _existingFotoUrl = widget.member?.foto;
   }
 
   @override
@@ -352,7 +361,6 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
     _instansiCtrl.dispose();
     _teleponCtrl.dispose();
     _alamatCtrl.dispose();
-    _fotoCtrl.dispose();
     super.dispose();
   }
 
@@ -366,12 +374,12 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
       instansi: _instansiCtrl.text.trim().isNotEmpty ? _instansiCtrl.text.trim() : '-',
       telepon: _teleponCtrl.text.trim(),
       alamat: _alamatCtrl.text.trim(),
-      foto: _fotoCtrl.text.trim().isNotEmpty ? _fotoCtrl.text.trim() : null,
+      foto: _existingFotoUrl,
       totalReservasi: widget.member?.totalReservasi ?? 0,
       createdAt: widget.member?.createdAt ?? DateTime.now().toIso8601String(),
     );
 
-    widget.onSave(member);
+    widget.onSave(member, _selectedPhotoFile);
     Navigator.of(context).pop();
   }
 
@@ -405,6 +413,23 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Foto Profil Picker (Kamera / Galeri)
+              AppPhotoPickerField(
+                label: 'Foto Profil Member',
+                shape: PhotoPickerShape.circle,
+                selectedFile: _selectedPhotoFile,
+                initialUrl: _existingFotoUrl,
+                onPhotoChanged: (file) {
+                  setState(() {
+                    _selectedPhotoFile = file;
+                    if (file == null) {
+                      _existingFotoUrl = null;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 16),
 
@@ -464,15 +489,6 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Alamat Lengkap',
                   hintText: 'Jl. ... Kota Malang',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _fotoCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'URL Foto Profil (Opsional)',
-                  hintText: 'https://...',
                 ),
               ),
               const SizedBox(height: 24),

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../../data/datasources/admin_remote_datasource.dart';
@@ -47,6 +48,10 @@ abstract class AdminRepository {
 
   // Monthly Report
   Future<AdminMonthlyReportModel> getMonthlyReport({int? month, int? year});
+
+  // Upload Media
+  Future<String> uploadSpacePhoto(File file);
+  Future<String> uploadMemberPhoto(File file);
 }
 
 class AdminRepositoryImpl implements AdminRepository {
@@ -142,4 +147,10 @@ class AdminRepositoryImpl implements AdminRepository {
   @override
   Future<AdminMonthlyReportModel> getMonthlyReport({int? month, int? year}) =>
       _dataSource.getMonthlyReport(month: month, year: year);
+
+  @override
+  Future<String> uploadSpacePhoto(File file) => _dataSource.uploadSpacePhoto(file);
+
+  @override
+  Future<String> uploadMemberPhoto(File file) => _dataSource.uploadMemberPhoto(file);
 }

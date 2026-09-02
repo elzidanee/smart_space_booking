@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_photo_picker_field.dart';
 import '../../../../core/widgets/auth_illustration.dart';
 import '../../data/models/auth_models.dart';
 import '../providers/auth_controller.dart';
@@ -45,72 +45,6 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
-        source: source,
-        maxWidth: 800,
-        maxHeight: 800,
-        imageQuality: 85,
-      );
-      if (picked != null) {
-        setState(() {
-          _selectedPhoto = File(picked.path);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memilih gambar: $e')),
-        );
-      }
-    }
-  }
-
-  void _showImageSourceDialog() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusBottomSheet),
-        ),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg16,
-            vertical: AppSpacing.xl24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Pilih Foto Profil', style: AppTypography.h2),
-              const SizedBox(height: AppSpacing.md12),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
-                title: const Text('Ambil dari Kamera'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
-                title: const Text('Pilih dari Galeri'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Future<void> _handleRegister() async {
@@ -267,73 +201,15 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // --- Photo Upload Circle (Stitch 03) ---
-                      Center(
-                        child: GestureDetector(
-                          onTap: _showImageSourceDialog,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                width: 96,
-                                height: 96,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.surface50,
-                                  border: Border.all(
-                                    color: AppColors.primary,
-                                    width: 1.5,
-                                    strokeAlign: BorderSide.strokeAlignInside,
-                                  ),
-                                  image: _selectedPhoto != null
-                                      ? DecorationImage(
-                                          image: FileImage(_selectedPhoto!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
-                                ),
-                                child: _selectedPhoto == null
-                                    ? Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                            Icons.add_a_photo_outlined,
-                                            size: 28,
-                                            color: AppColors.primary,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Foto',
-                                            style: AppTypography.captionMedium.copyWith(
-                                              color: AppColors.primary,
-                                              fontSize: 11,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : null,
-                              ),
-                              if (_selectedPhoto != null)
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
+                      AppPhotoPickerField(
+                        label: '',
+                        shape: PhotoPickerShape.circle,
+                        selectedFile: _selectedPhoto,
+                        onPhotoChanged: (file) {
+                          setState(() => _selectedPhoto = file);
+                        },
                       ),
-                      const SizedBox(height: AppSpacing.xl24),
+                      const SizedBox(height: AppSpacing.lg16),
 
                       // Nama Lengkap
                       Text('Nama Lengkap', style: AppTypography.bodyMedium),

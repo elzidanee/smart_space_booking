@@ -288,13 +288,7 @@ class _SpaceCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // Defer navigasi ke frame berikutnya untuk menghindari Flutter Windows
-          // MouseTracker assertion ('!_debugDuringDeviceUpdate') saat tap.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              context.push('/spaces/${space.id}');
-            }
-          });
+          context.push('/spaces/${space.id}');
         },
         borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         child: Container(

@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/app_illustrations.dart';
+import '../../../../core/widgets/app_photo_picker_field.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../providers/admin_controller.dart';
@@ -42,9 +44,12 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
       ),
       builder: (context) => _SpaceFormBottomSheet(
         space: space,
-        onSave: (savedSpace) {
+        onSave: (savedSpace, photoFile) {
           if (space == null) {
-            ref.read(adminSpacesControllerProvider.notifier).createSpace(savedSpace);
+            ref.read(adminSpacesControllerProvider.notifier).createSpace(
+                  savedSpace,
+                  photoFile: photoFile,
+                );
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Space berhasil ditambahkan!'),
@@ -52,7 +57,10 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
               ),
             );
           } else {
-            ref.read(adminSpacesControllerProvider.notifier).updateSpace(savedSpace);
+            ref.read(adminSpacesControllerProvider.notifier).updateSpace(
+                  savedSpace,
+                  photoFile: photoFile,
+                );
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Space berhasil diperbarui!'),
@@ -404,7 +412,7 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
 
 class _SpaceFormBottomSheet extends StatefulWidget {
   final SpaceModel? space;
-  final ValueChanged<SpaceModel> onSave;
+  final void Function(SpaceModel space, File? photoFile) onSave;
 
   const _SpaceFormBottomSheet({
     this.space,
@@ -422,7 +430,8 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
   late TextEditingController _kapasitasCtrl;
   late TextEditingController _deskripsiCtrl;
   late TextEditingController _fasilitasCtrl;
-  late TextEditingController _fotoCtrl;
+  File? _selectedPhotoFile;
+  String? _existingFotoUrl;
   late String _selectedTipe;
 
   @override
@@ -436,9 +445,7 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
     _deskripsiCtrl = TextEditingController(text: widget.space?.deskripsi ?? '');
     _fasilitasCtrl = TextEditingController(
         text: widget.space?.fasilitas.join(', ') ?? 'WiFi Cepat, AC, Power Outlet');
-    _fotoCtrl = TextEditingController(
-        text: widget.space?.foto ??
-            'https://images.unsplash.com/photo-1527192491265-7e15c55b1ed2?w=800&q=80');
+    _existingFotoUrl = widget.space?.foto;
     _selectedTipe = widget.space?.tipe ?? 'personal_desk';
   }
 
@@ -449,7 +456,6 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
     _kapasitasCtrl.dispose();
     _deskripsiCtrl.dispose();
     _fasilitasCtrl.dispose();
-    _fotoCtrl.dispose();
     super.dispose();
   }
 
@@ -470,11 +476,11 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
       hargaPerJam: int.tryParse(_hargaCtrl.text) ?? 20000,
       fasilitas: fasList.isNotEmpty ? fasList : ['WiFi Cepat', 'AC'],
       deskripsi: _deskripsiCtrl.text.trim(),
-      foto: _fotoCtrl.text.trim(),
+      foto: _existingFotoUrl,
       status: widget.space?.status ?? 'tersedia',
     );
 
-    widget.onSave(space);
+    widget.onSave(space, _selectedPhotoFile);
     Navigator.of(context).pop();
   }
 
@@ -508,6 +514,24 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Foto Space Picker (Kamera / Galeri)
+              AppPhotoPickerField(
+                label: 'Foto Ruangan / Meja',
+                helperText: 'Pilih dari kamera atau galeri untuk foto visual ruangan',
+                selectedFile: _selectedPhotoFile,
+                initialUrl: _existingFotoUrl,
+                height: 150,
+                onPhotoChanged: (file) {
+                  setState(() {
+                    _selectedPhotoFile = file;
+                    if (file == null) {
+                      _existingFotoUrl = null;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 16),
 
@@ -596,16 +620,6 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
                 decoration: const InputDecoration(
                   labelText: 'Deskripsi Space',
                   hintText: 'Tuliskan rincian fasilitas dan keunggulan ruangan...',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Foto URL
-              TextFormField(
-                controller: _fotoCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'URL Foto Space',
-                  hintText: 'https://...',
                 ),
               ),
               const SizedBox(height: 24),

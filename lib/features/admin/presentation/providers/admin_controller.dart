@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../spaces/data/models/space_models.dart';
 import '../../data/models/admin_models.dart';
@@ -19,11 +20,16 @@ class AdminProfileController extends AsyncNotifier<AdminProfileModel> {
     return repo.getProfile();
   }
 
-  Future<void> updateProfile(AdminProfileModel profile) async {
+  Future<void> updateProfile(AdminProfileModel profile, {File? photoFile}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      return repo.updateProfile(profile);
+      String? photoUrl = profile.foto;
+      if (photoFile != null) {
+        photoUrl = await repo.uploadSpacePhoto(photoFile);
+      }
+      final updatedProfile = profile.copyWith(foto: photoUrl);
+      return repo.updateProfile(updatedProfile);
     });
   }
 }
@@ -50,21 +56,31 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
     ref.read(adminMembersSearchQueryProvider.notifier).state = query;
   }
 
-  Future<void> createMember(AdminMemberModel member) async {
+  Future<void> createMember(AdminMemberModel member, {File? photoFile}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      await repo.createMember(member);
+      String? photoUrl = member.foto;
+      if (photoFile != null) {
+        photoUrl = await repo.uploadMemberPhoto(photoFile);
+      }
+      final newMember = member.copyWith(foto: photoUrl);
+      await repo.createMember(newMember);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
   }
 
-  Future<void> updateMember(AdminMemberModel member) async {
+  Future<void> updateMember(AdminMemberModel member, {File? photoFile}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      await repo.updateMember(member);
+      String? photoUrl = member.foto;
+      if (photoFile != null) {
+        photoUrl = await repo.uploadMemberPhoto(photoFile);
+      }
+      final updatedMember = member.copyWith(foto: photoUrl);
+      await repo.updateMember(updatedMember);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
@@ -109,22 +125,32 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
     ref.read(adminSpacesSearchQueryProvider.notifier).state = query;
   }
 
-  Future<void> createSpace(SpaceModel space) async {
+  Future<void> createSpace(SpaceModel space, {File? photoFile}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      await repo.createSpace(space);
+      String? photoUrl = space.foto;
+      if (photoFile != null) {
+        photoUrl = await repo.uploadSpacePhoto(photoFile);
+      }
+      final newSpace = space.copyWith(foto: photoUrl);
+      await repo.createSpace(newSpace);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);
     });
   }
 
-  Future<void> updateSpace(SpaceModel space) async {
+  Future<void> updateSpace(SpaceModel space, {File? photoFile}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
-      await repo.updateSpace(space);
+      String? photoUrl = space.foto;
+      if (photoFile != null) {
+        photoUrl = await repo.uploadSpacePhoto(photoFile);
+      }
+      final updatedSpace = space.copyWith(foto: photoUrl);
+      await repo.updateSpace(updatedSpace);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
       return repo.getSpaces(query: query, tipe: tipe);

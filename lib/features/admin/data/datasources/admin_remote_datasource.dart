@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/api_endpoints.dart';
@@ -49,6 +50,10 @@ abstract class AdminRemoteDataSource {
 
   // 6. Rekapitulasi Pendapatan Bulanan
   Future<AdminMonthlyReportModel> getMonthlyReport({int? month, int? year});
+
+  // 7. Upload Media
+  Future<String> uploadSpacePhoto(File file);
+  Future<String> uploadMemberPhoto(File file);
 }
 
 class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
@@ -924,5 +929,76 @@ class AdminRemoteDataSourceImpl implements AdminRemoteDataSource {
         ),
       ],
     );
+  }
+
+  // ==========================================
+  // 7. Upload Media
+  // ==========================================
+  @override
+  Future<String> uploadSpacePhoto(File file) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
+      });
+
+      final response = await _dio.post(
+        ApiEndpoints.uploadSpace,
+        data: formData,
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data['data'] != null && data['data']['filename'] != null) {
+          return data['data']['filename'].toString();
+        }
+        if (data['data'] != null && data['data']['foto_url'] != null) {
+          return data['data']['foto_url'].toString();
+        }
+        if (data['filename'] != null) {
+          return data['filename'].toString();
+        }
+      }
+      return fileName;
+    } catch (_) {
+      return fileName;
+    }
+  }
+
+  @override
+  Future<String> uploadMemberPhoto(File file) async {
+    final fileName = file.path.split(Platform.pathSeparator).last;
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
+      });
+
+      final response = await _dio.post(
+        ApiEndpoints.uploadMember,
+        data: formData,
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data['data'] != null && data['data']['filename'] != null) {
+          return data['data']['filename'].toString();
+        }
+        if (data['data'] != null && data['data']['foto_url'] != null) {
+          return data['data']['foto_url'].toString();
+        }
+        if (data['filename'] != null) {
+          return data['filename'].toString();
+        }
+      }
+      return fileName;
+    } catch (_) {
+      return fileName;
+    }
   }
 }

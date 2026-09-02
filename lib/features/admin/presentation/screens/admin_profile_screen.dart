@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_photo_picker_field.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/models/admin_models.dart';
@@ -43,8 +45,11 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
       ),
       builder: (context) => _EditProfileBottomSheet(
         profile: profile,
-        onSave: (updated) {
-          ref.read(adminProfileControllerProvider.notifier).updateProfile(updated);
+        onSave: (updated, photoFile) {
+          ref.read(adminProfileControllerProvider.notifier).updateProfile(
+                updated,
+                photoFile: photoFile,
+              );
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Profil coworking space berhasil diperbarui!'),
@@ -296,7 +301,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
 
 class _EditProfileBottomSheet extends StatefulWidget {
   final AdminProfileModel profile;
-  final ValueChanged<AdminProfileModel> onSave;
+  final void Function(AdminProfileModel profile, File? photoFile) onSave;
 
   const _EditProfileBottomSheet({
     required this.profile,
@@ -314,6 +319,8 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
   late TextEditingController _teleponCtrl;
   late TextEditingController _alamatCtrl;
   late TextEditingController _deskripsiCtrl;
+  File? _selectedPhotoFile;
+  String? _existingFotoUrl;
 
   @override
   void initState() {
@@ -323,6 +330,7 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
     _teleponCtrl = TextEditingController(text: widget.profile.telepon);
     _alamatCtrl = TextEditingController(text: widget.profile.alamat);
     _deskripsiCtrl = TextEditingController(text: widget.profile.deskripsiFasilitas);
+    _existingFotoUrl = widget.profile.foto;
   }
 
   @override
@@ -344,9 +352,10 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
       telepon: _teleponCtrl.text.trim(),
       alamat: _alamatCtrl.text.trim(),
       deskripsiFasilitas: _deskripsiCtrl.text.trim(),
+      foto: _existingFotoUrl,
     );
 
-    widget.onSave(updated);
+    widget.onSave(updated, _selectedPhotoFile);
     Navigator.of(context).pop();
   }
 
@@ -375,6 +384,24 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+
+              // Foto Coworking Space Picker (Kamera / Galeri)
+              AppPhotoPickerField(
+                label: 'Foto Coworking Space',
+                helperText: 'Pilih dari kamera atau galeri untuk foto profil lokasi',
+                selectedFile: _selectedPhotoFile,
+                initialUrl: _existingFotoUrl,
+                height: 140,
+                onPhotoChanged: (file) {
+                  setState(() {
+                    _selectedPhotoFile = file;
+                    if (file == null) {
+                      _existingFotoUrl = null;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 16),
 
