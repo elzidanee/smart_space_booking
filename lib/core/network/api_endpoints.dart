@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Base URL API. Ganti dengan URL panitia saat ujian dimulai.
-  static String baseUrl = 'https://learn.smktelkom-mlg.sch.id/coworking';
+  static String baseUrl = 'https://bias-cakes-progressive-battery.trycloudflare.com';
 
   // ─────────────────────────────────────────────────
   // 1. Root & Health Check  (#1, #2)
