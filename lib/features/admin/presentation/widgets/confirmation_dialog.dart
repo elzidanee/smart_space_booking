@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
+import '../../../../core/widgets/app_alert.dart';
+
 class ConfirmationDialog extends StatelessWidget {
   final String title;
   final String message;
@@ -38,20 +40,34 @@ class ConfirmationDialog extends StatelessWidget {
     Color confirmColor = AppColors.secondary,
     IconData icon = Icons.warning_amber_rounded,
   }) {
-    return showDialog<bool>(
+    Map<String, String>? details;
+    if (bookingCode != null || memberName != null || spaceName != null) {
+      details = {};
+      if (bookingCode != null) details['Kode Booking'] = bookingCode;
+      if (memberName != null) details['Nama Tamu'] = memberName;
+      if (spaceName != null) details['Ruangan'] = spaceName;
+    }
+
+    AppAlertType alertType = AppAlertType.info;
+    if (confirmColor == AppColors.danger) {
+      alertType = AppAlertType.danger;
+    } else if (confirmColor == AppColors.warning) {
+      alertType = AppAlertType.warning;
+    } else if (confirmColor == AppColors.success) {
+      alertType = AppAlertType.success;
+    }
+
+    return AppAlert.showDialog(
       context: context,
+      title: title,
+      message: message,
+      type: alertType,
+      customColor: confirmColor,
+      customIcon: icon,
+      confirmLabel: confirmLabel,
+      cancelLabel: cancelLabel,
+      details: details,
       barrierDismissible: false,
-      builder: (context) => ConfirmationDialog(
-        title: title,
-        message: message,
-        memberName: memberName,
-        bookingCode: bookingCode,
-        spaceName: spaceName,
-        confirmLabel: confirmLabel,
-        cancelLabel: cancelLabel,
-        confirmColor: confirmColor,
-        icon: icon,
-      ),
     );
   }
 

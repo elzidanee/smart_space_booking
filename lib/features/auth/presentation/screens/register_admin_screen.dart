@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/auth_illustration.dart';
 import '../../data/models/auth_models.dart';
 import '../providers/auth_controller.dart';
@@ -68,14 +69,11 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
 
     if (!success) {
       final error = ref.read(authControllerProvider).error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error?.toString() ?? 'Pendaftaran pengelola gagal. Periksa kembali data Anda.',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: AppColors.danger,
-        ),
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.danger,
+        title: 'Pendaftaran Gagal',
+        message: error?.toString() ?? 'Pendaftaran pengelola gagal. Periksa kembali data Anda.',
       );
     }
   }

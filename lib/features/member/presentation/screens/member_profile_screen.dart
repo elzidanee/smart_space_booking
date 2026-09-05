@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../auth/data/models/auth_models.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../reservations/presentation/providers/reservations_controller.dart';
@@ -590,40 +591,19 @@ class _LogoutButton extends StatelessWidget {
     );
   }
 
-  void _confirmLogout(BuildContext context, WidgetRef ref) {
-    showDialog(
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await AppAlert.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusCard)),
-        title: Row(
-          children: [
-            const Icon(Icons.logout_rounded, color: AppColors.danger, size: 24),
-            const SizedBox(width: 8),
-            Text('Keluar Akun?', style: AppTypography.h3),
-          ],
-        ),
-        content: Text(
-          'Kamu akan keluar dari akun ini. Pastikan semua data sudah tersimpan.',
-          style: AppTypography.body,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(authControllerProvider.notifier).logout();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Ya, Keluar'),
-          ),
-        ],
-      ),
+      title: 'Keluar dari Akun?',
+      message: 'Kamu akan keluar dari sesi ini. Sesi login akan ditutup dan kamu harus masuk kembali.',
+      confirmLabel: 'Ya, Keluar',
+      cancelLabel: 'Batal',
+      type: AppAlertType.danger,
+      icon: Icons.logout_rounded,
     );
+
+    if (confirmed == true) {
+      ref.read(authControllerProvider.notifier).logout();
+    }
   }
 }

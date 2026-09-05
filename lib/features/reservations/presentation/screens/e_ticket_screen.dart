@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../spaces/data/models/space_models.dart';
@@ -53,11 +54,11 @@ class ETicketScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.info_outline, color: AppColors.ink600),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tunjukkan QR Code ini ke resepsionis untuk verifikasi check-in.'),
-                  backgroundColor: AppColors.primary,
-                ),
+              AppAlert.showToast(
+                context: context,
+                type: AppAlertType.info,
+                title: 'Petunjuk Check-in',
+                message: 'Tunjukkan QR Code ini ke resepsionis untuk verifikasi akses ruangan.',
               );
             },
           ),
@@ -95,11 +96,11 @@ class ETicketScreen extends ConsumerWidget {
                       child: OutlinedButton.icon(
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: ticket.kodeBooking));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Kode booking ${ticket.kodeBooking} disalin ke clipboard!'),
-                              backgroundColor: AppColors.success,
-                            ),
+                          AppAlert.showToast(
+                            context: context,
+                            type: AppAlertType.success,
+                            title: 'Kode Disalin',
+                            message: 'Kode booking ${ticket.kodeBooking} berhasil disalin ke clipboard.',
                           );
                         },
                         style: OutlinedButton.styleFrom(
@@ -120,11 +121,11 @@ class ETicketScreen extends ConsumerWidget {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('E-Ticket siap dibagikan.'),
-                              backgroundColor: AppColors.primary,
-                            ),
+                          AppAlert.showToast(
+                            context: context,
+                            type: AppAlertType.info,
+                            title: 'Bagikan Tiket',
+                            message: 'E-Ticket siap dibagikan ke anggota tim atau tamu.',
                           );
                         },
                         style: ElevatedButton.styleFrom(

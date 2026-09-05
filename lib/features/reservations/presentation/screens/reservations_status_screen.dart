@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
@@ -32,74 +33,43 @@ class _ReservationsStatusScreenState
     {'id': 'dibatalkan', 'label': 'Dibatalkan'},
   ];
 
-  void _showCancelDialog(ReservationModel reservation) {
-    showDialog(
+  Future<void> _showCancelDialog(ReservationModel reservation) async {
+    final confirmed = await AppAlert.showConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-        ),
-        title: Row(
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 28),
-            const SizedBox(width: 8),
-            Text('Batalkan Pemesanan?', style: AppTypography.h3),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Apakah Anda yakin ingin membatalkan reservasi untuk ${reservation.namaSpace ?? "Space"} (${reservation.kodeBooking})?',
-              style: AppTypography.body,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tindakan ini tidak dapat dibatalkan setelah dikonfirmasi.',
-              style: AppTypography.caption.copyWith(color: AppColors.danger),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Kembali'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final success = await ref
-                  .read(cancelReservationControllerProvider.notifier)
-                  .cancel(reservation.id);
-
-              if (!mounted) return;
-
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Reservasi berhasil dibatalkan.'),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Gagal membatalkan reservasi.'),
-                    backgroundColor: AppColors.danger,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Ya, Batalkan'),
-          ),
-        ],
-      ),
+      title: 'Batalkan Reservasi?',
+      message: 'Apakah Anda yakin ingin membatalkan reservasi ini? Kuota akan dikembalikan ke publik dan tindakan ini tidak dapat dibatalkan.',
+      confirmLabel: 'Ya, Batalkan',
+      cancelLabel: 'Kembali',
+      type: AppAlertType.danger,
+      details: {
+        'Kode Booking': reservation.kodeBooking,
+        if (reservation.namaSpace != null) 'Ruangan': reservation.namaSpace!,
+      },
     );
+
+    if (confirmed == true && mounted) {
+      final success = await ref
+          .read(cancelReservationControllerProvider.notifier)
+          .cancel(reservation.id);
+
+      if (!mounted) return;
+
+      if (success) {
+        AppAlert.showToast(
+          context: context,
+          type: AppAlertType.success,
+          title: 'Reservasi Dibatalkan',
+          message: 'Reservasi ${reservation.kodeBooking} berhasil dibatalkan.',
+        );
+      } else {
+        AppAlert.showToast(
+          context: context,
+          type: AppAlertType.danger,
+          title: 'Gagal Membatalkan',
+          message: 'Terjadi kendala saat membatalkan reservasi. Silakan coba lagi.',
+        );
+      }
+    }
   }
 
   @override

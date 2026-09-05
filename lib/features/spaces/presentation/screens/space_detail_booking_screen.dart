@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../providers/spaces_controller.dart';
@@ -185,11 +186,11 @@ class _SpaceDetailBookingScreenState
                       _showSuccessBookingDialog(res);
                     } else {
                       final err = ref.read(bookingControllerProvider).errorMessage;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(err ?? 'Gagal membuat reservasi.'),
-                          backgroundColor: AppColors.danger,
-                        ),
+                      AppAlert.showToast(
+                        context: context,
+                        type: AppAlertType.danger,
+                        title: 'Reservasi Gagal',
+                        message: err ?? 'Gagal membuat reservasi. Silakan periksa kembali ketersediaan jadwal.',
                       );
                     }
                   },

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/auth_illustration.dart';
 import '../../../../core/widgets/server_config_bottom_sheet.dart';
 import '../providers/auth_controller.dart';
@@ -60,15 +61,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!success) {
       final error = ref.read(authControllerProvider).error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error?.toString() ?? 'Username atau password salah.',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: AppColors.danger,
-          behavior: SnackBarBehavior.floating,
-        ),
+      final errorMsg = error?.toString() ?? 'Username atau password salah. Silakan periksa kembali.';
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.danger,
+        title: 'Gagal Masuk',
+        message: errorMsg,
       );
     }
   }
