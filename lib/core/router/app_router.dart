@@ -126,6 +126,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Shortcut Routes to Member Tabs
+      GoRoute(
+        path: '/reservations',
+        redirect: (context, state) {
+          ref.read(memberNavIndexProvider.notifier).state = 1;
+          return '/member';
+        },
+      ),
+      GoRoute(
+        path: '/ticket',
+        redirect: (context, state) {
+          ref.read(memberNavIndexProvider.notifier).state = 2;
+          return '/member';
+        },
+      ),
+
       // Admin Shell Routes
       GoRoute(
         path: '/admin',

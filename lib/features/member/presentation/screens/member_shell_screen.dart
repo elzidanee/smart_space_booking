@@ -6,23 +6,21 @@ import '../../../reservations/presentation/screens/reservations_status_screen.da
 import '../../../spaces/presentation/screens/spaces_catalog_screen.dart';
 import 'member_profile_screen.dart';
 
+/// Provider state index tab navigasi member (0: Katalog, 1: Reservasi, 2: Tiket, 3: Akun)
+final memberNavIndexProvider = StateProvider<int>((ref) => 0);
+
 /// Shell Navigasi Member 4-tab sesuai PRD Bagian III §3 (Information Architecture).
-class MemberShellScreen extends ConsumerStatefulWidget {
+class MemberShellScreen extends ConsumerWidget {
   const MemberShellScreen({super.key});
 
   @override
-  ConsumerState<MemberShellScreen> createState() => _MemberShellScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(memberNavIndexProvider);
 
-class _MemberShellScreenState extends ConsumerState<MemberShellScreen> {
-  int _currentIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: IndexedStack(
-          index: _currentIndex,
+          index: currentIndex,
           children: const [
             SpacesCatalogScreen(),
             ReservationsStatusScreen(),
@@ -36,9 +34,9 @@ class _MemberShellScreenState extends ConsumerState<MemberShellScreen> {
           border: Border(top: BorderSide(color: AppColors.border)),
         ),
         child: NavigationBar(
-          selectedIndex: _currentIndex,
+          selectedIndex: currentIndex,
           onDestinationSelected: (index) {
-            setState(() => _currentIndex = index);
+            ref.read(memberNavIndexProvider.notifier).state = index;
           },
           backgroundColor: AppColors.surface0,
           indicatorColor: AppColors.primaryContainer,

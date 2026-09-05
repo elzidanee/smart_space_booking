@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../auth/data/models/auth_models.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../reservations/presentation/providers/reservations_controller.dart';
+import 'member_shell_screen.dart';
 
 class MemberProfileScreen extends ConsumerWidget {
   const MemberProfileScreen({super.key});
@@ -480,15 +481,19 @@ class _QuickLinks extends StatelessWidget {
             iconColor: AppColors.primary,
             title: 'Status Pemesanan',
             subtitle: 'Pantau reservasi aktif kamu',
-            onTap: () => context.push('/reservations'),
+            onTap: () {
+              ref.read(memberNavIndexProvider.notifier).state = 1;
+            },
             showDivider: true,
           ),
           _LinkTile(
-            icon: Icons.qr_code_rounded,
+            icon: Icons.qr_code_2_rounded,
             iconColor: AppColors.secondary,
             title: 'E-Ticket',
             subtitle: 'Akses tiket digital reservasi',
-            onTap: () => context.push('/ticket'),
+            onTap: () {
+              ref.read(memberNavIndexProvider.notifier).state = 2;
+            },
             showDivider: false,
           ),
         ],
