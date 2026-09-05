@@ -251,11 +251,14 @@ class _SpaceDetailBookingScreenState
                 color: AppColors.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                reservation.kodeBooking,
-                style: AppTypography.h2.copyWith(
-                  color: AppColors.primary,
-                  letterSpacing: 2,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  reservation.kodeBooking,
+                  style: AppTypography.h2.copyWith(
+                    color: AppColors.primary,
+                    letterSpacing: 2,
+                  ),
                 ),
               ),
             ),
@@ -287,6 +290,7 @@ class _SpaceDetailBookingScreenState
       {bool isTotal = false, bool isPromo = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -294,15 +298,102 @@ class _SpaceDetailBookingScreenState
               ? AppTypography.bodyEmphasis
               : AppTypography.caption.copyWith(color: AppColors.ink600),
         ),
-        Text(
-          value,
-          style: isTotal
-              ? AppTypography.h3.copyWith(color: AppColors.primary)
-              : isPromo
-                  ? AppTypography.captionMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)
-                  : AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+        const SizedBox(width: AppSpacing.md12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: isTotal
+                ? AppTypography.h3.copyWith(color: AppColors.primary)
+                : isPromo
+                    ? AppTypography.captionMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)
+                    : AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAvailabilityStatus(AvailabilityCheckResult result) {
+    final isAvailable = result.isAvailable;
+    final primaryColor = isAvailable ? AppColors.success : AppColors.danger;
+    final bgColor = isAvailable ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2);
+    final borderColor = isAvailable ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA);
+    final iconData = isAvailable ? Icons.check_circle_rounded : Icons.event_busy_rounded;
+    final title = isAvailable ? 'Slot Tersedia' : 'Slot Sudah Terisi / Tidak Tersedia';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1.2),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: primaryColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(iconData, size: 18, color: primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.captionMedium.copyWith(
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  result.message,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.ink900,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                  softWrap: true,
+                ),
+                if (!isAvailable) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.lightbulb_outline_rounded,
+                        size: 13,
+                        color: AppColors.ink600,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Silakan pilih waktu mulai atau tanggal sewa lain di atas.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.ink600,
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -566,17 +657,26 @@ class _SpaceDetailBookingScreenState
                                       IconButton(
                                         icon: const Icon(Icons.remove, size: 18),
                                         padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                        visualDensity: VisualDensity.compact,
                                         onPressed: () {
                                           ref.read(bookingControllerProvider.notifier).decrementDuration();
                                         },
                                       ),
-                                      Text(
-                                        '${bookingState.durationHours} Jam',
-                                        style: AppTypography.bodyEmphasis,
+                                      Flexible(
+                                        child: Text(
+                                          '${bookingState.durationHours} Jam',
+                                          style: AppTypography.bodyEmphasis,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.add, size: 18),
                                         padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                        visualDensity: VisualDensity.compact,
                                         onPressed: () {
                                           ref.read(bookingControllerProvider.notifier).incrementDuration();
                                         },
@@ -618,42 +718,62 @@ class _SpaceDetailBookingScreenState
                         ),
                       ),
 
-                      // Availability Status Badge
+                      // Availability Status Alert Card
                       if (bookingState.availabilityResult != null) ...[
                         const SizedBox(height: AppSpacing.sm8),
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: bookingState.availabilityResult!.isAvailable
-                                  ? const Color(0xFFD4E9DB)
-                                  : const Color(0xFFFFDAD6),
-                              borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  bookingState.availabilityResult!.isAvailable
-                                      ? Icons.check_circle
-                                      : Icons.cancel,
-                                  size: 16,
-                                  color: bookingState.availabilityResult!.isAvailable
-                                      ? const Color(0xFF2D6A4F)
-                                      : AppColors.danger,
+                        _buildAvailabilityStatus(bookingState.availabilityResult!),
+                      ],
+
+                      // Availability Check Error (if network/server failure)
+                      if (bookingState.errorMessage != null && bookingState.availabilityResult == null) ...[
+                        const SizedBox(height: AppSpacing.sm8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFECACA), width: 1.2),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: BoxDecoration(
+                                  color: AppColors.danger.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  bookingState.availabilityResult!.message,
-                                  style: AppTypography.captionMedium.copyWith(
-                                    color: bookingState.availabilityResult!.isAvailable
-                                        ? const Color(0xFF2D6A4F)
-                                        : AppColors.danger,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: const Icon(Icons.error_outline_rounded, size: 18, color: AppColors.danger),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Gagal Memeriksa Ketersediaan',
+                                      style: AppTypography.captionMedium.copyWith(
+                                        color: AppColors.danger,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      bookingState.errorMessage!,
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppColors.ink900,
+                                        fontSize: 12,
+                                        height: 1.35,
+                                      ),
+                                      softWrap: true,
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -721,11 +841,14 @@ class _SpaceDetailBookingScreenState
                             children: [
                               const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primary),
                               const SizedBox(width: 6),
-                              Text(
-                                '${bookingState.appliedPromo!.kode} (-${bookingState.appliedPromo!.persentase}%)',
-                                style: AppTypography.captionMedium.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
+                              Flexible(
+                                child: Text(
+                                  '${bookingState.appliedPromo!.kode} (-${bookingState.appliedPromo!.persentase}%)',
+                                  style: AppTypography.captionMedium.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -755,14 +878,21 @@ class _SpaceDetailBookingScreenState
                       // ── Rincian Biaya ─────────────────────────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Subtotal (${bookingState.durationHours} Jam)',
-                            style: AppTypography.caption.copyWith(color: AppColors.ink600),
+                          Expanded(
+                            child: Text(
+                              'Subtotal (${bookingState.durationHours} Jam)',
+                              style: AppTypography.caption.copyWith(color: AppColors.ink600),
+                            ),
                           ),
-                          Text(
-                            CurrencyFormatter.format(subtotal),
-                            style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                          const SizedBox(width: AppSpacing.sm8),
+                          Flexible(
+                            child: Text(
+                              CurrencyFormatter.format(subtotal),
+                              textAlign: TextAlign.right,
+                              style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ],
                       ),
@@ -770,16 +900,23 @@ class _SpaceDetailBookingScreenState
                         const SizedBox(height: 6),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Potongan Diskon',
-                              style: AppTypography.caption.copyWith(color: AppColors.primary),
+                            Expanded(
+                              child: Text(
+                                'Potongan Diskon',
+                                style: AppTypography.caption.copyWith(color: AppColors.primary),
+                              ),
                             ),
-                            Text(
-                              '-${CurrencyFormatter.format(diskon)}',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
+                            const SizedBox(width: AppSpacing.sm8),
+                            Flexible(
+                              child: Text(
+                                '-${CurrencyFormatter.format(diskon)}',
+                                textAlign: TextAlign.right,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -790,11 +927,18 @@ class _SpaceDetailBookingScreenState
                       const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text('Total Pembayaran', style: AppTypography.bodyEmphasis),
-                          Text(
-                            CurrencyFormatter.format(total),
-                            style: AppTypography.h2.copyWith(color: AppColors.ink900),
+                          Expanded(
+                            child: Text('Total Pembayaran', style: AppTypography.bodyEmphasis),
+                          ),
+                          const SizedBox(width: AppSpacing.sm8),
+                          Flexible(
+                            child: Text(
+                              CurrencyFormatter.format(total),
+                              textAlign: TextAlign.right,
+                              style: AppTypography.h2.copyWith(color: AppColors.ink900),
+                            ),
                           ),
                         ],
                       ),
@@ -823,22 +967,29 @@ class _SpaceDetailBookingScreenState
             child: SafeArea(
               child: Row(
                 children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Bayar',
-                        style: AppTypography.caption.copyWith(color: AppColors.ink600),
-                      ),
-                      Text(
-                        CurrencyFormatter.format(total),
-                        style: AppTypography.h3.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 150),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Bayar',
+                          style: AppTypography.caption.copyWith(color: AppColors.ink600),
                         ),
-                      ),
-                    ],
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            CurrencyFormatter.format(total),
+                            style: AppTypography.h3.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.lg16),
                   Expanded(

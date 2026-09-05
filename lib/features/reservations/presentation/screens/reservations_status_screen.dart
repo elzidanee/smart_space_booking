@@ -401,11 +401,15 @@ class _ReservationCard extends StatelessWidget {
                     'Total Biaya:',
                     style: AppTypography.caption.copyWith(color: AppColors.ink600),
                   ),
-                  Text(
-                    CurrencyFormatter.format(displayPrice),
-                    style: AppTypography.bodyEmphasis.copyWith(
-                      color: isCancelled ? AppColors.ink600 : AppColors.primary,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: AppSpacing.sm8),
+                  Flexible(
+                    child: Text(
+                      CurrencyFormatter.format(displayPrice),
+                      textAlign: TextAlign.right,
+                      style: AppTypography.bodyEmphasis.copyWith(
+                        color: isCancelled ? AppColors.ink600 : AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

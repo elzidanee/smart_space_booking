@@ -2,6 +2,7 @@ import 'package:bookingworkroom/core/errors/failure.dart';
 import 'package:bookingworkroom/core/utils/app_url_helper.dart';
 import 'package:bookingworkroom/features/spaces/data/models/space_models.dart';
 import 'package:bookingworkroom/features/spaces/presentation/providers/spaces_controller.dart';
+import 'package:bookingworkroom/features/spaces/domain/repositories/spaces_repository.dart';
 import 'package:bookingworkroom/features/spaces/presentation/screens/space_detail_booking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -297,5 +298,136 @@ void main() {
       expect(res.subtotal, equals(70000));
       expect(res.totalBayar, equals(70000));
     });
+
+    // SLOT-AVAILABILITY-01: When slot is full/taken, renders Slot Sudah Terisi card without collision or overflow
+    testWidgets(
+        'SLOT-AVAILABILITY-01: When slot is full, renders Slot Sudah Terisi card without overflow',
+        (WidgetTester tester) async {
+      const space = SpaceModel(
+        id: 20,
+        nama: 'Executive Boardroom',
+        tipe: 'meeting_room',
+        kapasitas: 8,
+        hargaPerJam: 100000,
+        foto: null,
+      );
+
+      final fakeRepo = _FakeSpacesRepository(
+        availabilityResult: const AvailabilityCheckResult(
+          isAvailable: false,
+          message: 'Ruangan sudah terisi pada slot waktu tersebut oleh pemesan lain.',
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            spaceDetailProvider(20).overrideWith((ref) => Future.value(space)),
+            spacesRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: SpaceDetailBookingScreen(spaceId: 20),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final checkButton = find.text('Cek Ketersediaan Slot');
+      await tester.ensureVisible(checkButton);
+      await tester.tap(checkButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Slot Sudah Terisi / Tidak Tersedia'), findsOneWidget);
+      expect(find.text('Ruangan sudah terisi pada slot waktu tersebut oleh pemesan lain.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    // SLOT-AVAILABILITY-02: When slot is available, renders Slot Tersedia alert card
+    testWidgets(
+        'SLOT-AVAILABILITY-02: When slot is available, renders Slot Tersedia alert card',
+        (WidgetTester tester) async {
+      const space = SpaceModel(
+        id: 21,
+        nama: 'Dedicated Desk',
+        tipe: 'personal_desk',
+        kapasitas: 1,
+        hargaPerJam: 25000,
+        foto: null,
+      );
+
+      final fakeRepo = _FakeSpacesRepository(
+        availabilityResult: const AvailabilityCheckResult(
+          isAvailable: true,
+          message: 'Ruangan tersedia untuk jadwal yang dipilih.',
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            spaceDetailProvider(21).overrideWith((ref) => Future.value(space)),
+            spacesRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: SpaceDetailBookingScreen(spaceId: 21),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final checkButton = find.text('Cek Ketersediaan Slot');
+      await tester.ensureVisible(checkButton);
+      await tester.tap(checkButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Slot Tersedia'), findsOneWidget);
+      expect(find.text('Ruangan tersedia untuk jadwal yang dipilih.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
+}
+
+class _FakeSpacesRepository implements SpacesRepository {
+  final AvailabilityCheckResult availabilityResult;
+
+  _FakeSpacesRepository({required this.availabilityResult});
+
+  @override
+  Future<AvailabilityCheckResult> checkAvailability({
+    required int spaceId,
+    required String tanggal,
+    required String jamMulai,
+    required int durasi,
+  }) async {
+    return availabilityResult;
+  }
+
+  @override
+  Future<PromoCheckResult> checkPromo(String kodePromo, {int subtotal = 0}) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ReservationModel> createReservation(CreateReservationRequest request) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getActiveDiscounts() async => [];
+
+  @override
+  Future<SpaceModel> getSpaceById(int id) async =>
+      const SpaceModel(id: 1, nama: 'Space', tipe: 'personal_desk', kapasitas: 1, hargaPerJam: 50000);
+
+  @override
+  Future<List<SpaceModel>> getSpaces({String? query, String? tipe}) async => [];
+
+  @override
+  Future<List<Map<String, dynamic>>> getSpaceTypes() async => [];
 }

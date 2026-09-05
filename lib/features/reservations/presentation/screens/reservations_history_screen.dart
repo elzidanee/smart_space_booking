@@ -359,6 +359,7 @@ class _HistoryItemCard extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: AppSpacing.sm8),
 
           // Price & Status Badge
           Column(

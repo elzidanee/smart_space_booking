@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as dev;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../spaces/data/models/space_models.dart';
@@ -20,6 +21,10 @@ final selectedHistoryYearProvider =
 /// Provider daftar reservasi member
 final myReservationsProvider =
     FutureProvider.autoDispose<List<ReservationModel>>((ref) async {
+  final link = ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 2), () => link.close());
+  ref.onDispose(() => timer.cancel());
+
   final repository = ref.watch(reservationsRepositoryProvider);
   final status = ref.watch(selectedReservationStatusFilterProvider);
   final list = await repository.getMyReservations(status: status);

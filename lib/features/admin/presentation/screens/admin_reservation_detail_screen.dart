@@ -516,18 +516,25 @@ class _AdminReservationDetailScreenState
   Widget _buildPriceRow(String label, String value, {bool isDiscount = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTypography.caption.copyWith(
-            color: isDiscount ? AppColors.primary : AppColors.ink600,
+        Expanded(
+          child: Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: isDiscount ? AppColors.primary : AppColors.ink600,
+            ),
           ),
         ),
-        Text(
-          value,
-          style: AppTypography.captionMedium.copyWith(
-            color: isDiscount ? AppColors.primary : AppColors.ink900,
-            fontWeight: FontWeight.w600,
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: AppTypography.captionMedium.copyWith(
+              color: isDiscount ? AppColors.primary : AppColors.ink900,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

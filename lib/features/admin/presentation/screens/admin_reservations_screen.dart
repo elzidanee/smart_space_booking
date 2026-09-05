@@ -543,13 +543,18 @@ class _AdminReservationsScreenState
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    item.kodeBooking,
-                    style: AppTypography.h2.copyWith(
-                      color: AppColors.secondary,
-                      fontSize: 15,
+                  Expanded(
+                    child: Text(
+                      item.kodeBooking,
+                      style: AppTypography.h2.copyWith(
+                        color: AppColors.secondary,
+                        fontSize: 15,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   StatusBadge(status: ReservasiStatus.fromApi(item.status)),
                 ],
               ),
@@ -618,17 +623,25 @@ class _AdminReservationsScreenState
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 13, color: AppColors.secondary),
-                        const SizedBox(width: 6),
-                        Text(
-                          DateFormatter.formatIndonesian(item.tanggal),
-                          style: AppTypography.caption.copyWith(fontSize: 12),
-                        ),
-                      ],
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, size: 13, color: AppColors.secondary),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              DateFormatter.formatIndonesian(item.tanggal),
+                              style: AppTypography.caption.copyWith(fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.access_time, size: 13, color: AppColors.secondary),
                         const SizedBox(width: 4),

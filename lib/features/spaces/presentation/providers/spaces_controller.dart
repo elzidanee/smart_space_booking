@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -11,7 +12,12 @@ final selectedSpaceCategoryProvider = StateProvider<String>((ref) => 'all');
 final spaceSearchQueryProvider = StateProvider<String>((ref) => '');
 
 /// Provider daftar space (dengan filter kategori & pencarian)
+/// Menggunakan cache retention 5 menit agar navigasi antar-tab instan tanpa loading ulang.
 final spacesListProvider = FutureProvider.autoDispose<List<SpaceModel>>((ref) async {
+  final link = ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 5), () => link.close());
+  ref.onDispose(() => timer.cancel());
+
   final repository = ref.watch(spacesRepositoryProvider);
   final category = ref.watch(selectedSpaceCategoryProvider);
   final query = ref.watch(spaceSearchQueryProvider);
@@ -24,12 +30,20 @@ final spacesListProvider = FutureProvider.autoDispose<List<SpaceModel>>((ref) as
 
 /// Provider tipe/kategori space dari API /api/spaces/types (FR-06 / Endpoint #12)
 final spaceTypesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final link = ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 10), () => link.close());
+  ref.onDispose(() => timer.cancel());
+
   final repository = ref.watch(spacesRepositoryProvider);
   return await repository.getSpaceTypes();
 });
 
 /// Provider promo/diskon aktif dari API /api/diskon/active (Endpoint #16)
 final activeDiscountsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final link = ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 5), () => link.close());
+  ref.onDispose(() => timer.cancel());
+
   final repository = ref.watch(spacesRepositoryProvider);
   return await repository.getActiveDiscounts();
 });

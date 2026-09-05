@@ -140,25 +140,28 @@ class _HeroHeader extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Profil Saya',
-                          style: AppTypography.captionMedium.copyWith(
-                            color: Colors.white.withValues(alpha: 0.75),
-                            letterSpacing: 1.5,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Profil Saya',
+                            style: AppTypography.captionMedium.copyWith(
+                              color: Colors.white.withValues(alpha: 0.75),
+                              letterSpacing: 1.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          nama,
-                          style: AppTypography.h1.copyWith(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(height: 4),
+                          Text(
+                            nama,
+                            style: AppTypography.h1.copyWith(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
                         if (username.isNotEmpty)
                           Text(
                             '@$username',
@@ -193,12 +196,13 @@ class _HeroHeader extends StatelessWidget {
                         ],
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
 
         // Floating Avatar
         Positioned(
