@@ -13,20 +13,39 @@ final memberNavIndexProvider = StateProvider<int>((ref) => 0);
 class MemberShellScreen extends ConsumerWidget {
   const MemberShellScreen({super.key});
 
+  static const List<Widget> _pages = [
+    SpacesCatalogScreen(),
+    ReservationsStatusScreen(),
+    ETicketScreen(),
+    MemberProfileScreen(),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(memberNavIndexProvider);
 
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(
-          index: currentIndex,
-          children: const [
-            SpacesCatalogScreen(),
-            ReservationsStatusScreen(),
-            ETicketScreen(),
-            MemberProfileScreen(),
-          ],
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 240),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0.0, 0.018),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            );
+          },
+          child: KeyedSubtree(
+            key: ValueKey<int>(currentIndex),
+            child: _pages[currentIndex.clamp(0, _pages.length - 1)],
+          ),
         ),
       ),
       bottomNavigationBar: Container(

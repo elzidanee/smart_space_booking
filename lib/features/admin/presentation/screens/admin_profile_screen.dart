@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/app_photo_picker_field.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import '../../../../core/widgets/server_config_bottom_sheet.dart';
@@ -51,11 +52,11 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                 updated,
                 photoFile: photoFile,
               );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profil coworking space berhasil diperbarui!'),
-              backgroundColor: AppColors.secondary,
-            ),
+          AppAlert.showToast(
+            context: context,
+            type: AppAlertType.success,
+            title: 'Profil Diperbarui',
+            message: 'Profil coworking space berhasil diperbarui.',
           );
         },
       ),
@@ -240,8 +241,11 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                           onPressed: () {
                             if (_appKey != null) {
                               Clipboard.setData(ClipboardData(text: _appKey!));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('App Key disalin ke clipboard')),
+                              AppAlert.showToast(
+                                context: context,
+                                type: AppAlertType.success,
+                                title: 'Key Disalin',
+                                message: 'App Key berhasil disalin ke clipboard.',
                               );
                             }
                           },
@@ -276,7 +280,20 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+                onPressed: () async {
+                  final confirmed = await AppAlert.showConfirmation(
+                    context: context,
+                    title: 'Keluar dari Akun Pengelola?',
+                    message: 'Sesi pengelola akan diakhiri dan kamu harus masuk kembali dengan kredensial admin.',
+                    confirmLabel: 'Ya, Keluar',
+                    cancelLabel: 'Batal',
+                    type: AppAlertType.danger,
+                    icon: Icons.logout_rounded,
+                  );
+                  if (confirmed == true) {
+                    ref.read(authControllerProvider.notifier).logout();
+                  }
+                },
                 icon: const Icon(Icons.logout, color: AppColors.danger),
                 label: const Text('Keluar dari Akun Pengelola', style: TextStyle(color: AppColors.danger)),
                 style: OutlinedButton.styleFrom(

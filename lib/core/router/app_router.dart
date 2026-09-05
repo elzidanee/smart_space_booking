@@ -55,74 +55,98 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Auth Routes
       GoRoute(
         path: '/login',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final role = state.uri.queryParameters['role'];
-          return LoginScreen(initialRole: role);
+          return _buildSmoothPage(
+            state: state,
+            child: LoginScreen(initialRole: role),
+          );
         },
       ),
       GoRoute(
         path: '/register-member',
-        builder: (context, state) => const RegisterMemberScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          state: state,
+          child: const RegisterMemberScreen(),
+        ),
       ),
       GoRoute(
         path: '/register-admin',
-        builder: (context, state) => const RegisterAdminScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          state: state,
+          child: const RegisterAdminScreen(),
+        ),
       ),
 
       // Member Shell Routes
       GoRoute(
         path: '/member',
-        builder: (context, state) => const MemberShellScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          state: state,
+          child: const MemberShellScreen(),
+        ),
       ),
 
       // Space Detail & Booking Route
       GoRoute(
         path: '/spaces/:id',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           // QA-019: Jangan fallback ke ID 1 — jika ID tidak valid tampilkan error state.
           final idStr = state.pathParameters['id'];
           final id = int.tryParse(idStr ?? '');
           if (id == null || id <= 0) {
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text('Detail Space'),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () {
-                    if (context.canPop()) {
-                      context.pop();
-                    } else {
-                      context.go('/member');
-                    }
-                  },
+            return _buildSmoothPage(
+              state: state,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: const Text('Detail Space'),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/member');
+                      }
+                    },
+                  ),
                 ),
-              ),
-              body: AppEmptyState(
-                illustration: const NetworkErrorIllustration(size: 160),
-                title: 'Space Tidak Ditemukan',
-                message: 'ID ruangan "$idStr" tidak valid atau format URL salah.',
-                actionLabel: 'Kembali ke Katalog',
-                onAction: () => context.go('/member'),
+                body: AppEmptyState(
+                  illustration: const NetworkErrorIllustration(size: 160),
+                  title: 'Space Tidak Ditemukan',
+                  message: 'ID ruangan "$idStr" tidak valid atau format URL salah.',
+                  actionLabel: 'Kembali ke Katalog',
+                  onAction: () => context.go('/member'),
+                ),
               ),
             );
           }
-          return SpaceDetailBookingScreen(spaceId: id);
+          return _buildSmoothPage(
+            state: state,
+            child: SpaceDetailBookingScreen(spaceId: id),
+          );
         },
       ),
 
       // Member Reservation History Route (Layar M6)
       GoRoute(
         path: '/reservations/history',
-        builder: (context, state) => const ReservationsHistoryScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          state: state,
+          child: const ReservationsHistoryScreen(),
+        ),
       ),
 
       // Member E-Ticket Detail Route (Layar M7)
       GoRoute(
         path: '/reservations/ticket/:id',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final idStr = state.pathParameters['id'];
           final id = int.tryParse(idStr ?? '');
-          return ETicketScreen(reservationId: id);
+          return _buildSmoothPage(
+            state: state,
+            child: ETicketScreen(reservationId: id),
+          );
         },
       ),
 
@@ -145,11 +169,56 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Admin Shell Routes
       GoRoute(
         path: '/admin',
-        builder: (context, state) => const AdminShellScreen(),
+        pageBuilder: (context, state) => _buildSmoothPage(
+          state: state,
+          child: const AdminShellScreen(),
+        ),
       ),
     ],
   );
 });
+
+/// Transisi halaman mulus (silky smooth transition) perpaduan micro-slide dan fade
+CustomTransitionPage<void> _buildSmoothPage({
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curvedIn = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      final curvedOut = CurvedAnimation(
+        parent: secondaryAnimation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.06, 0.0),
+          end: Offset.zero,
+        ).animate(curvedIn),
+        child: FadeTransition(
+          opacity: curvedIn,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset.zero,
+              end: const Offset(-0.03, 0.0),
+            ).animate(curvedOut),
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}
 
 /// Listenable bridge untuk memicu evaluasi redirect GoRouter saat AuthController berubah
 class _ListenableAuth extends ChangeNotifier {

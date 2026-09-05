@@ -29,6 +29,17 @@ class SmartSpaceApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      scrollBehavior: const SmoothScrollBehavior(),
     );
+  }
+}
+
+/// Konfigurasi scroll fisika halus dan membal (bouncy physics) di seluruh aplikasi
+class SmoothScrollBehavior extends MaterialScrollBehavior {
+  const SmoothScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
   }
 }

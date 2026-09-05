@@ -119,6 +119,14 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      splashFactory: InkSparkle.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+        },
+      ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface0,
         shape: RoundedRectangleBorder(
