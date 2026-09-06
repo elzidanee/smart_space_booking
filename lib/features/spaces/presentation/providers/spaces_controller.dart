@@ -196,11 +196,13 @@ class BookingController extends StateNotifier<BookingFormState> {
         jamMulai: state.formattedTime,
         durasi: state.durationHours,
       );
+      if (!mounted) return;
       state = state.copyWith(
         isCheckingAvailability: false,
         availabilityResult: result,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isCheckingAvailability: false,
         errorMessage: 'Gagal mengecek ketersediaan: ${e.toString()}',
@@ -213,6 +215,7 @@ class BookingController extends StateNotifier<BookingFormState> {
     state = state.copyWith(isCheckingPromo: true, clearPromoError: true);
     try {
       final promo = await _repository.checkPromo(code, subtotal: subtotal);
+      if (!mounted) return true;
       state = state.copyWith(
         isCheckingPromo: false,
         appliedPromo: promo,
@@ -220,6 +223,7 @@ class BookingController extends StateNotifier<BookingFormState> {
       );
       return true;
     } catch (e) {
+      if (!mounted) return false;
       state = state.copyWith(
         isCheckingPromo: false,
         promoError: e.toString().replaceAll('Exception: ', ''),
@@ -244,6 +248,7 @@ class BookingController extends StateNotifier<BookingFormState> {
       );
 
       if (!avail.isAvailable) {
+        if (!mounted) return null;
         state = state.copyWith(
           isSubmitting: false,
           availabilityResult: avail,
@@ -280,12 +285,14 @@ class BookingController extends StateNotifier<BookingFormState> {
       );
 
       final reservation = await _repository.createReservation(request);
+      if (!mounted) return reservation;
       state = state.copyWith(
         isSubmitting: false,
         createdReservation: reservation,
       );
       return reservation;
     } catch (e) {
+      if (!mounted) return null;
       final msg = e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', '');
       state = state.copyWith(
         isSubmitting: false,

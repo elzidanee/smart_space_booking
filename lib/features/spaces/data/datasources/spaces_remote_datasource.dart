@@ -65,11 +65,17 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
       },
     );
 
-    final data = _extractData(response.data);
+    var data = _extractData(response.data);
+    if (data is Map) {
+      for (final v in data.values) {
+        if (v is List) { data = v; break; }
+      }
+    }
     if (data is List) {
       return data
           .whereType<Map>()
           .map((json) => SpaceModel.fromJson(Map<String, dynamic>.from(json)))
+          .where((s) => s.id > 0)
           .toList();
     }
     return [];
