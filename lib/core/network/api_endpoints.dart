@@ -49,4 +49,7 @@ class ApiEndpoints {
   static const String uploadImage  = '/api/upload/image';
   static const String uploadSpace  = '/api/upload/spaces';
   static const String uploadMember = '/api/upload/members';
+
+  // Maker
+  static const String makerStats   = '/api/maker/stats';
 }

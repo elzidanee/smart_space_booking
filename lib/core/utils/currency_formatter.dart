@@ -25,4 +25,7 @@ class CurrencyFormatter {
 
   /// Format harga per jam. Contoh: 50000 → Rp 50.000/jam
   static String formatPerHour(num amount) => '${format(amount)}/jam';
+
+  /// Alias format rupiah
+  static String formatRupiah(num amount) => format(amount);
 }
