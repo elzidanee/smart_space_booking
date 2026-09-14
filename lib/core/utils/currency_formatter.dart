@@ -1,38 +1,28 @@
 import 'package:intl/intl.dart';
 
-/// Formatter mata uang Rupiah konsisten untuk seluruh aplikasi.
 class CurrencyFormatter {
   CurrencyFormatter._();
 
-  static final NumberFormat _formatter = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
+  static final _fmt = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-  /// Format angka ke Rupiah: contoh `50000` -> `Rp 50.000`
+  /// Format angka ke Rupiah. Contoh: 50000 → Rp 50.000
   static String format(num amount) {
     try {
-      return _formatter.format(amount);
+      return _fmt.format(amount);
     } catch (_) {
-      // Fallback manual jika locale id_ID belum ter-load (tanpa throw ke UI)
-      final isNegative = amount < 0;
-      final absStr = amount.abs().truncate().toString();
+      // Fallback manual jika locale belum ter-load
+      final isNeg = amount < 0;
+      final s = amount.abs().truncate().toString();
       final buf = StringBuffer();
-      for (int i = 0; i < absStr.length; i++) {
-        final rev = absStr.length - i;
-        buf.write(absStr[i]);
+      for (int i = 0; i < s.length; i++) {
+        final rev = s.length - i;
+        buf.write(s[i]);
         if (rev > 1 && rev % 3 == 1) buf.write('.');
       }
-      return '${isNegative ? '-Rp ' : 'Rp '}$buf';
+      return '${isNeg ? '-Rp ' : 'Rp '}$buf';
     }
   }
 
-  /// Alias format untuk Rupiah
-  static String formatRupiah(num amount) => format(amount);
-
-  /// Format harga per jam: contoh `50000` -> `Rp 50.000/jam`
-  static String formatPerHour(num amount) {
-    return '${format(amount)}/jam';
-  }
+  /// Format harga per jam. Contoh: 50000 → Rp 50.000/jam
+  static String formatPerHour(num amount) => '${format(amount)}/jam';
 }

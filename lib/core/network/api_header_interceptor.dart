@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../storage/secure_storage_service.dart';
 
-/// Interceptor Dio terpusat untuk menyisipkan header x-maker-key dan Authorization: Bearer,
-/// serta merespons 401 Unauthorized sesuai PRD Bagian II §5.
 class ApiHeaderInterceptor extends Interceptor {
   final SecureStorageService storage;
   final VoidCallback? onSessionExpired;
@@ -12,43 +10,36 @@ class ApiHeaderInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    // 1. Periksa apakah ada custom Base URL di secure storage
-    final customBaseUrl = await storage.readBaseUrl();
-    if (customBaseUrl != null && customBaseUrl.trim().isNotEmpty) {
-      options.baseUrl = customBaseUrl.trim();
+    // Gunakan custom base URL jika tersimpan
+    final customBase = await storage.readBaseUrl();
+    if (customBase != null && customBase.trim().isNotEmpty) {
+      options.baseUrl = customBase.trim();
     }
 
-    // Normalisasi URL path untuk baseUrl bersubfolder (misal: /coworking)
+    // Normalisasi trailing slash agar path tidak double-slash
     if (options.baseUrl.isNotEmpty) {
-      if (!options.baseUrl.endsWith('/')) {
-        options.baseUrl = '${options.baseUrl}/';
-      }
-      if (options.path.startsWith('/')) {
-        options.path = options.path.substring(1);
-      }
+      if (!options.baseUrl.endsWith('/')) options.baseUrl = '${options.baseUrl}/';
+      if (options.path.startsWith('/')) options.path = options.path.substring(1);
     }
 
-    // 2. Sisipkan header x-maker-key jika tersedia
+    // Sisipkan x-maker-key
     final appKey = await storage.readAppKey();
     if (appKey != null && appKey.isNotEmpty) {
       options.headers['x-maker-key'] = appKey;
     }
 
-    // 3. Sisipkan Authorization Bearer jika ada sesi aktif
+    // Sisipkan Bearer token
     final token = await storage.readAccessToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
 
-    // Selalu terima respon JSON
     options.headers['Accept'] = 'application/json';
-
     handler.next(options);
   }
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // Handle status 401 Unauthorized -> hapus sesi dan picu callback redirect login
     if (err.response?.statusCode == 401) {
       await storage.clearSession();
       onSessionExpired?.call();

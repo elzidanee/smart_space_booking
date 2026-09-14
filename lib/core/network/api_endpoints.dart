@@ -1,102 +1,52 @@
-/// Konstanta URL & Endpoint API Panitia sesuai endpoint.md (50 endpoint).
-/// Base URL dapat diubah saat panitia memberikan URL resmi ujian.
+/// Konstanta URL & endpoint API. Ganti baseUrl saat ujian dimulai.
 class ApiEndpoints {
   ApiEndpoints._();
 
-  /// Base URL API. Ganti dengan URL panitia saat ujian dimulai.
   static String baseUrl = 'https://learn.smktelkom-mlg.sch.id/coworking';
 
-  // ─────────────────────────────────────────────────
-  // 1. Root & Health Check  (#1, #2)
-  // ─────────────────────────────────────────────────
-  static const String root = '/';
-  static const String health = '/health';
+  // Auth
+  static const String registerMember = '/api/auth/register/member';
+  static const String registerAdmin  = '/api/auth/register/admin-space';
+  static const String login          = '/api/auth/login';
+  static const String profile        = '/api/auth/profile';
 
-  // ─────────────────────────────────────────────────
-  // 2. App Maker  (#3-#7)
-  // ─────────────────────────────────────────────────
-  static const String makerRegister = '/api/maker/register'; // POST
-  static const String makerLogin = '/api/maker/login';       // POST
-  static const String makerMe = '/api/maker/me';             // GET Bearer Maker
-  static const String makerStats = '/api/maker/stats';       // GET
-  static const String makerList = '/api/maker/list';         // GET publik
+  // Spaces
+  static const String spaceTypes        = '/api/spaces/types';
+  static const String spaceAvailability = '/api/spaces/availability';
+  static const String spaces            = '/api/spaces';
+  static String spaceDetail(int id)     => '/api/spaces/$id';
 
-  // ─────────────────────────────────────────────────
-  // 3. Autentikasi User  (#8-#11)
-  // ─────────────────────────────────────────────────
-  static const String registerMember = '/api/auth/register/member';       // POST
-  static const String registerAdmin = '/api/auth/register/admin-space';   // POST
-  static const String login = '/api/auth/login';                          // POST
-  static const String profile = '/api/auth/profile';                      // GET Bearer
+  // Diskon
+  static const String diskonActive      = '/api/diskon/active';
+  static const String checkDiskon       = '/api/diskon/check';
+  static String diskonDetail(int id)    => '/api/diskon/$id';
 
-  // ─────────────────────────────────────────────────
-  // 4. Space Coworking  (#12-#15)
-  // ─────────────────────────────────────────────────
-  static const String spaceTypes = '/api/spaces/types';          // GET
-  static const String spaceAvailability = '/api/spaces/availability'; // GET ?id_space,tanggal,jam_mulai,durasi_jam
-  static const String spaces = '/api/spaces';                     // GET ?tipe,search
-  static String spaceDetail(int id) => '/api/spaces/$id';         // GET
+  // Reservasi Member
+  static const String reservasi            = '/api/reservasi';
+  static const String reservasiMy         = '/api/reservasi/my';
+  static const String reservasiMyHistory  = '/api/reservasi/my/history';
+  static String eTicket(int id)           => '/api/reservasi/$id/e-ticket';
+  static String reservasiDetail(int id)   => '/api/reservasi/$id';
+  static String cancelReservasi(int id)   => '/api/reservasi/$id/cancel';
 
-  // ─────────────────────────────────────────────────
-  // 5. Diskon & Promo  (#16-#18)
-  // ─────────────────────────────────────────────────
-  static const String diskonActive = '/api/diskon/active';        // GET
-  static const String checkDiskon = '/api/diskon/check';          // POST { nama_diskon }
-  static String diskonDetail(int id) => '/api/diskon/$id';        // GET
+  // Admin
+  static const String adminProfile        = '/api/admin/profile';
+  static const String adminMembers        = '/api/admin/members';
+  static String adminMemberDetail(int id) => '/api/admin/members/$id';
+  static const String adminSpaces         = '/api/admin/spaces';
+  static String adminSpaceDetail(int id)  => '/api/admin/spaces/$id';
+  static const String adminDiskon         = '/api/admin/diskon';
+  static String adminDiskonDetail(int id) => '/api/admin/diskon/$id';
+  static const String adminReservasi      = '/api/admin/reservasi';
+  static String adminReservasiDetail(int id)        => '/api/admin/reservasi/$id';
+  static String adminUpdateReservasiStatus(int id)  => '/api/admin/reservasi/$id/status';
+  static String adminCheckIn(int id)                => '/api/admin/reservasi/$id/check-in';
+  static String adminCheckOut(int id)               => '/api/admin/reservasi/$id/check-out';
+  static const String adminMonthlyReport  = '/api/admin/reports/monthly';
+  static const String adminIncomeReport   = '/api/admin/reports/income';
 
-  // ─────────────────────────────────────────────────
-  // 6. Reservasi Member  (#19-#24)
-  // ─────────────────────────────────────────────────
-  static const String reservasi = '/api/reservasi';               // POST Bearer Member
-  static const String reservasiMy = '/api/reservasi/my';          // GET Bearer Member
-  static const String reservasiMyHistory = '/api/reservasi/my/history'; // GET ?month,year
-  static String eTicket(int id) => '/api/reservasi/$id/e-ticket'; // GET Bearer
-  static String reservasiDetail(int id) => '/api/reservasi/$id';  // GET Bearer
-  static String cancelReservasi(int id) => '/api/reservasi/$id/cancel'; // PATCH Bearer Member
-
-  // ─────────────────────────────────────────────────
-  // 7. Profil Lokasi Admin  (#25-#26)
-  // ─────────────────────────────────────────────────
-  static const String adminProfile = '/api/admin/profile';        // GET/PUT Bearer Admin
-
-  // ─────────────────────────────────────────────────
-  // 8. Manajemen Member Admin  (#27-#31)
-  // ─────────────────────────────────────────────────
-  static const String adminMembers = '/api/admin/members';                // GET/POST
-  static String adminMemberDetail(int id) => '/api/admin/members/$id';   // GET/PUT/DELETE
-
-  // ─────────────────────────────────────────────────
-  // 9. Manajemen Space Admin  (#32-#36)
-  // ─────────────────────────────────────────────────
-  static const String adminSpaces = '/api/admin/spaces';                  // GET/POST
-  static String adminSpaceDetail(int id) => '/api/admin/spaces/$id';     // GET/PUT/DELETE
-
-  // ─────────────────────────────────────────────────
-  // 10. Manajemen Diskon Admin  (#37-#41)
-  // ─────────────────────────────────────────────────
-  static const String adminDiskon = '/api/admin/diskon';                  // GET/POST
-  static String adminDiskonDetail(int id) => '/api/admin/diskon/$id';    // GET/PUT/DELETE
-
-  // ─────────────────────────────────────────────────
-  // 11. Reservasi & Check-in/out Admin  (#42-#45)
-  // ─────────────────────────────────────────────────
-  static const String adminReservasi = '/api/admin/reservasi';            // GET ?month,year,status,id_space,tanggal
-  static String adminReservasiDetail(int id) => '/api/admin/reservasi/$id'; // GET
-  static String adminUpdateReservasiStatus(int id) => '/api/admin/reservasi/$id/status'; // PATCH { status }
-  static String adminCheckIn(int id) => '/api/admin/reservasi/$id/check-in';   // POST
-  static String adminCheckOut(int id) => '/api/admin/reservasi/$id/check-out'; // POST
-
-  // ─────────────────────────────────────────────────
-  // 12. Laporan Pendapatan Admin  (#46-#47)
-  // ─────────────────────────────────────────────────
-  static const String adminMonthlyReport = '/api/admin/reports/monthly'; // GET ?month,year
-  static const String adminIncomeReport = '/api/admin/reports/income';   // GET ?month,year (alias ringkas)
-
-  // ─────────────────────────────────────────────────
-  // 13. Upload Media  (#48-#50)
-  // ─────────────────────────────────────────────────
-  static const String uploadImage = '/api/upload/image';   // POST multipart
-  static const String uploadSpace = '/api/upload/spaces';  // POST multipart Bearer Admin
-  static const String uploadMember = '/api/upload/members'; // POST multipart
+  // Upload
+  static const String uploadImage  = '/api/upload/image';
+  static const String uploadSpace  = '/api/upload/spaces';
+  static const String uploadMember = '/api/upload/members';
 }
-

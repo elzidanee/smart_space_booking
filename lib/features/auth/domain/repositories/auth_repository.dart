@@ -7,9 +7,10 @@ import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/models/auth_models.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final remoteDataSource = ref.watch(authRemoteDataSourceProvider);
-  final storage = ref.watch(secureStorageServiceProvider);
-  return AuthRepositoryImpl(remoteDataSource, storage);
+  return AuthRepositoryImpl(
+    ref.watch(authRemoteDataSourceProvider),
+    ref.watch(secureStorageServiceProvider),
+  );
 });
 
 abstract class AuthRepository {
@@ -22,27 +23,22 @@ abstract class AuthRepository {
 }
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource _remoteDataSource;
+  final AuthRemoteDataSource _remote;
   final SecureStorageService _storage;
 
-  AuthRepositoryImpl(this._remoteDataSource, this._storage);
+  AuthRepositoryImpl(this._remote, this._storage);
 
   @override
   Future<UserSession?> getCurrentSession() async {
     try {
       final token = await _storage.readAccessToken();
-      final role = await _storage.readUserRole();
+      final role  = await _storage.readUserRole();
+      if (token == null || token.isEmpty || role == null || role.isEmpty) return null;
 
-      if (token == null || token.isEmpty || role == null || role.isEmpty) {
-        return null;
-      }
-
-      final userDataStr = await _storage.readUserData();
       UserModel? user;
-      if (userDataStr != null && userDataStr.isNotEmpty) {
-        try {
-          user = UserModel.fromJsonString(userDataStr);
-        } catch (_) {}
+      final cached = await _storage.readUserData();
+      if (cached != null && cached.isNotEmpty) {
+        try { user = UserModel.fromJsonString(cached); } catch (_) {}
       }
 
       return UserSession(token: token, role: role, user: user);
@@ -53,16 +49,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserSession> login(String username, String password) async {
-    // Autentikasi murni ke Backend API (QA-002: Demo bypass removed for production integrity)
     try {
-      final session = await _remoteDataSource.login(username.trim(), password.trim());
-      await _storage.saveAccessToken(session.token);
-      await _storage.saveUserRole(session.role);
-
-      if (session.user != null) {
-        await _storage.saveUserData(session.user!.toJsonString());
-      }
-
+      final session = await _remote.login(username.trim(), password.trim());
+      await _saveSession(session);
       return session;
     } catch (e) {
       throw ExceptionMapper.map(e);
@@ -75,14 +64,13 @@ class AuthRepositoryImpl implements AuthRepository {
       String? photoFilename;
       if (photoFile != null) {
         try {
-          photoFilename = await _remoteDataSource.uploadMemberPhoto(photoFile);
+          photoFilename = await _remote.uploadMemberPhoto(photoFile);
         } catch (e) {
-          // Tetap lanjutkan registrasi jika upload gagal atau rethrow
-          throw ValidationFailure('Gagal mengunggah foto profil: ${e.toString()}');
+          throw ValidationFailure('Gagal mengunggah foto profil: $e');
         }
       }
 
-      final finalRequest = RegisterMemberRequest(
+      final finalReq = RegisterMemberRequest(
         namaMember: request.namaMember,
         instansi: request.instansi,
         telp: request.telp,
@@ -92,14 +80,8 @@ class AuthRepositoryImpl implements AuthRepository {
         foto: photoFilename ?? request.foto,
       );
 
-      final session = await _remoteDataSource.registerMember(finalRequest);
-      await _storage.saveAccessToken(session.token);
-      await _storage.saveUserRole(session.role);
-
-      if (session.user != null) {
-        await _storage.saveUserData(session.user!.toJsonString());
-      }
-
+      final session = await _remote.registerMember(finalReq);
+      await _saveSession(session);
       return session;
     } catch (e) {
       if (e is Failure) rethrow;
@@ -110,14 +92,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<UserSession> registerAdmin(RegisterAdminRequest request) async {
     try {
-      final session = await _remoteDataSource.registerAdmin(request);
-      await _storage.saveAccessToken(session.token);
-      await _storage.saveUserRole(session.role);
-
-      if (session.user != null) {
-        await _storage.saveUserData(session.user!.toJsonString());
-      }
-
+      final session = await _remote.registerAdmin(request);
+      await _saveSession(session);
       return session;
     } catch (e) {
       throw ExceptionMapper.map(e);
@@ -127,23 +103,27 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<UserModel> getProfile() async {
     try {
-      final profile = await _remoteDataSource.getProfile();
+      final profile = await _remote.getProfile();
       await _storage.saveUserData(profile.toJsonString());
       return profile;
     } catch (e) {
-      // Fallback ke data profil lokal yang tersimpan
-      final cachedStr = await _storage.readUserData();
-      if (cachedStr != null && cachedStr.isNotEmpty) {
-        try {
-          return UserModel.fromJsonString(cachedStr);
-        } catch (_) {}
+      final cached = await _storage.readUserData();
+      if (cached != null && cached.isNotEmpty) {
+        try { return UserModel.fromJsonString(cached); } catch (_) {}
       }
       throw ExceptionMapper.map(e);
     }
   }
 
   @override
-  Future<void> logout() async {
-    await _storage.clearSession();
+  Future<void> logout() => _storage.clearSession();
+
+  // Simpan token + role + data user ke storage setelah login/register
+  Future<void> _saveSession(UserSession session) async {
+    await _storage.saveAccessToken(session.token);
+    await _storage.saveUserRole(session.role);
+    if (session.user != null) {
+      await _storage.saveUserData(session.user!.toJsonString());
+    }
   }
 }
