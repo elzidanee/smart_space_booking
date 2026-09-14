@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Skala Spasi & Radius sesuai PRD Bagian III §2.3 dan §2.4.
+/// Skala Spasi & Radius UI.
 class AppSpacing {
   AppSpacing._();
 

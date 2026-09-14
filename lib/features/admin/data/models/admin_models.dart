@@ -152,7 +152,7 @@ class AdminMemberModel {
   }
 }
 
-/// Model Request Tambah Member Baru oleh Admin (POST /api/admin/members) (QA-005)
+/// Model Request Tambah Member Baru oleh Admin (POST /api/admin/members)
 class AdminMemberCreateRequest {
   final String nama;
   final String instansi;
@@ -185,7 +185,7 @@ class AdminMemberCreateRequest {
   }
 }
 
-/// Model Request Update Member oleh Admin (PUT /api/admin/members/{id}) (QA-006)
+/// Model Request Update Member oleh Admin (PUT /api/admin/members/{id})
 class AdminMemberUpdateRequest {
   final int id;
   final String? nama;

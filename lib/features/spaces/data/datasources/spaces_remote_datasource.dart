@@ -55,7 +55,6 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
   @override
   Future<List<SpaceModel>> getSpaces({String? query, String? tipe}) async {
     final queryTipe = (tipe == 'personal_desk' || tipe == 'desk') ? 'desk' : tipe;
-    // QA-001/018: Tidak ada silent mock fallback — exception dilempar agar UI menampilkan error state.
     final response = await _dio.get(
       ApiEndpoints.spaces,
       queryParameters: {

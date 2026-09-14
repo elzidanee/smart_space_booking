@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
-// =============================================================================
-// REUSABLE EMPTY STATE WIDGET (PRD Bagian III §6)
-// =============================================================================
-
+/// Reusable widget status kosong (Empty State)
 class AppEmptyState extends StatelessWidget {
   final Widget illustration;
   final String title;

@@ -239,7 +239,7 @@ class BookingController extends StateNotifier<BookingFormState> {
   Future<ReservationModel?> submitBooking(int spaceId, {int? hargaPerJam}) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      // 1. Re-check ketersediaan slot real-time tepat sebelum submit (QA-004 / PRD §9)
+      // 1. Re-check ketersediaan slot real-time tepat sebelum submit
       final avail = await _repository.checkAvailability(
         spaceId: spaceId,
         tanggal: state.formattedDate,

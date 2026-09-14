@@ -111,7 +111,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/spaces/:id',
         pageBuilder: (context, state) {
-          // QA-019: Jangan fallback ke ID 1 — jika ID tidak valid tampilkan error state.
           final idStr = state.pathParameters['id'];
           final id = int.tryParse(idStr ?? '');
           if (id == null || id <= 0) {

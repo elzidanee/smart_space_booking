@@ -6,7 +6,7 @@ import 'admin_master_data_screen.dart';
 import 'admin_profile_screen.dart';
 import 'admin_reservations_screen.dart';
 
-/// Shell Navigasi Admin 4-tab sesuai PRD Bagian III §3 (Information Architecture).
+/// Shell Navigasi Admin 4-tab (Dashboard, Reservasi, Master Data, Profil).
 class AdminShellScreen extends ConsumerStatefulWidget {
   const AdminShellScreen({super.key});
 

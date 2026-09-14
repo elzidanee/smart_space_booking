@@ -13,7 +13,7 @@ int _parseInt(dynamic value, {int defaultValue = 0}) {
   return defaultValue;
 }
 
-/// Model Ruangan / Workstation sesuai PRD Bagian II §5.3 & Kontrak API.
+/// Model Ruangan / Workstation.
 class SpaceModel {
   final int id;
   final String nama;

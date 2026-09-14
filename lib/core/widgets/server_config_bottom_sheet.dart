@@ -7,7 +7,7 @@ import '../storage/secure_storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
-/// Modal dialog untuk pengaturan dinamis Server URL & Maker App Key (QA-014)
+/// Modal dialog untuk pengaturan dinamis Server URL & Maker App Key
 class ServerConfigBottomSheet extends ConsumerStatefulWidget {
   const ServerConfigBottomSheet({super.key});
 

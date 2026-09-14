@@ -483,7 +483,7 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
               ),
               const SizedBox(height: 12),
 
-              // Password field (wajib saat create member, opsional saat edit) (QA-005, QA-006)
+              // Password field (wajib saat tambah member baru, opsional saat edit)
               TextFormField(
                 controller: _passwordCtrl,
                 obscureText: _obscurePassword,

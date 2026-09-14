@@ -5,7 +5,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../utils/app_url_helper.dart';
 
-/// Reusable Skeleton Shimmer Loading sesuai PRD NFR §6 & Desain §6.
+/// Reusable Skeleton Shimmer Loading untuk kartu dan detail data.
 class AppShimmer extends StatelessWidget {
   final double? width;
   final double? height;

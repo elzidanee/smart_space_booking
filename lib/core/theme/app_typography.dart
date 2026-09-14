@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// Sistem tipografi Sora + Inter sesuai PRD Bagian III §2.2.
+/// Sistem tipografi Sora + Inter.
 class AppTypography {
   AppTypography._();
 

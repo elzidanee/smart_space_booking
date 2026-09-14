@@ -3,7 +3,7 @@ import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 
-/// Konfigurasi ThemeData Material 3 Smart Space Booking sesuai PRD Bagian III.
+/// Konfigurasi ThemeData Material 3 Smart Space Booking.
 class AppTheme {
   AppTheme._();
 
@@ -50,7 +50,7 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          minimumSize: const Size.fromHeight(48), // Target sentuh >= 48dp sesuai NFR PRD §6
+          minimumSize: const Size.fromHeight(48), // Target sentuh standar >= 48dp
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
           ),

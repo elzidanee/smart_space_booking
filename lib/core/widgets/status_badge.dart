@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
-/// Enum 5 status reservasi resmi sesuai PRD Bagian II §7 & Bagian III §2.5a.
+/// Enum status reservasi resmi aplikasi.
 enum ReservasiStatus {
   belumDikonfirm,
   disetujui,
@@ -28,7 +28,7 @@ enum ReservasiStatus {
       };
 }
 
-/// Widget Status Badge sesuai PRD Bagian III §2.5a (Pill: Ikon + Warna + Teks).
+/// Widget Status Badge (Pill: Ikon + Warna + Teks).
 class StatusBadge extends StatelessWidget {
   final ReservasiStatus status;
   final bool compact;

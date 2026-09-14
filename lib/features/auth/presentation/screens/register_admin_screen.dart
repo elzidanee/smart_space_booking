@@ -9,7 +9,7 @@ import '../../../../core/widgets/auth_illustration.dart';
 import '../../data/models/auth_models.dart';
 import '../providers/auth_controller.dart';
 
-/// Layar Registrasi Admin / Pengelola Space sesuai PRD Layar A1.
+/// Layar Registrasi Admin / Pengelola Space.
 class RegisterAdminScreen extends ConsumerStatefulWidget {
   const RegisterAdminScreen({super.key});
 

@@ -9,7 +9,7 @@ import 'member_profile_screen.dart';
 /// Provider state index tab navigasi member (0: Katalog, 1: Reservasi, 2: Tiket, 3: Akun)
 final memberNavIndexProvider = StateProvider<int>((ref) => 0);
 
-/// Shell Navigasi Member 4-tab sesuai PRD Bagian III §3 (Information Architecture).
+/// Shell Navigasi Member 4-tab (Katalog, Reservasi, Tiket, Profil).
 class MemberShellScreen extends ConsumerWidget {
   const MemberShellScreen({super.key});
 
