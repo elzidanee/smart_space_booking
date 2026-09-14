@@ -13,11 +13,16 @@ import 'package:bookingworkroom/features/spaces/presentation/screens/spaces_cata
 import 'package:bookingworkroom/features/spaces/presentation/screens/space_detail_booking_screen.dart';
 import 'package:bookingworkroom/main.dart';
 
+import 'package:bookingworkroom/features/onboarding/presentation/screens/onboarding_flow_screen.dart';
+
 void main() {
   testWidgets('SmartSpaceApp main smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(
-        child: SmartSpaceApp(),
+      ProviderScope(
+        overrides: [
+          onboardingCompleteProvider.overrideWith((ref) => true),
+        ],
+        child: const SmartSpaceApp(),
       ),
     );
 

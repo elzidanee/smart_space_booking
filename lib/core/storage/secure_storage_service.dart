@@ -7,7 +7,7 @@ final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
   ));
 });
 
-/// Layanan penyimpanan kredensial terenkripsi (Keystore Android) sesuai PRD Bagian II §6 & §10.
+/// Layanan penyimpanan kredensial terenkripsi (Keystore/EncryptedSharedPreferences).
 class SecureStorageService {
   final FlutterSecureStorage _storage;
 

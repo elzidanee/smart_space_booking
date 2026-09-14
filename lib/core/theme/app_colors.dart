@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Palet warna resmi Smart Space Booking sesuai PRD Bagian III §2.1.
+/// Palet warna resmi Smart Space Booking.
 class AppColors {
   AppColors._();
 
