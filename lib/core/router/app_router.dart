@@ -10,15 +10,26 @@ import '../../features/member/presentation/screens/member_shell_screen.dart';
 import '../../features/reservations/presentation/screens/e_ticket_screen.dart';
 import '../../features/reservations/presentation/screens/reservations_history_screen.dart';
 import '../../features/spaces/presentation/screens/space_detail_booking_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_flow_screen.dart';
 import '../widgets/app_illustrations.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/onboarding',
     debugLogDiagnostics: false,
     refreshListenable: _ListenableAuth(ref),
     redirect: (context, state) {
       final authState = ref.read(authControllerProvider);
+      final onboardingDone = ref.read(onboardingCompleteProvider);
+
+      // 0. Jika onboarding belum selesai, tetap di halaman onboarding
+      if (!onboardingDone) {
+        if (state.matchedLocation == '/onboarding') return null;
+        return '/onboarding';
+      }
+
+      // Jika sudah selesai onboarding dan masih di /onboarding, redirect ke login
+      if (state.matchedLocation == '/onboarding') return '/login';
 
       // 1. Jika masih loading memeriksa sesi, jangan redirect
       if (authState.isLoading) return null;
@@ -52,6 +63,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      // Onboarding Flow (Splash + 3 Screens)
+      GoRoute(
+        path: '/onboarding',
+        pageBuilder: (context, state) => _buildSmoothPage(
+          state: state,
+          child: const OnboardingFlowScreen(),
+        ),
+      ),
+
       // Auth Routes
       GoRoute(
         path: '/login',
@@ -220,10 +240,17 @@ CustomTransitionPage<void> _buildSmoothPage({
   );
 }
 
-/// Listenable bridge untuk memicu evaluasi redirect GoRouter saat AuthController berubah
+/// Listenable bridge untuk memicu evaluasi redirect GoRouter saat AuthController atau Onboarding berubah
 class _ListenableAuth extends ChangeNotifier {
   _ListenableAuth(Ref ref) {
     ref.listen(authControllerProvider, (previous, next) {
+      if (previous != next) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
+      }
+    });
+    ref.listen(onboardingCompleteProvider, (previous, next) {
       if (previous != next) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
