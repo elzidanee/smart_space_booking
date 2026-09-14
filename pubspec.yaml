@@ -48,10 +48,6 @@ dependencies:
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
 
-  # Forms & Validation
-  flutter_form_builder: ^10.3.0
-  form_builder_validators: ^11.1.2
-
   # QR Code & Image Picker
   qr_flutter: ^4.1.0
   image_picker: ^1.1.2
