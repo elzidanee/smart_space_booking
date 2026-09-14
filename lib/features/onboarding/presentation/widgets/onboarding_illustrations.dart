@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
@@ -71,13 +72,12 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
 
     // Building roof accent bar (Terracotta)
     final roofPaint = Paint()..color = AppColors.primary;
+    final roofRect = Rect.fromLTWH(w * 0.20, h * 0.20, w * 0.52, h * 0.045);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.20, h * 0.20, w * 0.52, h * 0.045),
-        const Radius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
+      RRect.fromLTRBAndCorners(
+        roofRect.left, roofRect.top, roofRect.right, roofRect.bottom,
+        topLeft: const Radius.circular(12),
+        topRight: const Radius.circular(12),
       ),
       roofPaint,
     );
@@ -123,13 +123,12 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
 
     // === ENTRANCE DOOR ===
     final doorPaint = Paint()..color = AppColors.primary;
+    final doorRect = Rect.fromLTWH(w * 0.40, h * 0.68, w * 0.12, h * 0.14);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.40, h * 0.68, w * 0.12, h * 0.14),
-        const Radius.only(
-          topLeft: Radius.circular(6),
-          topRight: Radius.circular(6),
-        ),
+      RRect.fromLTRBAndCorners(
+        doorRect.left, doorRect.top, doorRect.right, doorRect.bottom,
+        topLeft: const Radius.circular(6),
+        topRight: const Radius.circular(6),
       ),
       doorPaint,
     );
@@ -281,13 +280,12 @@ class _EasyBookingPainter extends CustomPainter {
 
     // Calendar header bar (Teal)
     final headerPaint = Paint()..color = AppColors.secondary;
+    final headerRect = Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.60, h * 0.09);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.60, h * 0.09),
-        const Radius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
+      RRect.fromLTRBAndCorners(
+        headerRect.left, headerRect.top, headerRect.right, headerRect.bottom,
+        topLeft: const Radius.circular(16),
+        topRight: const Radius.circular(16),
       ),
       headerPaint,
     );
@@ -516,13 +514,12 @@ class _SmartManagementPainter extends CustomPainter {
 
     // Dashboard top bar
     final topBarPaint = Paint()..color = AppColors.surface50;
+    final topBarRect = Rect.fromLTWH(w * 0.12, h * 0.20, w * 0.62, h * 0.07);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.12, h * 0.20, w * 0.62, h * 0.07),
-        const Radius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
+      RRect.fromLTRBAndCorners(
+        topBarRect.left, topBarRect.top, topBarRect.right, topBarRect.bottom,
+        topLeft: const Radius.circular(16),
+        topRight: const Radius.circular(16),
       ),
       topBarPaint,
     );
@@ -608,12 +605,10 @@ class _SmartManagementPainter extends CustomPainter {
       final color = i == 3 ? AppColors.primary : AppColors.secondary.withValues(alpha: 0.6);
 
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(barX, barY, w * 0.035, barH),
-          const Radius.only(
-            topLeft: Radius.circular(3),
-            topRight: Radius.circular(3),
-          ),
+        RRect.fromLTRBAndCorners(
+          barX, barY, barX + w * 0.035, barY + barH,
+          topLeft: const Radius.circular(3),
+          topRight: const Radius.circular(3),
         ),
         Paint()..color = color,
       );
@@ -821,24 +816,22 @@ class _SplashLogoPainter extends CustomPainter {
     final buildPaint = Paint()..color = Colors.white;
 
     // Left building
+    final leftBldg = Rect.fromLTWH(w * 0.30, h * 0.32, w * 0.14, h * 0.30);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.30, h * 0.32, w * 0.14, h * 0.30),
-        const Radius.only(
-          topLeft: Radius.circular(4),
-          topRight: Radius.circular(4),
-        ),
+      RRect.fromLTRBAndCorners(
+        leftBldg.left, leftBldg.top, leftBldg.right, leftBldg.bottom,
+        topLeft: const Radius.circular(4),
+        topRight: const Radius.circular(4),
       ),
       buildPaint,
     );
     // Right building (taller)
+    final rightBldg = Rect.fromLTWH(w * 0.48, h * 0.26, w * 0.16, h * 0.36);
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.48, h * 0.26, w * 0.16, h * 0.36),
-        const Radius.only(
-          topLeft: Radius.circular(4),
-          topRight: Radius.circular(4),
-        ),
+      RRect.fromLTRBAndCorners(
+        rightBldg.left, rightBldg.top, rightBldg.right, rightBldg.bottom,
+        topLeft: const Radius.circular(4),
+        topRight: const Radius.circular(4),
       ),
       buildPaint,
     );
