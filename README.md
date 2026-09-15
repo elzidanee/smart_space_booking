@@ -11,7 +11,7 @@
 [![Architecture](https://img.shields.io/badge/Architecture-Clean_Feature--First-orange?style=for-the-badge)]()
 [![Security](https://img.shields.io/badge/Security-Android_Keystore_(AES--GCM)-red?style=for-the-badge&logo=android)]()
 [![API Endpoints](https://img.shields.io/badge/API_Contract-50%2F50_Endpoints_(100%25)-brightgreen?style=for-the-badge&logo=postman&logoColor=white)]()
-[![QA Status](https://img.shields.io/badge/QA_Tests-48%2F48_Passed_(100%25)-success?style=for-the-badge&logo=checkmarx&logoColor=white)]()
+[![QA Status](https://img.shields.io/badge/QA_Tests-53%2F53_Passed_(100%25)-success?style=for-the-badge&logo=checkmarx&logoColor=white)]()
 
 <br>
 
@@ -25,6 +25,7 @@
 [Siklus Status Reservasi](#-siklus-status-reservasi-state-machine) •
 [Arsitektur & Direktori](#-arsitektur-perangkat-lunak--struktur-proyek) •
 [Keputusan Rekayasa Penting](#-sorotan-rekayasa-teknis-engineering-highlights) •
+[Alur Pemanggilan API (Call Flow)](#-arsitektur--alur-pemanggilan-api-api-call-flow) •
 [Matriks Kontrak API (50 Endpoint)](#-matriks-kontrak-api-50-endpoint-lengkap) •
 [Sistem Desain UI/UX](#-sistem-desain--pengalaman-pengguna-uiux) •
 [Instalasi & Menjalankan](#-panduan-instalasi--menjalankan-proyek) •
@@ -368,6 +369,140 @@ Ilustrasi pada alur onboarding serta garis putus-putus perforasi sobekan tiket d
 
 ---
 
+## 🔄 Arsitektur & Alur Pemanggilan API (API Call Flow)
+
+Seluruh komunikasi data antara aplikasi Flutter dan server REST API diatur melalui arsitektur berlapis yang konsisten, terisolasi, dan aman. Tidak ada layar (*Screen*) yang memanggil `Dio` secara langsung. Setiap request wajib melewati lapisan abstraksi: **Presentation (Screen & Controller) ➔ Domain (Repository Interface) ➔ Data (Repository Impl & Remote DataSource) ➔ Core Network (Dio Client & Interceptor)**.
+
+### 1. Diagram Siklus Pemanggilan API Berlapis (Layered Request-Response Lifecycle)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Pengguna (UI)
+    participant Screen as Presentation (Screen/Widget)
+    participant Controller as Riverpod Controller (StateNotifier)
+    participant Repo as Domain & Data Repository
+    participant DataSource as Remote DataSource
+    participant Interceptor as ApiHeaderInterceptor
+    participant DioClient as Dio HTTP Client
+    participant Server as Backend REST API (Panitia UKK)
+
+    User->>Screen: Interaksi (Klik tombol / Submit form)
+    Screen->>Controller: Panggil method (misal: submitBooking)
+    Note over Controller: Set loading state (isSubmitting = true)
+    Controller->>Repo: createReservation(requestDto)
+    Repo->>DataSource: createReservation(request)
+    
+    DataSource->>Interceptor: Kirim HTTP Request via Dio
+    Note over Interceptor: 1. Injeksi header x-maker-key otomatis<br/>2. Injeksi Bearer Token dari SecureStorage<br/>3. Normalisasi double slash URL
+    Interceptor->>DioClient: Request dengan Header Lengkap
+    DioClient->>Server: HTTP Method + Endpoint + JSON Body
+    
+    alt Response Sukses (HTTP 200 / 201)
+        Server-->>DioClient: HTTP 200/201 JSON Payload
+        DioClient-->>DataSource: Response Data
+        Note over DataSource: Helper _extractData()<br/>Model.fromJson() mapping defensif
+        DataSource-->>Repo: Entity / DTO Model
+        Repo-->>Controller: Return ReservationModel
+        Note over Controller: Update State (createdReservation, loading=false)
+        Controller-->>Screen: Reaktif rebuild UI
+        Screen-->>User: Tampilkan dialog sukses / hasil data
+    else Response Gagal / Token Expired (HTTP 401 / 400 / 500)
+        Server-->>DioClient: HTTP Error (401 / 400 / 404 / 500)
+        DioClient-->>Interceptor: Tangkap DioException
+        opt Kode Status 401 Unauthorized
+            Note over Interceptor: Force Logout Otomatis:<br/>Hapus token di SecureStorage<br/>Trigger redirect GoRouter ke /login
+        end
+        Interceptor-->>DataSource: Lempar DioException
+        DataSource-->>Repo: Tangkap error
+        Note over Repo: ExceptionMapper.map(e)<br/>Ubah ke Failure ramah pengguna
+        Repo-->>Controller: Lempar Failure terpetakan
+        Note over Controller: Update State (errorMessage, loading=false)
+        Controller-->>Screen: Kirim notifikasi error
+        Screen-->>User: Tampilkan AppAlert Toast (Bahasa Indonesia)
+    end
+```
+
+---
+
+### 2. Alur Rinci 6 Skenario Utama Pemanggilan API (End-to-End User Journey)
+
+#### 🔐 Skenario 1: Autentikasi & Penyimpanan Sesi Terenkripsi (Login Flow)
+1. **Input Kredensial**: Pengguna memilih peran (**Member** atau **Admin Coworking**), menginput username dan password di `LoginScreen`.
+2. **Pemicu Controller**: Form memanggil `ref.read(authControllerProvider.notifier).login(username, password, role)`.
+3. **Penyisipan Kunci Tenant**: `ApiHeaderInterceptor` otomatis menyisipkan header multi-tenant `x-maker-key: <app_key>` dari konfigurasi aktif.
+4. **Panggilan Endpoint**: Mengirim `POST /api/auth/login` dengan request body `{ "username": "...", "password": "..." }`.
+5. **Penyimpanan Terenkripsi Hardware**: Server mengembalikan JWT `access_token` beserta objek profil pengguna. Token disimpan ke `SecureStorageService` yang terenkripsi hardware via **Android Keystore (AES-GCM)** serta di-cache ke memori RAM untuk akses instan tanpa jeda baca disk.
+6. **Pengalihan Rute Otomatis**: Pembaruan status sesi di `authControllerProvider` otomatis memicu `_ListenableAuth`, dan `GoRouter` mengarahkan layar ke beranda sesuai peran pengguna (`/member` atau `/admin`).
+
+#### 🏢 Skenario 2: Eksplorasi Katalog Ruangan & Caching Memori 5 Menit (Catalog Flow)
+1. **Pemicu Provider**: Saat `SpacesCatalogScreen` dibuka, `spacesListProvider` diinisialisasi dengan konfigurasi `ref.keepAlive()` dan `Timer(Duration(minutes: 5))`.
+2. **Panggilan Endpoint**: `SpacesRemoteDataSourceImpl` memanggil `GET /api/spaces?tipe=<tipe>&search=<keyword>`.
+3. **Ekstraksi Data Defensif**: Metode `_extractData` mengekstrak data dari berbagai kemungkinan format respons server (baik array langsung, objek dengan bungkus `data`, atau string JSON).
+4. **Fallback Filter Sisi Klien**: Jika backend ujian mengabaikan query parameter, aplikasi secara cerdas memfilter kecocokan tipe (*Personal Desk*, *Meeting Room*, *Private Office*) dan keyword pencarian di memori lokal.
+5. **Retensi Cache**: Jika pengguna berpindah-pindah tab navigasi dalam kurun 5 menit, katalog tampil instan dari RAM tanpa request jaringan ulang.
+
+#### ⏱️ Skenario 3: Pengecekan Ketersediaan Slot & Tabrakan Jam (Availability Engine & Collision Check)
+1. **Input Parameter Sewa**: Pengguna memilih tanggal, jam mulai sewa (misal `09:00`), dan durasi (misal `3 Jam` $\implies$ rentang `09:00 - 12:00`).
+2. **Validasi Waktu Lokal (Anti Jam Lampau)**:
+   - Jika tanggal sewa adalah hari ini, sistem membandingkan jam mulai terhadap jam perangkat saat ini:
+   $$\text{Jam Perangkat} > \text{Jam Mulai} \implies \text{Ditolak ("Jam sewa sudah terlewat")}$$
+3. **Cross-Check Database Reservasi (Pencegahan Double-Booking)**:
+   - Sistem memeriksa daftar reservasi aktif pada tanggal & space yang sama dari endpoint `/api/admin/reservasi` atau `/api/reservasi/my`.
+   - Algoritma `TimeSlotCollisionHelper.isRangeColliding` mengonversi waktu ke menit sejak tengah malam:
+   $$\text{Bentrok} = (T_{\text{mulai}} < R_{\text{selesai}}) \land (T_{\text{selesai}} > R_{\text{mulai}})$$
+   - Jika terjadi irisan/overlap, langsung mengembalikan status `isAvailable = false` dengan informasi: *"Slot ruangan pukul 09:00 - 12:00 sudah ter-reservasi (#BK-XXXXXX)"*.
+4. **Panggilan Endpoint Server**: Mengirim `GET /api/spaces/availability?id_space=X&tanggal=Y&jam_mulai=Z&durasi_jam=N`.
+5. **Proteksi Tombol "Lanjutkan Reservasi" (*Auto Pre-Check*)**:
+   - Saat pengguna menekan tombol "Lanjutkan Reservasi", sistem **otomatis menjalankan pengecekan terlebih dahulu**.
+   - Jika slot terisi, sistem memblokir form konfirmasi, menampilkan kartu peringatan merah, dan memunculkan pop-up bahaya (*toast danger*).
+
+#### 📝 Skenario 4: Pembuatan Transaksi Reservasi (Booking Creation Flow)
+1. **Validasi Kupon Diskon (Opsional)**: Pengguna mengetik kode promo $\implies$ aplikasi memanggil `POST /api/diskon/check` dengan payload `{ nama_diskon }`. Persentase diskon diparsing dan memotong subtotal secara otomatis.
+2. **Pengecekan Ganda Sebelum Submit (*Anti-Race Condition*)**: Tepat sebelum data pesanan dikirim, controller mengecek ketersediaan slot sekali lagi untuk mengantisipasi jika ada pemesan lain yang baru saja membayar slot tersebut pada detik yang sama.
+3. **Panggilan Endpoint Transaksi**: Mengirim `POST /api/reservasi` dengan body lengkap:
+   ```json
+   {
+     "id_space": 1,
+     "tanggal_reservasi": "2026-09-15",
+     "jam_mulai": "09:00",
+     "durasi_jam": 3,
+     "id_diskon": 2,
+     "harga_per_jam": 50000,
+     "subtotal": 150000,
+     "potongan_diskon": 30000,
+     "total_bayar": 120000
+   }
+   ```
+4. **Parsing Respons & Fallback Kode Booking**: Server mengembalikan `ReservationModel`. Jika kode booking kosong dari server, sistem otomatis membuat kode unik rapi `BK-XXXXXX`.
+5. **Modal Dialog Sukses Modern**: Menampilkan modal dialog sukses beranimasi glow checkmark, tiket kode booking monospace dengan tombol salin (clipboard), rincian pesanan, dan dual tombol navigasi ke E-Ticket.
+
+#### 🎫 Skenario 5: Siklus Hidup E-Ticket & Penguncian QR Code (E-Ticket Lifecycle Flow)
+1. **Panggilan Endpoint Tiket**: Mengirim `GET /api/reservasi/:id/e-ticket`.
+2. **Ekstraksi Tiket Digital**: Mengambil data jadwal, ruangan, profil pemesan, rincian pembayaran, dan string payload QR Code.
+3. **Logika Pengaman Status (*QR Code Lock Logic*)**:
+   - Jika status pemesanan masih `belum_dikonfirm` / `menunggu`: **QR Code disembunyikan dan dikunci**, digantikan kartu placeholder informasi dengan ikon gembok waktu (`Icons.lock_clock_rounded`). Ini mencegah tamu melakukan check-in tanpa persetujuan admin.
+   - Jika status pemesanan sudah `disetujui`: **QR Code aktif dan dirender secara dinamis** menggunakan widget `qr_flutter` siap untuk dipindai resepsionis.
+
+#### 🛡️ Skenario 6: Operasional Resepsionis Admin (Konfirmasi, Check-In & Check-Out)
+1. **Persetujuan Pesanan**: Admin meninjau pesanan masuk di `AdminReservationsScreen`. Memanggil `PATCH /api/admin/reservasi/:id/status` dengan body `{ "status": "disetujui" }`.
+2. **Proses Check-In Tamu**: Saat tamu tiba di lokasi dan menunjukkan E-Ticket QR Code, admin menekan tombol **Check-In**. Aplikasi memanggil `POST /api/admin/reservasi/:id/check-in`, status pemesanan berubah menjadi `aktif`.
+3. **Proses Check-Out Terproteksi**: Saat sesi sewa berakhir, admin menekan tombol **Check-Out**. Dialog konfirmasi dua langkah muncul untuk mencegah klik tak sengaja. Setelah dikonfirmasi, aplikasi memanggil `POST /api/admin/reservasi/:id/check-out`, status berubah menjadi `selesai` dan otomatis masuk ke rekapitulasi pendapatan bersih.
+
+---
+
+### 3. Komponen Infrastruktur Jaringan (Network Infrastructure)
+
+| Komponen | File Sumber | Peran & Tanggung Jawab Utama |
+|---|---|---|
+| **Dio Client** | [`dio_client.dart`](lib/core/network/dio_client.dart) | Mengonfigurasi instance singleton HTTP Client dengan batasan `connectTimeout: 15s`, `receiveTimeout: 15s`, dan `LogInterceptor` otomatis nonaktif di mode release. |
+| **Header Interceptor** | [`api_header_interceptor.dart`](lib/core/network/api_header_interceptor.dart) | Menyisipkan header wajib `x-maker-key` dan `Authorization: Bearer <token>`, menormalisasi URL dari *double slash* (`//`), serta mengeksekusi force logout saat server merespons kode `401 Unauthorized`. |
+| **API Endpoints** | [`api_endpoints.dart`](lib/core/network/api_endpoints.dart) | Pusat konstanta URL 50 endpoint API dengan variabel dinamis `baseUrl` yang dapat diganti langsung dari antarmuka aplikasi. |
+| **Exception Mapper** | [`exception_mapper.dart`](lib/core/errors/exception_mapper.dart) | Menerjemahkan setiap jenis error teknis Dio (Timeout, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 500 Server Error) ke dalam pesan Bahasa Indonesia yang ramah bagi pengguna. |
+| **Network Image Helper** | [`app_url_helper.dart`](lib/core/utils/app_url_helper.dart) | Menormalisasi URL foto dari server, mengganti host `localhost:3000` menjadi domain aktif, dan menangani fallback placeholder jika gambar tidak ditemukan. |
+
+---
+
 ## 📡 Matriks Kontrak API (50 Endpoint Lengkap)
 
 Aplikasi telah diaudit secara ketat dan **100% patuh** terhadap seluruh 50 endpoint yang didefinisikan pada Postman Collection UKK Paket B:
@@ -586,19 +721,19 @@ Kualitas kode proyek ini dijaga dengan pengujian berlapis (*Static Analysis*, *U
 # Menjalankan Static Code Analyzer (Hasil: 0 Issues / Bebas Warning)
 flutter analyze
 
-# Menjalankan Seluruh 48 Automated Tests
+# Menjalankan Seluruh 53 Automated Tests
 flutter test
 ```
 
-### Ringkasan Hasil Uji Otomatis (48/48 Passed — 100%)
+### Ringkasan Hasil Uji Otomatis (53/53 Passed — 100%)
 
 | Berkas Pengujian | Jenis Pengujian | Jumlah Test | Status |
 |---|---|:---:|:---:|
-| [`test/admin_test.dart`](test/admin_test.dart) | Widget & Model Testing Modul Admin (Dashboard, Master Data, Report, Shell) | 16 Tests | 🟢 **PASSED** |
+| [`test/admin_test.dart`](test/admin_test.dart) | Widget & Model Testing Modul Admin (Dashboard, Master Data, Report, Shell, Filter) | 18 Tests | 🟢 **PASSED** |
 | [`test/business_logic_qa_test.dart`](test/business_logic_qa_test.dart) | Logika Bisnis, Login Tanpa Bypass, 401 Force Logout, Pre-check Availability | 8 Tests | 🟢 **PASSED** |
-| [`test/detail_space_qa_regression_test.dart`](test/detail_space_qa_regression_test.dart) | Regresi Detail Space, Normalisasi URL Foto, Penanganan Missing JSON Keys | 8 Tests | 🟢 **PASSED** |
-| [`test/widget_test.dart`](test/widget_test.dart) | Smoke Tests & UI Rendering (Catalog, Booking Form, E-Ticket QR, Filter Histori) | 16 Tests | 🟢 **PASSED** |
-| **TOTAL** | **Seluruh Cakupan Pengujian Sistem** | **48 Tests** | 🟢 **ALL PASSED (100%)** |
+| [`test/detail_space_qa_regression_test.dart`](test/detail_space_qa_regression_test.dart) | Regresi Detail Space, Normalisasi URL Foto, Penanganan Missing Keys, Time Collision Math, Slot Availability Guard | 11 Tests | 🟢 **PASSED** |
+| [`test/widget_test.dart`](test/widget_test.dart) | Smoke Tests, UI Rendering, E-Ticket Pending QR Lock, Filter Histori & Katalog | 16 Tests | 🟢 **PASSED** |
+| **TOTAL** | **Seluruh Cakupan Pengujian Sistem** | **53 Tests** | 🟢 **ALL PASSED (100%)** |
 
 ---
 
