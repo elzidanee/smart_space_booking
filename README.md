@@ -7,10 +7,11 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.38.7-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
 [![State Management](https://img.shields.io/badge/State-Riverpod_2.6-blueviolet?style=for-the-badge&logo=redux&logoColor=white)](https://riverpod.dev)
+[![Routing](https://img.shields.io/badge/Router-GoRouter_14.1-00B4D8?style=for-the-badge&logo=flutter&logoColor=white)](https://pub.dev/packages/go_router)
 [![Architecture](https://img.shields.io/badge/Architecture-Clean_Feature--First-orange?style=for-the-badge)]()
+[![Security](https://img.shields.io/badge/Security-Android_Keystore_(AES--GCM)-red?style=for-the-badge&logo=android)]()
 [![API Endpoints](https://img.shields.io/badge/API_Contract-50%2F50_Endpoints_(100%25)-brightgreen?style=for-the-badge&logo=postman&logoColor=white)]()
-[![QA Status](https://img.shields.io/badge/QA_Tests-48%2F48_Passed_(0_Issues)-success?style=for-the-badge&logo=checkmarx&logoColor=white)]()
-[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Windows-green?style=for-the-badge&logo=android)]()
+[![QA Status](https://img.shields.io/badge/QA_Tests-48%2F48_Passed_(100%25)-success?style=for-the-badge&logo=checkmarx&logoColor=white)]()
 
 <br>
 
@@ -20,15 +21,15 @@
 </p>
 
 [Latar Belakang](#-latar-belakang--problem-statement) •
-[Fitur Utama](#-fitur-lengkap-berdasarkan-peran) •
-[Alur Status](#-siklus-status-reservasi-state-machine) •
-[Arsitektur & Folder](#-arsitektur-perangkat-lunak--struktur-proyek) •
-[Matriks API (50 Endpoint)](#-matriks-kontrak-api-50-endpoint-lengkap) •
-[Sistem Desain](#-sistem-desain--pengalaman-pengguna-uiux) •
-[Keamanan & Multi-Tenancy](#-keamanan-multi-tenancy--resiliensi-sistem) •
-[Instalasi & Build APK](#-panduan-instalasi--menjalankan-proyek) •
-[Pengujian QA](#-jaminan-kualitas--pengujian-otomatis-qa) •
-[Cheatsheet Penguji](#-panduan-pengujian-cepat-untuk-penguji-cheatsheet-ukk)
+[Fitur Berdasarkan Peran](#-fitur-lengkap-berdasarkan-peran) •
+[Siklus Status Reservasi](#-siklus-status-reservasi-state-machine) •
+[Arsitektur & Direktori](#-arsitektur-perangkat-lunak--struktur-proyek) •
+[Keputusan Rekayasa Penting](#-sorotan-rekayasa-teknis-engineering-highlights) •
+[Matriks Kontrak API (50 Endpoint)](#-matriks-kontrak-api-50-endpoint-lengkap) •
+[Sistem Desain UI/UX](#-sistem-desain--pengalaman-pengguna-uiux) •
+[Instalasi & Menjalankan](#-panduan-instalasi--menjalankan-proyek) •
+[Panduan Penguji (Cheatsheet UKK)](#-panduan-pengujian-cepat-untuk-penguji-cheatsheet-ukk) •
+[Jaminan Kualitas (QA)](#-jaminan-kualitas--pengujian-otomatis-qa)
 
 ---
 
@@ -36,17 +37,18 @@
 
 ## 📖 Latar Belakang & Problem Statement
 
-Pengelolaan operasional reservasi coworking space dan workstation secara konvensional (melalui WhatsApp, buku tamu fisik, atau spreadsheet) memiliki 3 celah fatal:
-1. **Bentrok Jadwal (*Double Booking*)**: Tidak adanya validasi slot ketersediaan meja/ruangan secara *real-time* sebelum pemesanan dibuat, sehingga dua tamu dapat memesan ruangan yang sama pada slot jam yang bertabrakan.
-2. **Ketiadaan Bukti Sah yang Terverifikasi**: Tamu kesulitan membuktikan keabsahan reservasinya di meja resepsionis tanpa sistem tiket digital resmi berbasis QR Code.
-3. **Pencatatan Finansial Manual**: Pengelola kesulitan menghitung estimasi pendapatan kotor, akumulasi potongan voucher promo/diskon, dan realisasi pendapatan bersih per jenis ruangan secara akurat.
+Pengelolaan operasional reservasi coworking space dan workstation secara konvensional (melalui pesan instan, buku tamu fisik, atau spreadsheet) memiliki 3 celah fatal:
+1. **Bentrok Jadwal (*Double Booking*)**: Tidak adanya validasi ketersediaan slot meja/ruangan secara *real-time*, sehingga dua pelanggan dapat memesan ruangan yang sama pada rentang jam yang bertabrakan.
+2. **Ketiadaan Bukti Sah yang Terverifikasi**: Tamu kesulitan membuktikan keabsahan reservasinya di meja resepsionis tanpa sistem tiket digital resmi berbasis QR Code unik.
+3. **Pencatatan Finansial Manual**: Pengelola kesulitan menghitung estimasi pendapatan kotor, akumulasi potongan voucher diskon, dan realisasi pendapatan bersih per jenis ruangan secara akurat dan otomatis.
 
 ### Solusi yang Dihadirkan: Smart Space Booking
 **Smart Space Booking** adalah aplikasi mobile *native-grade* berbasis **Flutter** dengan arsitektur **Clean Architecture (Feature-First)** yang mengintegrasikan dua peran pengguna (**Member** dan **Admin Pengelola Space**) ke dalam satu ekosistem terpadu:
 * 🛡️ **Pencegahan Double-Booking**: Mesin pengecekan ketersediaan slot waktu dinamis (`/api/spaces/availability`) dengan *double-check validation* sesaat sebelum transaksi dikirim ke server.
-* 🎫 **Tiket Digital QR Code**: Penerbitan e-ticket instan dengan barcode 2D QR Code yang dapat langsung diverifikasi di lokasi saat *check-in*.
-* 📊 **Laporan Finansial Otomatis**: Rekapitulasi pendapatan bulanan (omzet kotor, diskon, omzet bersih, jam pemakaian) lengkap dengan visualisasi proporsi pendapatan per tipe ruangan.
-* 🌐 **Multi-Tenant Ready**: Mendukung isolasi data tenant antar peserta ujian menggunakan header wajib `x-maker-key` dan konfigurasi dinamis langsung dari antarmuka aplikasi.
+* 🎫 **E-Ticket Digital QR Code**: Penerbitan tiket instan dengan barcode 2D QR Code yang dapat langsung diverifikasi oleh resepsionis di lokasi saat tamu *check-in*.
+* 📊 **Laporan Finansial Bulanan**: Rekapitulasi pendapatan otomatis (omzet kotor, total diskon, omzet bersih, akumulasi jam pakai) lengkap dengan visualisasi proporsi pendapatan per tipe ruangan.
+* 🌐 **Multi-Tenant Ready**: Mendukung isolasi data tenant antar peserta ujian menggunakan header wajib `x-maker-key` dan konfigurasi dinamis langsung dari antarmuka aplikasi tanpa kompilasi ulang.
+* 🎨 **Visual Canvas Native**: Ilustrasi onboarding interaktif dan garis perforasi tiket dibuat murni di atas Canvas Flutter (`CustomPainter`), menghasilkan grafis tajam tanpa beban aset gambar eksternal.
 
 ---
 
@@ -60,34 +62,36 @@ Aplikasi mengimplementasikan **seluruh 24 Kebutuhan Fungsional (FR-01 s.d. FR-24
 ├──────────────────────────────────────┬──────────────────────────────────────────┤
 │        👤 MODUL MEMBER (TAMU)        │       🛡️ MODUL ADMIN (PENGELOLA)        │
 ├──────────────────────────────────────┼──────────────────────────────────────────┤
-│ • Registrasi Akun & Foto Profil      │ • Registrasi Lokasi Coworking & Admin    │
-│ • Login Aman dengan Sesi Terenkripsi │ • Dashboard Operasional & Real-time KPI  │
-│ • Katalog Space (Desk/Meeting/Office)│ • Master Data Member (CRUD Penuh)        │
-│ • Filter Tipe Ruangan & Quick Search │ • Master Data Space & Upload Foto Ruangan│
-│ • Cek Ketersediaan Real-Time         │ • Master Data Diskon/Promo (CRUD Penuh)  │
-│ • Klaim Kupon Diskon / Voucher Promo │ • Operasional Check-In Tamu              │
-│ • Rincian Biaya Transparan           │ • Operasional Check-Out (Dialog Aman)    │
-│ • E-Ticket Resmi Berfitur QR Code    │ • Filter Multi-Parameter Reservasi Masuk │
-│ • Pelacakan Status Pemesanan 5 Fase  │ • Laporan Finansial Bulanan Komprehensif │
-│ • Histori Transaksi & Filter Bulanan │ • Distribusi Pendapatan per Tipe Space   │
-│ • Profil & Rekap Pengeluaran Pribadi │ • Profil Lokasi & Informasi Kontak Space │
+│ • Onboarding Interaktif (3 Slide)    │ • Registrasi Lokasi Coworking & Admin    │
+│ • Registrasi Akun & Foto Profil      │ • Dashboard Operasional & Real-time KPI  │
+│ • Login Aman dengan Sesi Terenkripsi │ • Master Data Member (CRUD Penuh)        │
+│ • Katalog Space (Desk/Meeting/Office)│ • Master Data Space & Upload Foto Ruangan│
+│ • Filter Tipe Ruangan & Quick Search │ • Master Data Diskon/Promo (CRUD Penuh)  │
+│ • Cek Ketersediaan Real-Time         │ • Operasional Check-In Tamu              │
+│ • Klaim Kupon Diskon / Voucher Promo │ • Operasional Check-Out (Dialog Aman)    │
+│ • Rincian Biaya Transparan           │ • Filter Multi-Parameter Reservasi Masuk │
+│ • E-Ticket Resmi Berfitur QR Code    │ • Laporan Finansial Bulanan Komprehensif │
+│ • Pelacakan Status Pemesanan 5 Fase  │ • Distribusi Pendapatan per Tipe Space   │
+│ • Histori Transaksi & Filter Bulanan │ • Profil Lokasi & Informasi Kontak Space │
+│ • Profil & Rekap Pengeluaran Pribadi │ • Pengaturan Jaringan & Server Switcher  │
 └──────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
 ### 1. 👤 Modul Member (Penyewa / Tamu)
 * **Onboarding & Autentikasi**:
-  * Pendaftaran akun member baru (`/api/auth/register/member`) lengkap dengan nama, instansi, nomor telepon, alamat, username, dan foto profil.
-  * Login kredensial dengan penyimpanan token JWT terenkripsi dan opsi *Remember Me*.
+  * Pengenalan fitur lewat 3 layar onboarding beranimasi halus: *Discover Workspaces*, *Instant Real-Time Booking*, dan *Smart QR Check-In*.
+  * Pendaftaran akun member baru (`/api/auth/register/member`) lengkap dengan nama, instansi, nomor telepon, alamat, username, dan unggah foto profil (`multipart/form-data`).
+  * Login kredensial aman dengan penyimpanan token JWT terenkripsi dan fitur auto-login otomatis.
 * **Katalog & Eksplorasi Ruangan**:
   * Menampilkan seluruh inventaris ruangan dengan foto resolusi tinggi, kapasitas orang, tarif sewa per jam, dan badge fasilitas (WiFi, AC, Proyektor, Kopi, Whiteboard, dll.).
   * Filter instan berbasis kategori (*Personal Desk*, *Meeting Room*, *Private Office*) serta kolom pencarian nama ruangan yang responsif.
 * **Mesin Pemesanan & Slot Availability Engine**:
-  * Pemilihan tanggal sewa, jam mulai (format 24 jam), dan durasi penggunaan.
+  * Pemilihan tanggal sewa (hari lampau dinonaktifkan, maksimal 90 hari ke depan), jam mulai, dan durasi penggunaan.
   * Tombol **Cek Ketersediaan** yang mengecek bentrok slot ke server secara *real-time* sebelum pemesanan diajukan.
   * Pengecekan ulang otomatis (*pre-submit double check*) untuk menjamin tidak terjadi *race condition* antar pengguna.
 * **Kalkulasi Biaya & Kupon Diskon**:
   * Validasi kode kupon promo (`/api/diskon/check`) dengan verifikasi rentang masa berlaku.
-  * Ringkasan rincian biaya transparan: Subtotal (Durasi × Tarif per Jam), Potongan Diskon, dan Total Bayar Bersih.
+  * Ringkasan rincian biaya transparan: Subtotal (Durasi × Tarif per Jam), Potongan Diskon, dan Total Bayar Bersih (dijaga minimal Rp 0).
 * **Pelacakan Status & Pembatalan Mandiri**:
   * Layar pelacakan status dengan tab filter (Semua, Menunggu, Disetujui, Aktif, Selesai, Dibatalkan).
   * Fitur pembatalan mandiri untuk pemesanan yang masih berstatus `belum_dikonfirm` atau `disetujui`.
@@ -97,7 +101,7 @@ Aplikasi mengimplementasikan **seluruh 24 Kebutuhan Fungsional (FR-01 s.d. FR-24
   * Arsip riwayat pemesanan yang dapat difilter per bulan dan tahun.
   * Kartu ringkasan finansial personal: Total Reservasi, Akumulasi Jam, dan Total Pengeluaran bulanan.
 * **Profil & Akun Member**:
-  * Tampilan kartu identitas digital member, informasi instansi, nomor kontak, statistik pemakaian personal, dan tombol logout aman.
+  * Tampilan kartu identitas digital member, informasi instansi, nomor kontak, statistik pemakaian personal (`.fold()` akumulasi), dan tombol logout aman.
 
 ### 2. 🛡️ Modul Admin (Pengelola Coworking Space)
 * **Registrasi & Dashboard Lokasi**:
@@ -153,7 +157,7 @@ stateDiagram-v2
     [*] --> belum_dikonfirm : Member Mengajukan Reservasi
     belum_dikonfirm --> disetujui : Admin Menyetujui Reservasi
     belum_dikonfirm --> dibatalkan : Dibatalkan (Member / Admin)
-    disetujui --> aktif : Tamu Hadir & Admin Check-In
+    disetujui --> aktif : Tamu Hadir & Admin Check-In (Verifikasi QR)
     disetujui --> dibatalkan : Dibatalkan (Member / Admin)
     aktif --> selesai : Sesi Berakhir & Admin Check-Out
     selesai --> [*] : Masuk Rekap Pendapatan Bersih
@@ -174,20 +178,20 @@ stateDiagram-v2
 
 ## 🏗️ Arsitektur Perangkat Lunak & Struktur Proyek
 
-Aplikasi dibangun mengikuti standar industri **Clean Architecture** dengan pendekatan **Feature-First (Modular by Feature)**. Pola ini memastikan *separation of concerns*, independensi logika bisnis, kemudahan pengujian unit/widget, serta keteraturan kode:
+Aplikasi dibangun mengikuti standar industri **Clean Architecture** dengan pendekatan **Feature-First (Modular by Feature)**. Pola ini memastikan pemisahan tanggung jawab (*separation of concerns*), independensi logika bisnis, kemudahan pengujian otomatis, serta keteraturan kode:
 
 ```mermaid
 flowchart TD
-    subgraph ClientDevice["Aplikasi Mobile Flutter"]
+    subgraph ClientDevice["Aplikasi Mobile Flutter (bookingworkroom)"]
         subgraph PresentationLayer["1. Presentation Layer (UI & State)"]
-            Screens["Screens (Views)"]
+            Screens["Screens (Views / Pages)"]
             Widgets["Reusable Custom Widgets"]
-            Controllers["Riverpod Controllers (StateNotifier)"]
+            Controllers["Riverpod Notifiers & Providers"]
         end
         
-        subgraph DomainLayer["2. Domain Layer (Abstraksi Bisnis)"]
+        subgraph DomainLayer["2. Domain Layer (Kontrak Bisnis)"]
             ReposInterface["Repository Interfaces"]
-            Entities["Entities & Value Objects"]
+            Entities["Entities & Domain Failures"]
         end
         
         subgraph DataLayer["3. Data Layer (Sumber Data & DTO)"]
@@ -198,13 +202,14 @@ flowchart TD
         
         subgraph CoreLayer["Core Infrastructure"]
             Network["Dio Client + Header Interceptor"]
-            Security["Secure Storage (Keystore/Keychain)"]
-            Router["GoRouter + Role Guards"]
-            Theme["Design Tokens (Colors, Typography)"]
+            Security["Secure Storage (Android Keystore / iOS Keychain)"]
+            Router["GoRouter + Role Guards + Smooth Transitions"]
+            Theme["Design Tokens (Colors, Spacing, Typography)"]
+            Utils["Formatters (Currency, Date) + Image Helper"]
         end
     end
     
-    BackendAPI[("Panitia REST API Server\n(50 Endpoints)")]
+    BackendAPI[("REST API Server Panitia UKK\n(50 Endpoints JSON)")]
 
     Screens --> Controllers
     Widgets --> Controllers
@@ -216,6 +221,7 @@ flowchart TD
     Network <--> BackendAPI
     Controllers --> Security
     Router --> Security
+    Router --> Controllers
 ```
 
 ### Struktur Direktori Lengkap (`lib/`)
@@ -227,7 +233,7 @@ lib/
 ├── core/                                      # Fondasi Global & Utilitas Lintas Fitur
 │   ├── errors/
 │   │   ├── failure.dart                       # Domain Failure abstractions (ServerFailure, NetworkFailure, dll.)
-│   │   └── exception_mapper.dart              # Pemetaan DioException -> Pesan kegagalan ramah pengguna
+│   │   └── exception_mapper.dart              # Pemetaan DioException & HTTP Status -> Pesan ramah pengguna
 │   ├── network/
 │   │   ├── api_endpoints.dart                 # Sumber kebenaran URL path 50 endpoint API
 │   │   ├── api_header_interceptor.dart        # Interceptor otomatis (x-maker-key, Bearer Token, 401 Expiry)
@@ -235,16 +241,16 @@ lib/
 │   ├── router/
 │   │   └── app_router.dart                    # GoRouter dengan proteksi rute berbasis Role (Member vs Admin)
 │   ├── storage/
-│   │   └── secure_storage_service.dart        # Enkripsi sesi lokal via Android Keystore & iOS Keychain
+│   │   └── secure_storage_service.dart        # Enkripsi sesi lokal via Android Keystore & RAM Cache
 │   ├── theme/
-│   │   ├── app_colors.dart                    # Token warna terstandarisasi (Teal, Amber, Emerald, Slate)
+│   │   ├── app_colors.dart                    # Token warna terstandarisasi (Terracotta, Teal, Amber, Slate)
 │   │   ├── app_spacing.dart                   # Grid spasi konsisten (xs: 4dp, sm: 8dp, md: 12dp, lg: 16dp, xl: 24dp)
 │   │   ├── app_typography.dart                # Tipografi Sora (Headings) & Inter (Body/Data Finansial)
 │   │   └── app_theme.dart                     # Konfigurasi ThemeData Material 3
 │   ├── utils/
 │   │   ├── app_url_helper.dart                # Resolusi URL foto & normalisasi port backend otomatis
-│   │   ├── currency_formatter.dart            # Pemformatan mata uang Rupiah Indonesia (Rp x.xxx.xxx)
-│   │   ├── date_formatter.dart                # Pemformatan tanggal & jam Indonesia (WIB)
+│   │   ├── currency_formatter.dart            # Pemformatan mata uang Rupiah dengan manual fallback modulo 3
+│   │   ├── date_formatter.dart                # Pemformatan tanggal Indonesia & standarisasi format API
 │   │   └── image_picker_helper.dart           # Pembungkus helper ImagePicker (Kamera & Galeri)
 │   └── widgets/
 │       ├── app_alert.dart                     # Banner notifikasi & toast kustom bergaya modern
@@ -256,17 +262,26 @@ lib/
 │       └── status_badge.dart                  # Badge status reservasi seragam di seluruh layar
 │
 └── features/                                  # Fitur Bisnis (Feature-First Architecture)
+    ├── onboarding/                            # Modul Onboarding Interaktif
+    │   └── presentation/
+    │       ├── screens/
+    │       │   ├── splash_screen.dart         # Layar splash pembuka dengan inisialisasi sesi
+    │       │   ├── onboarding_screen.dart     # Komponen geser per halaman onboarding
+    │       │   └── onboarding_flow_screen.dart# Alur 3 layar onboarding dengan smooth page indicator
+    │       └── widgets/
+    │           └── onboarding_illustrations.dart # 3 Ilustrasi Canvas Native (Discover, Booking, QR Check-In)
+    │
     ├── auth/                                  # Modul Autentikasi & Registrasi
     │   ├── data/
     │   │   ├── datasources/auth_remote_datasource.dart
-    │   │   └── models/auth_models.dart        # UserModel, AuthSession, DTO Requests
+    │   │   └── models/auth_models.dart        # UserModel, UserSession, DTO Requests
     │   ├── domain/
     │   │   └── repositories/auth_repository.dart
     │   └── presentation/
-    │       ├── providers/auth_controller.dart # State autentikasi, login, register, dan auto-logout
+    │       ├── providers/auth_controller.dart # State sesi user, AsyncValue.guard, auto-login
     │       └── screens/
-    │           ├── login_screen.dart          # Layar login dwifungsi dengan pemilih role & server config
-    │           ├── register_member_screen.dart# Formulir registrasi tamu/member
+    │           ├── login_screen.dart          # Layar login dwifungsi (Member & Admin)
+    │           ├── register_member_screen.dart# Formulir registrasi tamu/member (dengan upload foto)
     │           └── register_admin_screen.dart # Formulir registrasi pengelola lokasi coworking
     │
     ├── spaces/                                # Modul Katalog & Reservasi Ruangan
@@ -276,28 +291,27 @@ lib/
     │   ├── domain/
     │   │   └── repositories/spaces_repository.dart
     │   └── presentation/
-    │       ├── providers/spaces_controller.dart
+    │       ├── providers/spaces_controller.dart # Cache 5 menit, kalkulasi biaya sewa, form state
     │       └── screens/
-    │           ├── spaces_catalog_screen.dart # Katalog ruang kerja dengan filter & pencarian
+    │           ├── spaces_catalog_screen.dart # Katalog ruang kerja dengan filter & pencarian instan
     │           └── space_detail_booking_screen.dart # Detail space, form booking, ketersediaan, promo
     │
     ├── reservations/                          # Modul Siklus Reservasi, Tiket & Histori
     │   ├── data/
-    │   │   ├── datasources/reservations_remote_datasource.dart
-    │   │   └── models/ (terpadu di domain/data)
+    │   │   └── datasources/reservations_remote_datasource.dart
     │   ├── domain/
     │   │   └── repositories/reservations_repository.dart
     │   └── presentation/
-    │       ├── providers/reservations_controller.dart
+    │       ├── providers/reservations_controller.dart # Defensive data enrichment, fold() statistik
     │       └── screens/
     │           ├── reservations_status_screen.dart  # Layar status reservasi aktif dengan tab filter
-    │           ├── e_ticket_screen.dart             # Layar e-ticket resmi dengan QR Code scanner
+    │           ├── e_ticket_screen.dart             # Layar e-ticket resmi dengan QR Code & garis putus-putus
     │           └── reservations_history_screen.dart # Histori reservasi dengan filter bulan & rekap
     │
     ├── member/                                # Modul Shell & Profil Pengunjung
     │   └── presentation/screens/
     │       ├── member_shell_screen.dart       # Navigasi utama member (4 Tab BottomNavigationBar)
-    │       └── member_profile_screen.dart     # Profil member & ringkasan statistik akumulatif
+    │       └── member_profile_screen.dart     # Profil member & ringkasan statistik pemakaian
     │
     └── admin/                                 # Modul Panel Pengelola Coworking
         ├── data/
@@ -306,17 +320,17 @@ lib/
         ├── domain/
         │   └── repositories/admin_repository.dart
         ├── presentation/
-        │   ├── providers/admin_controller.dart
+        │   ├── providers/admin_controller.dart # CRUD state management, search query, multipart
         │   ├── widgets/
         │   │   ├── admin_stat_card.dart       # Kartu statistik metrik dashboard admin
         │   │   └── confirmation_dialog.dart   # Dialog konfirmasi aksi destruktif dua langkah
         │   └── screens/
         │       ├── admin_shell_screen.dart    # Navigasi utama admin (4 Tab BottomNavigationBar)
-        │       ├── admin_dashboard_screen.dart# Dashboard ringkasan harian
-        │       ├── admin_reservations_screen.dart # Manajemen reservasi masuk & filter
+        │       ├── admin_dashboard_screen.dart# Dashboard ringkasan operasional harian
+        │       ├── admin_reservations_screen.dart # Manajemen reservasi masuk & filter multi-parameter
         │       ├── admin_reservation_detail_screen.dart # Detail reservasi, aksi konfirmasi/check-in/check-out
         │       ├── admin_master_data_screen.dart # Hub Master Data (Space, Member, Diskon)
-        │       ├── admin_spaces_screen.dart   # CRUD Ruangan & upload foto
+        │       ├── admin_spaces_screen.dart   # CRUD Ruangan & upload foto via kamera/galeri
         │       ├── admin_members_screen.dart  # CRUD Member pengguna
         │       ├── admin_discounts_screen.dart# CRUD Kupon diskon/promo
         │       ├── admin_monthly_report_screen.dart # Rekapitulasi pendapatan & distribusi omzet
@@ -325,12 +339,41 @@ lib/
 
 ---
 
+## 💡 Sorotan Rekayasa Teknis (Engineering Highlights)
+
+Berikut adalah beberapa implementasi algoritma dan keputusan arsitektural penting yang diterapkan pada aplikasi:
+
+### 1. Jembatan Riverpod ke GoRouter (`_ListenableAuth`)
+GoRouter membutuhkan turunan `ChangeNotifier` agar mengetahui kapan harus mengevaluasi ulang fungsi pengalihan rute (`redirect`). Kami membuat class `_ListenableAuth` yang mendengarkan `authControllerProvider` dan `onboardingCompleteProvider`. Menggunakan `WidgetsBinding.instance.addPostFrameCallback`, notifikasi dikirimkan tepat setelah frame selesai digambar, mencegah potensi error *setState during build*.
+
+### 2. Transisi Halaman Kustom Mulus (`_buildSmoothPage`)
+Alih-alih transisi default platform yang kaku, aplikasi menerapkan `CustomTransitionPage` berdurasi 260ms dengan kurva `Curves.easeOutCubic`. Transisi ini memadukan geseran tipis horizontal (micro-slide 6%) dan efek fading halus untuk menghadirkan nuansa aplikasi modern kelas enterprise.
+
+### 3. Trik Retensi Cache Memori 5 Menit
+Pada `spacesListProvider`, kami memadukan fitur `autoDispose` Riverpod dengan `ref.keepAlive()` dan `Timer(Duration(minutes: 5))`. Hasilnya: saat pengguna bolak-balik berpindah tab navigasi, data katalog tidak perlu memuat ulang dari internet (muncul instan), namun memori tetap otomatis dibersihkan jika tab ditinggalkan lebih dari 5 menit.
+
+### 4. Pencegahan Bentrok Jadwal (*Race Condition Pre-Submit Check*)
+Pada method `submitBooking` di `BookingController`, sistem tidak hanya mengandalkan hasil pengecekan slot di awal formulir. Tepat sebelum data pesanan dikirim ke endpoint `POST /api/reservasi`, controller melakukan verifikasi ketersediaan ulang secara instan (*double-check validation*). Jika ada pemesan lain yang baru saja membayar slot tersebut pada detik yang sama, pemesanan dicegah secara aman.
+
+### 5. *Defensive Data Enrichment* pada Riwayat Reservasi
+Terkadang respons backend UKK untuk daftar reservasi hanya menyertakan data minimal dengan nilai `totalBayar <= 0` atau nama/foto ruangan `null`. Controller secara defensif mengambil data katalog ruangan dan mencocokkannya (*mapping*) berdasarkan `spaceId` atau nama ruangan di sisi klien. Nilai subtotal, diskon, foto, dan total bayar otomatis dilengkapi sehingga tampilan kartu tiket tidak pernah kosong.
+
+### 6. Algoritma Manual Formatter Rupiah (*Fallback Modulo 3*)
+Jika package `intl` atau locale `id_ID` belum siap pada perangkat Android versi lama, class `CurrencyFormatter` memiliki algoritma manual berbasis perulangan karakter:
+$$\text{rev} = \text{panjang string} - i$$
+Setiap kali nilai $\text{rev} > 1$ dan $\text{rev} \pmod 3 = 1$, tanda titik (.) disisipkan sebagai pemisah ribuan.
+
+### 7. Gambar Vektor Native Canvas (`CustomPainter`)
+Ilustrasi pada alur onboarding serta garis putus-putus perforasi sobekan tiket digambar secara native menggunakan `CustomPainter`. Pendekatan ini mengeliminasi ketergantungan pada file gambar bitmap/SVG eksternal, membuat ukuran APK sangat ramping, dan menghasilkan tampilan grafis yang selalu tajam pada resolusi layar apa pun.
+
+---
+
 ## 📡 Matriks Kontrak API (50 Endpoint Lengkap)
 
 Aplikasi telah diaudit secara ketat dan **100% patuh** terhadap seluruh 50 endpoint yang didefinisikan pada Postman Collection UKK Paket B:
 
 <details open>
-<summary><b>Klik untuk Melihat Matriks Lengkap 50 Endpoint API</b></summary>
+<summary><b>Klik untuk Membuka Matriks Lengkap 50 Endpoint API</b></summary>
 <br>
 
 | No | Modul / Folder | Method | URL Endpoint | Fungsi & Implementasi di Aplikasi |
@@ -392,14 +435,14 @@ Aplikasi telah diaudit secara ketat dan **100% patuh** terhadap seluruh 50 endpo
 
 ## 🎨 Sistem Desain & Pengalaman Pengguna (UI/UX)
 
-Antarmuka **Smart Space Booking** dirancang dengan standar ergonomi tinggi, kontras warna yang nyaman, serta mikro-interaksi halus yang memberikan kesan aplikasi profesional:
+Antarmuka **Smart Space Booking** dirancang dengan standar estetika tinggi, palet warna elegan bertema *Warm Terracotta & Modern Teal*, kontras rasio WCAG AAA, serta mikro-interaksi intuitif:
 
 ```
-Palette Warna Utama:
+Palet Warna Desain Utama:
 ┌─────────────────────────┐  ┌─────────────────────────┐  ┌─────────────────────────┐
-│     Primary Teal        │  │     Deep Teal Dark      │  │       Surface Warm      │
-│        #0E7C6B          │  │         #0A5C50         │  │         #FAF9F7         │
-│   (Identitas Utama)     │  │     (Aksen Pengelola)   │  │   (Latar Belakang Halus)│
+│     Primary Terracotta  │  │      Deep Ink Dark      │  │       Surface Warm      │
+│        #BD4C31          │  │         #1C1917         │  │         #FAF9F7         │
+│   (Identitas Brand)     │  │   (Teks & Kontras Utama)│  │   (Latar Belakang Halus)│
 └─────────────────────────┘  └─────────────────────────┘  └─────────────────────────┘
 ```
 
@@ -421,31 +464,13 @@ Palette Warna Utama:
 
 ---
 
-## 🔐 Keamanan, Multi-Tenancy & Resiliensi Sistem
-
-1. **Multi-Tenancy Guard (`x-maker-key`)**:
-   Setiap permintaan HTTP dari aplikasi secara otomatis disisipi header `x-maker-key` melalui [`ApiHeaderInterceptor`](lib/core/network/api_header_interceptor.dart). Hal ini menjamin isolasi data mutlak antar peserta ujian yang mengakses server bersama.
-2. **Penyimpanan Sesi Terenkripsi Perangkat Keras**:
-   Token akses JWT, data profil, dan pengaturan tersimpan di [`flutter_secure_storage`](https://pub.dev/packages/flutter_secure_storage) yang memanfaatkan **Android Keystore** (dengan enkripsi AES-GCM) dan **iOS Keychain**.
-3. **Session Expiry Handler (401 Interceptor)**:
-   Bila sesi login kedaluwarsa atau token dicabut di sisi server, interceptor secara otomatis menghapus token lokal dan mengembalikan pengguna ke layar login dengan notifikasi yang jelas tanpa menyebabkan *state corruption*.
-4. **Proteksi Akses Berbasis Peran (RBAC GoRouter Guard)**:
-   Sistem rute memverifikasi peran pengguna secara ketat:
-   * Pengguna dengan role `member` tidak dapat membuka rute `/admin/*`.
-   * Pengguna dengan role `admin_space` tidak dapat membuka rute `/member/*`.
-   * Pengguna yang belum login otomatis diarahkan ke rute `/login`.
-5. **Availability Pre-Submit Verification**:
-   Sesaat sebelum pengajuan reservasi dikirim, aplikasi melakukan pemeriksaan ketersediaan instan ke `/api/spaces/availability` untuk mengeliminasi potensi bentrok jadwal akibat transaksi simultan.
-
----
-
 ## 🚀 Panduan Instalasi & Menjalankan Proyek
 
 ### Prasyarat Lingkungan Pengembangan
 * **Flutter SDK**: Versi `>= 3.38.7` (Channel Stable)
 * **Dart SDK**: Versi `>= 3.10.7`
 * **Java Development Kit (JDK)**: JDK 17 atau yang kompatibel dengan Gradle Android terbaru
-* **Android Studio / VS Code**: Terpasang plugin Flutter dan Dart
+* **Android Studio / VS Code**: Terpasang ekstensi Flutter dan Dart
 * Perangkat fisik Android (USB Debugging aktif) atau Android Emulator (API level 29+)
 
 ### Langkah Menjalankan Aplikasi
@@ -462,13 +487,13 @@ Palette Warna Utama:
    ```
 
 3. **Pengaturan URL API Server & App Key**:
-   * **Opsi A (Melalui File Kode)**:
+   * **Opsi A (Paling Praktis — Tanpa Edit Kode)**:
+     Jalankan aplikasi ke HP/Emulator. Di layar Login, ketuk ikon **Pengaturan Jaringan** di pojok kanan atas (`Icons.settings_ethernet`). Pilih preset server yang sesuai (Production/Emulator/Localhost) dan masukkan `x-maker-key` Anda.
+   * **Opsi B (Melalui File Kode)**:
      Buka file [`lib/core/network/api_endpoints.dart`](lib/core/network/api_endpoints.dart) dan sesuaikan konstanta:
      ```dart
      static String baseUrl = 'https://learn.smktelkom-mlg.sch.id/coworking';
      ```
-   * **Opsi B (Paling Praktis — Tanpa Edit Kode)**:
-     Cukup jalankan aplikasi, lalu di layar Login ketuk ikon **Pengaturan Jaringan** (di pojok kanan atas) untuk memilih server (Production/Emulator/Localhost) dan memasukkan `x-maker-key` Anda.
 
 4. **Jalankan Aplikasi**:
    ```bash
@@ -480,10 +505,10 @@ Palette Warna Utama:
 
 ## 📦 Panduan Build APK Siap Rilis (Distribution)
 
-Untuk kebutuhan demonstrasi, evaluasi juri, atau instalasi langsung ke perangkat penguji, Anda dapat menghasilkan file APK rilis:
+Untuk kebutuhan demonstrasi, evaluasi juri, atau instalasi langsung ke perangkat penguji, buat file APK rilis:
 
 ```bash
-# 1. Menghasilkan Universal Release APK (Dapat dipasang di semua arsitektur Android)
+# 1. Menghasilkan Universal Release APK (Dapat dipasang di semua arsitektur HP Android)
 flutter build apk --release
 
 # 2. ATAU menghasilkan Split APK per ABI (Ukuran file jauh lebih kecil dan cepat diinstal)
@@ -501,30 +526,6 @@ flutter build apk --split-per-abi
   build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
   build/app/outputs/flutter-apk/app-x86_64-release.apk
   ```
-
----
-
-## 🧪 Jaminan Kualitas & Pengujian Otomatis (QA)
-
-Kualitas kode proyek ini dijaga dengan pengujian berlapis (*Static Analysis*, *Unit Testing*, *Widget Testing*, dan *Regression Testing*):
-
-```bash
-# Menjalankan Static Code Analyzer (Hasil: 0 Issues / Bebas Warning)
-flutter analyze
-
-# Menjalankan Seluruh 48 Automated Tests
-flutter test
-```
-
-### Ringkasan Hasil Uji Otomatis (48/48 Passed — 100%)
-
-| Berkas Pengujian | Jenis Pengujian | Jumlah Test | Status |
-|---|---|:---:|:---:|
-| [`test/admin_test.dart`](test/admin_test.dart) | Widget & Model Testing Modul Admin (Dashboard, Master Data, Report, Shell) | 16 Tests | 🟢 **PASSED** |
-| [`test/business_logic_qa_test.dart`](test/business_logic_qa_test.dart) | Logika Bisnis, Login Tanpa Bypass, 401 Force Logout, Pre-check Availability | 8 Tests | 🟢 **PASSED** |
-| [`test/detail_space_qa_regression_test.dart`](test/detail_space_qa_regression_test.dart) | Regresi Detail Space, Normalisasi URL Foto, Penanganan Missing JSON Keys | 8 Tests | 🟢 **PASSED** |
-| [`test/widget_test.dart`](test/widget_test.dart) | Smoke Tests & UI Rendering (Catalog, Booking Form, E-Ticket QR, Filter Histori) | 16 Tests | 🟢 **PASSED** |
-| **TOTAL** | **Seluruh Cakupan Pengujian Sistem** | **48 Tests** | 🟢 **ALL PASSED** |
 
 ---
 
@@ -574,6 +575,30 @@ Skenario Pengujian Cepat 5 Menit:
    * Buka tab **Laporan**. Periksa kalkulasi otomatis omzet kotor, total potongan promo, dan omzet bersih bulan berjalan.
    * Amati visualisasi proporsi pendapatan per tipe ruangan.
    * Buka tab **Master Data** untuk mencoba CRUD Member, CRUD Ruangan (termasuk upload foto ruangan), dan CRUD Kupon Diskon.
+
+---
+
+## 🧪 Jaminan Kualitas & Pengujian Otomatis (QA)
+
+Kualitas kode proyek ini dijaga dengan pengujian berlapis (*Static Analysis*, *Unit Testing*, *Widget Testing*, dan *Regression Testing*):
+
+```bash
+# Menjalankan Static Code Analyzer (Hasil: 0 Issues / Bebas Warning)
+flutter analyze
+
+# Menjalankan Seluruh 48 Automated Tests
+flutter test
+```
+
+### Ringkasan Hasil Uji Otomatis (48/48 Passed — 100%)
+
+| Berkas Pengujian | Jenis Pengujian | Jumlah Test | Status |
+|---|---|:---:|:---:|
+| [`test/admin_test.dart`](test/admin_test.dart) | Widget & Model Testing Modul Admin (Dashboard, Master Data, Report, Shell) | 16 Tests | 🟢 **PASSED** |
+| [`test/business_logic_qa_test.dart`](test/business_logic_qa_test.dart) | Logika Bisnis, Login Tanpa Bypass, 401 Force Logout, Pre-check Availability | 8 Tests | 🟢 **PASSED** |
+| [`test/detail_space_qa_regression_test.dart`](test/detail_space_qa_regression_test.dart) | Regresi Detail Space, Normalisasi URL Foto, Penanganan Missing JSON Keys | 8 Tests | 🟢 **PASSED** |
+| [`test/widget_test.dart`](test/widget_test.dart) | Smoke Tests & UI Rendering (Catalog, Booking Form, E-Ticket QR, Filter Histori) | 16 Tests | 🟢 **PASSED** |
+| **TOTAL** | **Seluruh Cakupan Pengujian Sistem** | **48 Tests** | 🟢 **ALL PASSED (100%)** |
 
 ---
 
