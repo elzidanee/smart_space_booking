@@ -111,11 +111,54 @@ final adminSpacesControllerProvider =
 
 class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
   @override
-  FutureOr<List<SpaceModel>> build() {
+  FutureOr<List<SpaceModel>> build() async {
     final tipe = ref.watch(adminSpacesFilterTipeProvider);
     final query = ref.watch(adminSpacesSearchQueryProvider);
     final repo = ref.watch(adminRepositoryProvider);
-    return repo.getSpaces(query: query, tipe: tipe);
+
+    // 1. Ambil data dari server (dengan query params jika server mendukung)
+    final spaces = await repo.getSpaces(query: query, tipe: tipe);
+
+    // 2. Client-side filtering fallback:
+    // Menjamin bahwa jika server mengabaikan parameter 'tipe' atau 'search' (sebagaimana spec UKK /api/admin/spaces),
+    // data tetap terfilter dengan 100% akurat di aplikasi.
+    return _applyFilter(spaces, tipe: tipe, query: query);
+  }
+
+  /// Logika penyaringan space berdasarkan tipe dan kata kunci pencarian
+  static List<SpaceModel> _applyFilter(
+    List<SpaceModel> spaces, {
+    required String tipe,
+    required String query,
+  }) {
+    return spaces.where((space) {
+      // 1. Filter Tipe Space
+      if (tipe != 'all' && tipe != 'semua' && tipe.isNotEmpty) {
+        final s = space.tipe.toLowerCase().replaceAll(' ', '_').trim();
+        final f = tipe.toLowerCase().replaceAll(' ', '_').trim();
+
+        final isDeskMatch = (s == 'desk' || s == 'personal_desk') && (f == 'desk' || f == 'personal_desk');
+        final isMeetingMatch = (s == 'meeting_room' || s == 'meeting') && (f == 'meeting_room' || f == 'meeting');
+        final isOfficeMatch = (s == 'private_office' || s == 'office') && (f == 'private_office' || f == 'office');
+
+        final matches = isDeskMatch || isMeetingMatch || isOfficeMatch || s == f || s.contains(f) || f.contains(s);
+        if (!matches) return false;
+      }
+
+      // 2. Filter Kata Kunci Pencarian (Nama, Fasilitas, Tipe, Deskripsi)
+      if (query.trim().isNotEmpty) {
+        final q = query.toLowerCase().trim();
+        final matchNama = space.nama.toLowerCase().contains(q);
+        final matchTipe = space.tipeLabel.toLowerCase().contains(q) || space.tipe.toLowerCase().contains(q);
+        final matchFasilitas = space.fasilitas.any((fas) => fas.toLowerCase().contains(q));
+        final matchDesc = space.deskripsi?.toLowerCase().contains(q) ?? false;
+        if (!matchNama && !matchTipe && !matchFasilitas && !matchDesc) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
   }
 
   void filterByTipe(String tipe) {
@@ -137,7 +180,8 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       await repo.createSpace(space, photoFile: photoFile);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
-      return repo.getSpaces(query: query, tipe: tipe);
+      final spaces = await repo.getSpaces(query: query, tipe: tipe);
+      return _applyFilter(spaces, tipe: tipe, query: query);
     });
     if (state.hasError) throw state.error!;
   }
@@ -149,7 +193,8 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       await repo.updateSpace(space, photoFile: photoFile);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
-      return repo.getSpaces(query: query, tipe: tipe);
+      final spaces = await repo.getSpaces(query: query, tipe: tipe);
+      return _applyFilter(spaces, tipe: tipe, query: query);
     });
     if (state.hasError) throw state.error!;
   }
@@ -161,7 +206,8 @@ class AdminSpacesController extends AsyncNotifier<List<SpaceModel>> {
       await repo.deleteSpace(id);
       final tipe = ref.read(adminSpacesFilterTipeProvider);
       final query = ref.read(adminSpacesSearchQueryProvider);
-      return repo.getSpaces(query: query, tipe: tipe);
+      final spaces = await repo.getSpaces(query: query, tipe: tipe);
+      return _applyFilter(spaces, tipe: tipe, query: query);
     });
     if (state.hasError) throw state.error!;
   }

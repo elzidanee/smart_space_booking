@@ -25,10 +25,33 @@ final spacesListProvider = FutureProvider.autoDispose<List<SpaceModel>>((ref) as
   final category = ref.watch(selectedSpaceCategoryProvider);
   final query = ref.watch(spaceSearchQueryProvider);
 
-  return await repository.getSpaces(
+  final spaces = await repository.getSpaces(
     query: query.isEmpty ? null : query,
     tipe: category == 'all' ? null : category,
   );
+
+  // Client-side fallback filter: menjamin akurasi jika server API mengabaikan query param
+  return spaces.where((space) {
+    if (category != 'all' && category != 'semua' && category.isNotEmpty) {
+      final s = space.tipe.toLowerCase().replaceAll(' ', '_').trim();
+      final f = category.toLowerCase().replaceAll(' ', '_').trim();
+      final isDeskMatch = (s == 'desk' || s == 'personal_desk') && (f == 'desk' || f == 'personal_desk');
+      final isMeetingMatch = (s == 'meeting_room' || s == 'meeting') && (f == 'meeting_room' || f == 'meeting');
+      final isOfficeMatch = (s == 'private_office' || s == 'office') && (f == 'private_office' || f == 'office');
+      if (!(isDeskMatch || isMeetingMatch || isOfficeMatch || s == f || s.contains(f) || f.contains(s))) {
+        return false;
+      }
+    }
+    if (query.trim().isNotEmpty) {
+      final q = query.toLowerCase().trim();
+      final matchNama = space.nama.toLowerCase().contains(q);
+      final matchTipe = space.tipeLabel.toLowerCase().contains(q) || space.tipe.toLowerCase().contains(q);
+      final matchFasilitas = space.fasilitas.any((fas) => fas.toLowerCase().contains(q));
+      final matchDesc = space.deskripsi?.toLowerCase().contains(q) ?? false;
+      if (!matchNama && !matchTipe && !matchFasilitas && !matchDesc) return false;
+    }
+    return true;
+  }).toList();
 });
 
 /// Provider tipe/kategori space dari API /api/spaces/types (FR-06 / Endpoint #12)

@@ -78,7 +78,7 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
         centerTitle: false,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -173,11 +173,24 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('IDENTITAS & FASILITAS', style: AppTypography.sectionLabel),
+                            Expanded(
+                              child: Text(
+                                'IDENTITAS & FASILITAS',
+                                style: AppTypography.sectionLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             TextButton.icon(
                               onPressed: () => _showEditProfileDialog(profile),
-                              icon: const Icon(Icons.edit, size: 16, color: AppColors.secondary),
-                              label: const Text('Edit Profil', style: TextStyle(color: AppColors.secondary)),
+                              icon: const Icon(Icons.edit, size: 15, color: AppColors.secondary),
+                              label: const Text('Edit Profil', style: TextStyle(color: AppColors.secondary, fontSize: 13)),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
                             ),
                           ],
                         ),
@@ -207,7 +220,12 @@ class _AdminProfileScreenState extends ConsumerState<AdminProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('INFORMASI APP MAKER (DEVELOPER)', style: AppTypography.sectionLabel),
+                  Text(
+                    'INFORMASI APP MAKER (DEVELOPER)',
+                    style: AppTypography.sectionLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     'Kunci Maker Multi-Tenancy (x-maker-key):',

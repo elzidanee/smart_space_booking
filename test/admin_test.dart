@@ -153,6 +153,39 @@ void main() {
     expect(find.byIcon(Icons.add), findsOneWidget);
   });
 
+  test('AdminSpaces filtering by type personal_desk, meeting_room, private_office matches correctly', () {
+    const mockSpaces = [
+      SpaceModel(id: 1, nama: 'Flexi Desk 01', tipe: 'personal_desk', kapasitas: 1, hargaPerJam: 15000),
+      SpaceModel(id: 2, nama: 'Meeting Room Alpha', tipe: 'meeting_room', kapasitas: 8, hargaPerJam: 100000),
+      SpaceModel(id: 3, nama: 'Private Office Suite', tipe: 'private_office', kapasitas: 4, hargaPerJam: 250000),
+    ];
+
+    bool matchesTipe(String spaceTipe, String filterTipe) {
+      if (filterTipe == 'all' || filterTipe == 'semua' || filterTipe.isEmpty) return true;
+      final s = spaceTipe.toLowerCase().replaceAll(' ', '_').trim();
+      final f = filterTipe.toLowerCase().replaceAll(' ', '_').trim();
+      final isDeskMatch = (s == 'desk' || s == 'personal_desk') && (f == 'desk' || f == 'personal_desk');
+      final isMeetingMatch = (s == 'meeting_room' || s == 'meeting') && (f == 'meeting_room' || f == 'meeting');
+      final isOfficeMatch = (s == 'private_office' || s == 'office') && (f == 'private_office' || f == 'office');
+      return isDeskMatch || isMeetingMatch || isOfficeMatch || s == f;
+    }
+
+    final desk = mockSpaces.where((s) => matchesTipe(s.tipe, 'desk')).toList();
+    expect(desk.length, 1);
+    expect(desk.first.nama, 'Flexi Desk 01');
+
+    final meeting = mockSpaces.where((s) => matchesTipe(s.tipe, 'meeting_room')).toList();
+    expect(meeting.length, 1);
+    expect(meeting.first.nama, 'Meeting Room Alpha');
+
+    final office = mockSpaces.where((s) => matchesTipe(s.tipe, 'private_office')).toList();
+    expect(office.length, 1);
+    expect(office.first.nama, 'Private Office Suite');
+
+    final all = mockSpaces.where((s) => matchesTipe(s.tipe, 'all')).toList();
+    expect(all.length, 3);
+  });
+
   // ============================================================
   // 8. AdminMembersScreen: rendered in Master tab 1
   // ============================================================

@@ -158,7 +158,9 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: _typeFilters.map((t) {
-                      final isSelected = activeTipe == t.value;
+                      final isSelected = activeTipe == t.value ||
+                          (t.value == 'desk' && activeTipe == 'personal_desk') ||
+                          (t.value == 'personal_desk' && activeTipe == 'desk');
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
                         child: ChoiceChip(
@@ -216,13 +218,31 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
               ),
               data: (spaces) {
                 if (spaces.isEmpty) {
+                  final isFiltered = activeTipe != 'all' || _searchController.text.trim().isNotEmpty;
+                  final activeFilterLabel = _typeFilters
+                      .firstWhere(
+                        (e) => e.value == activeTipe || (e.value == 'desk' && activeTipe == 'personal_desk'),
+                        orElse: () => (label: activeTipe, value: activeTipe),
+                      )
+                      .label;
+
                   return AppEmptyState(
                     illustration: const EmptySpacesIllustration(size: 160),
-                    title: 'Belum Ada Data Ruangan',
-                    message: 'Tambahkan inventaris ruangan kerja atau meja baru untuk mulai menerima pemesanan tamu.',
-                    actionLabel: 'Tambah Ruangan',
+                    title: isFiltered ? 'Ruangan Tidak Ditemukan' : 'Belum Ada Data Ruangan',
+                    message: isFiltered
+                        ? 'Tidak ada ruangan yang cocok dengan filter "$activeFilterLabel"${_searchController.text.trim().isNotEmpty ? ' dan kata kunci "${_searchController.text.trim()}"' : ''}.'
+                        : 'Tambahkan inventaris ruangan kerja atau meja baru untuk mulai menerima pemesanan tamu.',
+                    actionLabel: isFiltered ? 'Reset Filter' : 'Tambah Ruangan',
                     actionColor: AppColors.secondary,
-                    onAction: () => _showSpaceFormDialog(),
+                    onAction: () {
+                      if (isFiltered) {
+                        _searchController.clear();
+                        ref.read(adminSpacesControllerProvider.notifier).search('');
+                        ref.read(adminSpacesControllerProvider.notifier).setFilterTipe('all');
+                      } else {
+                        _showSpaceFormDialog();
+                      }
+                    },
                   );
                 }
 
