@@ -87,7 +87,7 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
         slivers: [
           // ── Banner Header Bergradien (Deep Teal) ───────────────────────────
           SliverAppBar(
-            expandedHeight: 210,
+            expandedHeight: 225,
             pinned: true,
             backgroundColor: AppColors.secondary,
             leading: IconButton(
@@ -147,9 +147,15 @@ class _RegisterAdminScreenState extends ConsumerState<RegisterAdminScreen> {
                           ),
                         ),
                         // Ilustrasi gedung di sudut kanan
-                        const BuildingIllustration(
-                          width: 130,
-                          height: 100,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120, maxHeight: 95),
+                          child: const FittedBox(
+                            fit: BoxFit.contain,
+                            child: BuildingIllustration(
+                              width: 120,
+                              height: 95,
+                            ),
+                          ),
                         ),
                       ],
                     ),

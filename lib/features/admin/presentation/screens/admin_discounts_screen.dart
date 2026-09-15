@@ -208,11 +208,15 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      discount.kode,
-                      style: AppTypography.h2.copyWith(
-                        fontSize: 16,
-                        letterSpacing: 0.5,
+                    Flexible(
+                      child: Text(
+                        discount.kode,
+                        style: AppTypography.h2.copyWith(
+                          fontSize: 16,
+                          letterSpacing: 0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -239,11 +243,13 @@ class _AdminDiscountsScreenState extends ConsumerState<AdminDiscountsScreen> {
                   children: [
                     const Icon(Icons.date_range, size: 13, color: AppColors.ink600),
                     const SizedBox(width: 4),
-                    Text(
-                      'Berlaku: ${DateFormatter.formatIndonesian(discount.tanggalMulai)} - ${DateFormatter.formatIndonesian(discount.tanggalAkhir)}',
-                      style: AppTypography.caption.copyWith(fontSize: 11),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: Text(
+                        'Berlaku: ${DateFormatter.formatIndonesian(discount.tanggalMulai)} - ${DateFormatter.formatIndonesian(discount.tanggalAkhir)}',
+                        style: AppTypography.caption.copyWith(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -392,9 +398,13 @@ class _DiscountFormBottomSheetState extends State<_DiscountFormBottomSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    isEdit ? 'Edit Kode Promo' : 'Tambah Promo Baru',
-                    style: AppTypography.h2,
+                  Expanded(
+                    child: Text(
+                      isEdit ? 'Edit Kode Promo' : 'Tambah Promo Baru',
+                      style: AppTypography.h2,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),

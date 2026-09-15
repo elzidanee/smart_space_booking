@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
 /// Varian tipe alert dengan palet warna dan ikon harmonis.
@@ -432,6 +433,7 @@ class _AppAlertModal extends StatelessWidget {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
@@ -441,11 +443,15 @@ class _AppAlertModal extends StatelessWidget {
                               fontSize: 12.5,
                             ),
                           ),
-                          Text(
-                            entry.value,
-                            style: AppTypography.bodyEmphasis.copyWith(
-                              color: AppColors.ink900,
-                              fontSize: 12.5,
+                          const SizedBox(width: AppSpacing.md12),
+                          Flexible(
+                            child: Text(
+                              entry.value,
+                              textAlign: TextAlign.end,
+                              style: AppTypography.bodyEmphasis.copyWith(
+                                color: AppColors.ink900,
+                                fontSize: 12.5,
+                              ),
                             ),
                           ),
                         ],

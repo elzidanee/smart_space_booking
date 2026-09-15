@@ -88,55 +88,64 @@ class _SpacesCatalogScreenState extends ConsumerState<SpacesCatalogScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                                width: 1.5,
-                              ),
-                            ),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColors.primaryContainer,
-                              backgroundImage: (userAvatar != null && userAvatar.isNotEmpty)
-                                  ? NetworkImage(userAvatar) as ImageProvider
-                                  : null,
-                              child: (userAvatar == null || userAvatar.isEmpty)
-                                  ? Text(
-                                      userName.isNotEmpty ? userName[0].toUpperCase() : 'M',
-                                      style: AppTypography.bodyEmphasis.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Smart Space',
-                                style: AppTypography.h3.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                  width: 1.5,
                                 ),
                               ),
-                              Text(
-                                'Halo, $userName 👋',
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.ink600,
-                                ),
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: AppColors.primaryContainer,
+                                backgroundImage: (userAvatar != null && userAvatar.isNotEmpty)
+                                    ? NetworkImage(userAvatar) as ImageProvider
+                                    : null,
+                                child: (userAvatar == null || userAvatar.isEmpty)
+                                    ? Text(
+                                        userName.isNotEmpty ? userName[0].toUpperCase() : 'M',
+                                        style: AppTypography.bodyEmphasis.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : null,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                            const SizedBox(width: AppSpacing.sm8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Smart Space',
+                                    style: AppTypography.h3.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    'Halo, $userName 👋',
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.ink600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: AppSpacing.sm8),
                       Container(
                         decoration: BoxDecoration(
                           color: AppColors.surface0,

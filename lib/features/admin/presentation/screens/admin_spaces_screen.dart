@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/app_illustrations.dart';
@@ -347,11 +348,15 @@ class _AdminSpacesScreenState extends ConsumerState<AdminSpacesScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      CurrencyFormatter.formatPerHour(space.hargaPerJam),
-                      style: AppTypography.h2.copyWith(
-                        color: AppColors.secondary,
-                        fontSize: 15,
+                    const SizedBox(width: AppSpacing.sm8),
+                    Flexible(
+                      child: Text(
+                        CurrencyFormatter.formatPerHour(space.hargaPerJam),
+                        style: AppTypography.h2.copyWith(
+                          color: AppColors.secondary,
+                          fontSize: 15,
+                        ),
+                        textAlign: TextAlign.end,
                       ),
                     ),
                   ],
@@ -526,9 +531,13 @@ class _SpaceFormBottomSheetState extends State<_SpaceFormBottomSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    isEdit ? 'Edit Data Space' : 'Tambah Space Baru',
-                    style: AppTypography.h2,
+                  Expanded(
+                    child: Text(
+                      isEdit ? 'Edit Data Space' : 'Tambah Space Baru',
+                      style: AppTypography.h2,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),

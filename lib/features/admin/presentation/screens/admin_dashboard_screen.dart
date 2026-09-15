@@ -282,10 +282,15 @@ class AdminDashboardScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    item.kodeBooking,
-                    style: AppTypography.h2.copyWith(color: AppColors.secondary, fontSize: 14),
+                  Flexible(
+                    child: Text(
+                      item.kodeBooking,
+                      style: AppTypography.h2.copyWith(color: AppColors.secondary, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   StatusBadge(status: ReservasiStatus.fromApi(item.status)),
                 ],
               ),
@@ -303,6 +308,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(

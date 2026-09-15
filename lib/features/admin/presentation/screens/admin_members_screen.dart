@@ -262,10 +262,15 @@ class _AdminMembersScreenState extends ConsumerState<AdminMembersScreen> {
                   children: [
                     const Icon(Icons.phone, size: 13, color: AppColors.secondary),
                     const SizedBox(width: 4),
-                    Text(
-                      member.telepon,
-                      style: AppTypography.captionMedium.copyWith(fontSize: 12),
+                    Flexible(
+                      child: Text(
+                        member.telepon,
+                        style: AppTypography.captionMedium.copyWith(fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 6),
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -432,9 +437,13 @@ class _MemberFormBottomSheetState extends State<_MemberFormBottomSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    isEdit ? 'Edit Data Member' : 'Tambah Member Baru',
-                    style: AppTypography.h2,
+                  Expanded(
+                    child: Text(
+                      isEdit ? 'Edit Data Member' : 'Tambah Member Baru',
+                      style: AppTypography.h2,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),

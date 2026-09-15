@@ -102,7 +102,7 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
         slivers: [
           // ── Banner Header Bergradien ──────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 210,
+            expandedHeight: 225,
             pinned: true,
             backgroundColor: AppColors.primary,
             leading: IconButton(
@@ -162,10 +162,16 @@ class _RegisterMemberScreenState extends ConsumerState<RegisterMemberScreen> {
                           ),
                         ),
                         // Ilustrasi kecil di sudut kanan
-                        const CoworkingIllustration(
-                          width: 130,
-                          height: 100,
-                          isAdmin: false,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120, maxHeight: 95),
+                          child: const FittedBox(
+                            fit: BoxFit.contain,
+                            child: CoworkingIllustration(
+                              width: 120,
+                              height: 95,
+                              isAdmin: false,
+                            ),
+                          ),
                         ),
                       ],
                     ),

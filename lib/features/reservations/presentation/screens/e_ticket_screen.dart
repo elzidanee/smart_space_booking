@@ -358,11 +358,15 @@ class _BoardingPassCard extends StatelessWidget {
                       'Total Pembayaran',
                       style: AppTypography.bodyMedium.copyWith(color: AppColors.ink600),
                     ),
-                    Text(
-                      CurrencyFormatter.format(ticket.totalBayar),
-                      style: AppTypography.h2.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: AppSpacing.sm8),
+                    Flexible(
+                      child: Text(
+                        CurrencyFormatter.format(ticket.totalBayar),
+                        textAlign: TextAlign.right,
+                        style: AppTypography.h2.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],

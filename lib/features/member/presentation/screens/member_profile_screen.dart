@@ -136,7 +136,7 @@ class _HeroHeader extends StatelessWidget {
               ),
               // Greeting text
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 56, 24, 0),
+                padding: const EdgeInsets.fromLTRB(24, 56, 108, 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

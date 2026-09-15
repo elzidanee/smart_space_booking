@@ -140,36 +140,51 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Widget _buildPage(_PageData data) {
     return FadeTransition(
       opacity: _animCtrl,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          children: [
-            const Spacer(),
-            data.illustration,
-            const Spacer(),
-            Text(
-              data.title,
-              style: GoogleFonts.sora(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ink900,
-                height: 1.3,
-              ),
-              textAlign: TextAlign.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxImgSize = (constraints.maxHeight * 0.42).clamp(160.0, 260.0);
+          final titleSize = constraints.maxHeight < 620 ? 22.0 : 26.0;
+          final subtitleSize = constraints.maxHeight < 620 ? 13.0 : 14.0;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              children: [
+                const Spacer(flex: 2),
+                SizedBox(
+                  height: maxImgSize,
+                  width: maxImgSize,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: data.illustration,
+                  ),
+                ),
+                const Spacer(flex: 2),
+                Text(
+                  data.title,
+                  style: GoogleFonts.sora(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink900,
+                    height: 1.25,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  data.subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: subtitleSize,
+                    color: AppColors.ink600,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const Spacer(flex: 3),
+              ],
             ),
-            const SizedBox(height: 14),
-            Text(
-              data.subtitle,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: AppColors.ink600,
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const Spacer(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

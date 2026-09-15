@@ -158,20 +158,30 @@ class _ServerConfigBottomSheetState extends ConsumerState<ServerConfigBottomShee
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryContainer,
-                        borderRadius: BorderRadius.circular(10),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryContainer,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.settings_ethernet, color: AppColors.secondary, size: 20),
                       ),
-                      child: const Icon(Icons.settings_ethernet, color: AppColors.secondary, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Text('Konfigurasi Server & Key', style: AppTypography.h3),
-                  ],
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          'Konfigurasi Server & Key',
+                          style: AppTypography.h3,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
