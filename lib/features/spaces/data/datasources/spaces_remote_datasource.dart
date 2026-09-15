@@ -137,25 +137,165 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
     required String jamMulai,
     required int durasi,
   }) async {
+    // 1. Cek dulu apakah jam sewa untuk hari ini sudah terlewat dari jam saat ini
+    // Logika sederhana: kalau user milih hari ini tapi jam mulainya udah lewat di jam HP,
+    // otomatis kita tolak dengan pesan yang ramah biar gak pesan jam di masa lalu.
+    final now = DateTime.now();
+    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final cleanTanggal = tanggal.contains('T')
+        ? tanggal.split('T').first
+        : tanggal.split(' ').first;
+
+    final reqStartMin = TimeSlotCollisionHelper.timeToMinutes(jamMulai);
+    final reqEndMin = reqStartMin + (durasi * 60);
+
+    if (cleanTanggal == todayStr) {
+      final curMin = now.hour * 60 + now.minute;
+      if (reqStartMin < curMin) {
+        return AvailabilityCheckResult(
+          isAvailable: false,
+          message: 'Jam sewa ($jamMulai) sudah terlewat dari waktu saat ini. Silakan pilih jam berikutnya.',
+          tanggal: tanggal,
+          jamMulai: jamMulai,
+          durasi: durasi,
+        );
+      }
+    }
+
+    // 2. Cross-check tabrakan jadwal langsung ke daftar reservasi yang tersimpan di sistem:
+    // Kenapa kita cek juga ke daftar reservasi?
+    // Biar kalau ada user atau member lain yang sudah reservasi di ruangan & jam yang sama,
+    // sistem langsung mendeteksi bahwa slot tersebut sudah terisi (mencegah tabrakan jadwal / double booking).
     try {
-      // GET /api/spaces/availability?id_space=X&tanggal=Y&jam_mulai=Z&durasi_jam=N
+      List<ReservationModel> existingReservations = [];
+
+      // Coba ambil daftar reservasi (bisa lewat endpoint admin atau riwayat member)
+      try {
+        final resResponse = await _dio.get(
+          ApiEndpoints.adminReservasi,
+          queryParameters: {
+            'id_space': spaceId,
+            'tanggal': cleanTanggal,
+          },
+        );
+        final resData = _extractData(resResponse.data);
+        if (resData is List) {
+          existingReservations = resData
+              .whereType<Map>()
+              .map((e) => ReservationModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
+        }
+      } catch (_) {
+        // Kalau akun yang login bukan admin (dapat 401/403), fallback cek reservasi member
+        try {
+          final myResponse = await _dio.get(ApiEndpoints.reservasiMy);
+          final myData = _extractData(myResponse.data);
+          if (myData is List) {
+            existingReservations = myData
+                .whereType<Map>()
+                .map((e) => ReservationModel.fromJson(Map<String, dynamic>.from(e)))
+                .toList();
+          }
+        } catch (_) {}
+      }
+
+      // Periksa satu per satu apakah ada reservasi lain yang jamnya tabrakan
+      for (final res in existingReservations) {
+        // Reservasi yang dibatalkan tidak memakan slot ruangan
+        final st = res.status.toLowerCase();
+        if (st == 'dibatalkan' || st == 'cancelled' || st == 'canceled') {
+          continue;
+        }
+
+        final resDate = res.tanggal.contains('T')
+            ? res.tanggal.split('T').first
+            : res.tanggal.split(' ').first;
+
+        final isMatchSpace = res.spaceId == spaceId || res.spaceId == 0;
+        final isMatchDate = resDate == cleanTanggal;
+
+        if (isMatchSpace && isMatchDate && res.jamMulai.isNotEmpty) {
+          final resStartMin = TimeSlotCollisionHelper.timeToMinutes(res.jamMulai);
+          int resEndMin = res.jamSelesai.isNotEmpty
+              ? TimeSlotCollisionHelper.timeToMinutes(res.jamSelesai)
+              : 0;
+          if (resEndMin <= resStartMin) {
+            resEndMin = resStartMin + ((res.durasi > 0 ? res.durasi : 1) * 60);
+          }
+
+          // Cek rumus tabrakan jam: A mulai sebelum B selesai, DAN A selesai setelah B mulai
+          if (TimeSlotCollisionHelper.isRangeColliding(
+            startMinA: reqStartMin,
+            endMinA: reqEndMin,
+            startMinB: resStartMin,
+            endMinB: resEndMin,
+          )) {
+            final endStr = res.jamSelesai.isNotEmpty
+                ? res.jamSelesai
+                : '${(resEndMin ~/ 60).toString().padLeft(2, '0')}:${(resEndMin % 60).toString().padLeft(2, '0')}';
+
+            return AvailabilityCheckResult(
+              isAvailable: false,
+              message: 'Slot ruangan pukul ${res.jamMulai} - $endStr sudah ter-reservasi (${res.kodeBooking}). Silakan pilih jam lain.',
+              tanggal: tanggal,
+              jamMulai: jamMulai,
+              durasi: durasi,
+            );
+          }
+        }
+      }
+    } catch (_) {
+      // Jika terjadi kendala jaringan lokal saat cross-check, lanjut ke endpoint availability server
+    }
+
+    // 3. Panggil API pengecekan ketersediaan space resmi dari server:
+    // GET /api/spaces/availability?id_space=X&tanggal=Y&jam_mulai=Z&durasi_jam=N
+    try {
       final response = await _dio.get(
         ApiEndpoints.spaceAvailability,
         queryParameters: {
           'id_space': spaceId,
-          'tanggal': tanggal,
+          'tanggal': cleanTanggal,
           'jam_mulai': jamMulai,
           'durasi_jam': durasi, // API: durasi_jam
         },
       );
 
+      final rootMap = response.data is Map ? Map<String, dynamic>.from(response.data as Map) : null;
       final data = _extractData(response.data);
+
       if (data is Map) {
-        return AvailabilityCheckResult.fromJson(Map<String, dynamic>.from(data));
+        final res = AvailabilityCheckResult.fromJson(Map<String, dynamic>.from(data));
+        // Jika di response data pesannya kosong atau generik, tapi di root response ada pesan yang lebih spesifik:
+        if ((res.message.isEmpty || res.message == 'Space tersedia' || res.message == 'Space sudah terisi') &&
+            rootMap != null &&
+            rootMap['message'] != null) {
+          return AvailabilityCheckResult(
+            isAvailable: res.isAvailable,
+            message: rootMap['message'].toString(),
+            tanggal: res.tanggal ?? tanggal,
+            jamMulai: res.jamMulai ?? jamMulai,
+            durasi: res.durasi ?? durasi,
+          );
+        }
+        return res;
       }
+
+      final rootStatus = rootMap?['status'];
+      final rootMsg = rootMap?['message']?.toString();
+      if (rootStatus == false) {
+        return AvailabilityCheckResult(
+          isAvailable: false,
+          message: rootMsg ?? 'Space tidak tersedia pada jadwal yang dipilih.',
+          tanggal: tanggal,
+          jamMulai: jamMulai,
+          durasi: durasi,
+        );
+      }
+
       return AvailabilityCheckResult(
         isAvailable: true,
-        message: 'Space tersedia untuk jadwal ini',
+        message: rootMsg ?? 'Space tersedia untuk jadwal ini',
         tanggal: tanggal,
         jamMulai: jamMulai,
         durasi: durasi,
@@ -170,7 +310,10 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
       if (statusCode == 400 ||
           statusCode == 409 ||
           message.toLowerCase().contains('tidak tersedia') ||
-          message.toLowerCase().contains('sudah terisi')) {
+          message.toLowerCase().contains('sudah terisi') ||
+          message.toLowerCase().contains('ter-reservasi') ||
+          message.toLowerCase().contains('dibooking') ||
+          message.toLowerCase().contains('bentrok')) {
         return AvailabilityCheckResult(
           isAvailable: false,
           message: message,

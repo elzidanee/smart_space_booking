@@ -390,6 +390,133 @@ void main() {
       expect(find.text('Ruangan tersedia untuk jadwal yang dipilih.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    // TIME-COLLISION-01: TimeSlotCollisionHelper detects overlapping and disjoint intervals
+    test('TIME-COLLISION-01: TimeSlotCollisionHelper accurately detects overlapping and non-overlapping slots', () {
+      // 09:00 - 12:00 (540 - 720 min) vs 10:00 - 11:00 (600 - 660 min) -> Overlap!
+      expect(
+        TimeSlotCollisionHelper.isRangeColliding(
+          startMinA: 540, endMinA: 720,
+          startMinB: 600, endMinB: 660,
+        ),
+        isTrue,
+      );
+
+      // 09:00 - 12:00 vs 08:30 - 09:30 (510 - 570 min) -> Overlap!
+      expect(
+        TimeSlotCollisionHelper.isRangeColliding(
+          startMinA: 540, endMinA: 720,
+          startMinB: 510, endMinB: 570,
+        ),
+        isTrue,
+      );
+
+      // 09:00 - 12:00 vs 12:00 - 14:00 (720 - 840 min) -> Back to back, NO overlap!
+      expect(
+        TimeSlotCollisionHelper.isRangeColliding(
+          startMinA: 540, endMinA: 720,
+          startMinB: 720, endMinB: 840,
+        ),
+        isFalse,
+      );
+
+      // 09:00 - 12:00 vs 07:00 - 09:00 (420 - 540 min) -> Preceding edge, NO overlap!
+      expect(
+        TimeSlotCollisionHelper.isRangeColliding(
+          startMinA: 540, endMinA: 720,
+          startMinB: 420, endMinB: 540,
+        ),
+        isFalse,
+      );
+
+      // 09:00 - 12:00 vs 14:00 - 16:00 (840 - 960 min) -> Far apart, NO overlap!
+      expect(
+        TimeSlotCollisionHelper.isRangeColliding(
+          startMinA: 540, endMinA: 720,
+          startMinB: 840, endMinB: 960,
+        ),
+        isFalse,
+      );
+
+      // timeToMinutes conversion
+      expect(TimeSlotCollisionHelper.timeToMinutes('09:00'), equals(540));
+      expect(TimeSlotCollisionHelper.timeToMinutes('14:30'), equals(870));
+      expect(TimeSlotCollisionHelper.timeToMinutes(''), equals(0));
+    });
+
+    // AVAILABILITY-PARSE-01: AvailabilityCheckResult handles various response payload formats
+    test('AVAILABILITY-PARSE-01: AvailabilityCheckResult parses available and unavailable payloads cleanly', () {
+      final jsonUnavailable = {
+        'available': false,
+        'message': 'Slot jam 10:00 s/d 12:00 sudah di-booking oleh pemesan lain.',
+        'tanggal': '2026-09-15',
+        'jam_mulai': '10:00',
+        'durasi_jam': 2,
+      };
+      final res1 = AvailabilityCheckResult.fromJson(jsonUnavailable);
+      expect(res1.isAvailable, isFalse);
+      expect(res1.message, contains('Slot jam 10:00 s/d 12:00 sudah di-booking'));
+      expect(res1.jamMulai, equals('10:00'));
+      expect(res1.durasi, equals(2));
+
+      final jsonAvailable = {
+        'status': 'tersedia',
+        'message': 'Ruangan tersedia',
+        'tanggal': '2026-09-15',
+        'jam_mulai': '09:00',
+        'durasi': 3,
+      };
+      final res2 = AvailabilityCheckResult.fromJson(jsonAvailable);
+      expect(res2.isAvailable, isTrue);
+      expect(res2.message, equals('Ruangan tersedia'));
+    });
+
+    // SLOT-AVAILABILITY-03: When slot is unavailable, Lanjutkan Reservasi does NOT open confirmation bottomsheet
+    testWidgets(
+        'SLOT-AVAILABILITY-03: When slot is already reserved, Lanjutkan Reservasi prevents opening confirmation sheet',
+        (WidgetTester tester) async {
+      const space = SpaceModel(
+        id: 25,
+        nama: 'Focus Room Gamma',
+        tipe: 'private_office',
+        kapasitas: 4,
+        hargaPerJam: 80000,
+        foto: null,
+      );
+
+      final fakeRepo = _FakeSpacesRepository(
+        availabilityResult: const AvailabilityCheckResult(
+          isAvailable: false,
+          message: 'Slot ruangan pada pukul 09:00 - 12:00 sudah ter-reservasi (BK-001234).',
+        ),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            spaceDetailProvider(25).overrideWith((ref) => Future.value(space)),
+            spacesRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: SpaceDetailBookingScreen(spaceId: 25),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Tap Lanjutkan Reservasi directly
+      final continueButton = find.text('Lanjutkan Reservasi');
+      await tester.ensureVisible(continueButton);
+      await tester.tap(continueButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      // Konfirmasi Pemesanan sheet must NOT be present
+      expect(find.text('Konfirmasi Pemesanan'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 

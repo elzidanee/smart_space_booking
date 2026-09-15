@@ -95,6 +95,65 @@ class _SpaceDetailBookingScreenState
     }
   }
 
+  // Logika cek ketersediaan sebelum lanjut reservasi:
+  // "Sebelum ngebuka form konfirmasi dan bayar, wajib kita CEK DULU apakah
+  // slot pada jam dan tanggal itu udah ada yang reservasi atau belum.
+  // Kalau ternyata bentrok atau udah penuh, cegah user lanjut dan kasih peringatan jelas."
+  Future<void> _handleProceedToBooking(SpaceModel space) async {
+    final bookingState = ref.read(bookingControllerProvider);
+
+    // 1. Kalau user sebelumnya udah ngecek dan hasilnya slot sudah terisi/bentrok:
+    // Langsung ingatkan user agar ganti jam atau tanggal, jangan biarkan lanjut.
+    if (bookingState.availabilityResult != null && !bookingState.availabilityResult!.isAvailable) {
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.danger,
+        title: 'Slot Tidak Tersedia',
+        message: bookingState.availabilityResult!.message.isNotEmpty
+            ? bookingState.availabilityResult!.message
+            : 'Slot pada jam tersebut sudah ter-reservasi. Silakan pilih jam atau tanggal lain.',
+      );
+      return;
+    }
+
+    // 2. Kalau ketersediaan belum dicek (atau baru direset karena ganti jam/tanggal):
+    // Kita jalankan pengecekan ketersediaan secara otomatis saat ini juga!
+    AvailabilityCheckResult? avail = bookingState.availabilityResult;
+    avail ??= await ref
+        .read(bookingControllerProvider.notifier)
+        .checkAvailability(space.id);
+
+    if (!mounted) return;
+
+    // 3. Periksa hasil pengecekan barusan:
+    if (avail != null && !avail.isAvailable) {
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.danger,
+        title: 'Slot Sudah Ter-reservasi',
+        message: avail.message.isNotEmpty
+            ? avail.message
+            : 'Ruangan sudah terisi pada jam tersebut. Silakan pilih jam sewa lainnya.',
+      );
+      return;
+    }
+
+    // Kalau ada kendala koneksi internet saat pengecekan ketersediaan:
+    final latestError = ref.read(bookingControllerProvider).errorMessage;
+    if (avail == null && latestError != null) {
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.danger,
+        title: 'Gagal Memeriksa Ketersediaan',
+        message: 'Tidak dapat memastikan ketersediaan ruangan. Silakan coba beberapa saat lagi.',
+      );
+      return;
+    }
+
+    // 4. Kalau slot dipastikan aman & tersedia, baru tampilkan BottomSheet konfirmasi
+    _showBookingConfirmationDialog(space);
+  }
+
   // BottomSheet ringkasan rincian biaya sebelum submit final:
   void _showBookingConfirmationDialog(SpaceModel space) {
     final bookingState = ref.read(bookingControllerProvider);
@@ -184,6 +243,19 @@ class _SpaceDetailBookingScreenState
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () async {
+                    // Double check keamanan: pastikan slot tidak berubah jadi tidak tersedia
+                    final currentAvail = ref.read(bookingControllerProvider).availabilityResult;
+                    if (currentAvail != null && !currentAvail.isAvailable) {
+                      Navigator.pop(ctx);
+                      AppAlert.showToast(
+                        context: context,
+                        type: AppAlertType.danger,
+                        title: 'Slot Tidak Tersedia',
+                        message: currentAvail.message,
+                      );
+                      return;
+                    }
+
                     Navigator.pop(ctx);
                     final res = await ref
                         .read(bookingControllerProvider.notifier)
@@ -1240,10 +1312,10 @@ class _SpaceDetailBookingScreenState
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: bookingState.isSubmitting
+                        onPressed: (bookingState.isSubmitting || bookingState.isCheckingAvailability)
                             ? null
-                            : () => _showBookingConfirmationDialog(space),
-                        child: bookingState.isSubmitting
+                            : () => _handleProceedToBooking(space),
+                        child: (bookingState.isSubmitting || bookingState.isCheckingAvailability)
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,

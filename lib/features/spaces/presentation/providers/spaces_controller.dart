@@ -222,8 +222,11 @@ class BookingController extends StateNotifier<BookingFormState> {
     }
   }
 
-  // Cek ketersediaan slot ke server:
-  Future<void> checkAvailability(int spaceId) async {
+  // Cek ketersediaan slot ke server & database:
+  // Fungsi ini memastikan apakah jadwal yang dipilih user (tanggal, jam mulai, dan durasi)
+  // masih kosong atau sudah pernah di-reservasi oleh orang lain.
+  // Mengembalikan hasil ketersediaan agar tombol "Lanjutkan Reservasi" bisa langsung tahu hasilnya.
+  Future<AvailabilityCheckResult?> checkAvailability(int spaceId) async {
     state = state.copyWith(isCheckingAvailability: true, clearError: true);
     try {
       final result = await _repository.checkAvailability(
@@ -232,17 +235,20 @@ class BookingController extends StateNotifier<BookingFormState> {
         jamMulai: state.formattedTime,
         durasi: state.durationHours,
       );
-      if (!mounted) return;
+      if (!mounted) return result;
       state = state.copyWith(
         isCheckingAvailability: false,
         availabilityResult: result,
       );
+      return result;
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) return null;
+      final errMsg = 'Gagal mengecek ketersediaan: ${e.toString()}';
       state = state.copyWith(
         isCheckingAvailability: false,
-        errorMessage: 'Gagal mengecek ketersediaan: ${e.toString()}',
+        errorMessage: errMsg,
       );
+      return null;
     }
   }
 

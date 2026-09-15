@@ -181,17 +181,76 @@ class AvailabilityCheckResult {
   });
 
   factory AvailabilityCheckResult.fromJson(Map<String, dynamic> json) {
-    final available = json['is_available'] == true ||
-        json['tersedia'] == true ||
-        json['available'] == true ||
-        json['status'] == 'tersedia';
+    // Cek berbagai kemungkinan format boolean ketersediaan dari API:
+    // Bisa 'available': true, 'is_available': true, 'tersedia': true, atau 'status': 'tersedia'
+    final rawAvailable = json['is_available'] ?? json['available'] ?? json['tersedia'];
+    bool available = false;
+    if (rawAvailable is bool) {
+      available = rawAvailable;
+    } else if (rawAvailable is num) {
+      available = rawAvailable == 1;
+    } else if (rawAvailable is String) {
+      final s = rawAvailable.trim().toLowerCase();
+      available = s == 'true' || s == '1' || s == 'tersedia' || s == 'available' || s == 'yes';
+    } else if (json['status'] != null) {
+      final s = json['status'].toString().trim().toLowerCase();
+      available = s == 'tersedia' || s == 'true' || s == 'available' || s == 'success';
+    }
+
+    final rawMsg = json['message']?.toString() ?? json['pesan']?.toString() ?? json['error']?.toString();
+    final message = (rawMsg != null && rawMsg.trim().isNotEmpty)
+        ? rawMsg.trim()
+        : (available ? 'Space tersedia untuk jadwal ini' : 'Space sudah terisi pada jam tersebut');
+
     return AvailabilityCheckResult(
       isAvailable: available,
-      message: json['message']?.toString() ?? (available ? 'Space tersedia' : 'Space sudah terisi'),
-      tanggal: json['tanggal']?.toString(),
+      message: message,
+      tanggal: json['tanggal']?.toString() ?? json['tanggal_reservasi']?.toString(),
       jamMulai: json['jam_mulai']?.toString(),
-      durasi: _parseInt(json['durasi'] ?? json['durasi_jam'], defaultValue: 1),
+      durasi: _parseInt(json['durasi'] ?? json['durasi_jam'] ?? json['durasi_sewa'], defaultValue: 1),
     );
+  }
+}
+
+/// Helper logika matematika untuk mengecek apakah dua jadwal sewa bentrok/tabrakan.
+/// Menggunakan bahasa manusia/santai anak SMK:
+/// "Kita ubah jam mulai dan jam selesai ke satuan total menit biar gampang dihitung.
+/// Dua jadwal dibilang tabrakan kalau:
+/// Jam mulai kita < Jam selesai orang lain, DAN Jam selesai kita > Jam mulai orang lain."
+class TimeSlotCollisionHelper {
+  TimeSlotCollisionHelper._();
+
+  /// Konversi format jam 'HH:mm' ke total menit dari jam 00:00 tengah malam.
+  /// Contoh: '09:30' -> (9 * 60) + 30 = 570 menit
+  static int timeToMinutes(String timeStr) {
+    if (timeStr.trim().isEmpty) return 0;
+    try {
+      final clean = timeStr.trim();
+      final parts = clean.split(':');
+      final h = int.parse(parts[0]);
+      final m = parts.length > 1 ? int.parse(parts[1].split(' ').first) : 0;
+      return (h * 60) + m;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Rumus Tabrakan Rentang Waktu (Time Overlap Collision):
+  /// [startMinA] & [endMinA]: rentang sewa yang kita inginkan
+  /// [startMinB] & [endMinB]: rentang sewa orang lain yang sudah ter-reservasi
+  /// Bernilai true jika kedua jadwal saling bertabrakan / berebut jam yang sama.
+  static bool isRangeColliding({
+    required int startMinA,
+    required int endMinA,
+    required int startMinB,
+    required int endMinB,
+  }) {
+    // Kalau salah satu jam selesai lebih kecil dari jam mulai (lewat tengah malam), jaga durasi
+    final safeEndA = endMinA <= startMinA ? startMinA + 60 : endMinA;
+    final safeEndB = endMinB <= startMinB ? startMinB + 60 : endMinB;
+
+    // Logika Overlap: A mulai sebelum B selesai, DAN A selesai setelah B mulai
+    return startMinA < safeEndB && safeEndA > startMinB;
   }
 }
 
