@@ -36,6 +36,7 @@ class _SpaceDetailBookingScreenState
     super.dispose();
   }
 
+  // Pilih tanggal booking:
   Future<void> _selectDate(BuildContext context) async {
     final bookingState = ref.read(bookingControllerProvider);
     final now = DateTime.now();
@@ -43,6 +44,8 @@ class _SpaceDetailBookingScreenState
     final picked = await showDatePicker(
       context: context,
       initialDate: bookingState.selectedDate.isBefore(today) ? today : bookingState.selectedDate,
+      // Batasan tanggal: Tanggal kemarin/lampau gak boleh dipilih (firstDate: today),
+      // dan pemesanan dibatasi paling jauh 90 hari (3 bulan) ke depan.
       firstDate: today,
       lastDate: today.add(const Duration(days: 90)),
       builder: (context, child) {
@@ -64,6 +67,7 @@ class _SpaceDetailBookingScreenState
     }
   }
 
+  // Pilih jam mulai sewa:
   Future<void> _selectTime(BuildContext context) async {
     final bookingState = ref.read(bookingControllerProvider);
     final picked = await showTimePicker(
@@ -88,8 +92,10 @@ class _SpaceDetailBookingScreenState
     }
   }
 
+  // BottomSheet ringkasan rincian biaya sebelum submit final:
   void _showBookingConfirmationDialog(SpaceModel space) {
     final bookingState = ref.read(bookingControllerProvider);
+    // Hitung rincian angka: subtotal durasi sewa, potongan kupon, dan total akhir
     final subtotal = bookingState.calculateSubtotal(space.hargaPerJam);
     final diskon = bookingState.calculateDiscount(subtotal);
     final total = bookingState.calculateTotal(space.hargaPerJam);

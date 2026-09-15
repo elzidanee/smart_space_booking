@@ -1,13 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+// Menggunakan FlutterSecureStorage dengan enkripsi hardware (EncryptedSharedPreferences)
+// Biar token dan data login tersimpan aman di Android Keystore, bukan plaintext.
 final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageService(const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   ));
 });
 
-/// Layanan penyimpanan kredensial terenkripsi (Keystore/EncryptedSharedPreferences).
+// Service khusus buat nyimpen data sensitif (Token JWT, User Role, Kunci Aplikasi).
 class SecureStorageService {
   final FlutterSecureStorage _storage;
 
@@ -19,7 +21,10 @@ class SecureStorageService {
   static const String _keyUserRole = 'user_role';
   static const String _keyUserData = 'user_data';
 
-  // In-memory cache untuk performa latensi tinggi (menghindari overhead IPC/KeyStore di setiap request)
+  // Trik Caching di Memori RAM:
+  // Baca-tulis ke secure storage fisik di Android itu agak lambat (ada jeda enkripsi).
+  // Biar setiap kali aplikasi butuh token gak bolak-balik akses storage fisik yang bikin UI lag,
+  // kita cache nilainya di variabel RAM ini. Kalau ada di RAM, langsung pake.
   String? _cachedBaseUrl;
   String? _cachedAppKey;
   String? _cachedAccessToken;

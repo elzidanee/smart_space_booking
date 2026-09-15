@@ -45,9 +45,11 @@ final adminMembersControllerProvider =
   AdminMembersController.new,
 );
 
+// Controller untuk Master Data Member (CRUD Member oleh Admin):
 class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
   @override
   FutureOr<List<AdminMemberModel>> build() {
+    // ref.watch di sini bikin list otomatis nge-load ulang begitu keyword pencarian (query) berubah
     final query = ref.watch(adminMembersSearchQueryProvider);
     final repo = ref.watch(adminRepositoryProvider);
     return repo.getMembers(query: query);
@@ -57,21 +59,26 @@ class AdminMembersController extends AsyncNotifier<List<AdminMemberModel>> {
     ref.read(adminMembersSearchQueryProvider.notifier).state = query;
   }
 
+  // Tambah member baru:
   Future<void> createMember(AdminMemberModel member, {File? photoFile, String? password}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
       await repo.createMember(member, photoFile: photoFile, password: password);
+      // Begitu berhasil disimpan di database, langsung panggil getMembers() lagi
+      // supaya tabel/daftar member di layar langsung bertambah tanpa perlu ditarik (pull-to-refresh) manual.
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);
     });
     if (state.hasError) throw state.error!;
   }
 
+  // Edit member yang sudah ada:
   Future<void> updateMember(AdminMemberModel member, {File? photoFile, String? password}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(adminRepositoryProvider);
+      // Kalau user upload foto baru, foto lama ditimpa. Kalau gak pilih foto baru, foto lama tetap dipakai.
       await repo.updateMember(member, photoFile: photoFile, password: password);
       final query = ref.read(adminMembersSearchQueryProvider);
       return repo.getMembers(query: query);

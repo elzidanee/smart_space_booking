@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'failure.dart';
 
+// Class ini bertugas nerjemahin error teknis (DioException, HTTP status code, timeout)
+// jadi pesan Failure yang ramah dalam bahasa Indonesia, biar pas dimunculin di Snackbar/Alert
+// user atau penguji langsung paham apa masalahnya (bukan pesan error kodingan yang bikin bingung).
 class ExceptionMapper {
   ExceptionMapper._();
 
@@ -11,7 +14,7 @@ class ExceptionMapper {
   }
 
   static Failure _fromDio(DioException error) {
-    // Timeout & koneksi
+    // 1. Masalah jaringan / koneksi internet (HP offline, server mati, atau timeout 15 detik habis)
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
@@ -19,22 +22,27 @@ class ExceptionMapper {
       return const NetworkFailure();
     }
 
-    // Request dibatalkan
+    // 2. Request sengaja dibatalkan oleh aplikasi
     if (error.type == DioExceptionType.cancel) {
       return const NetworkFailure('Permintaan dibatalkan.');
     }
 
-    // Respons dari server
+    // 3. Ada respon dari server, tinggal kita bedah kode HTTP status-nya:
     final response = error.response;
     if (response != null) {
       final code = response.statusCode ?? 500;
       final msg = _extractMessage(response.data) ?? error.message ?? 'Terjadi kesalahan sistem.';
 
       return switch (code) {
+        // 400: User salah isi data form (misal password kurang panjang / format salah)
         400 => ValidationFailure(msg),
+        // 401: Token JWT kadaluarsa atau belum login
         401 => SessionExpiredFailure(msg),
+        // 403: Dilarang (misal akun member nyoba buka menu admin)
         403 => UnauthorizedFailure(msg),
+        // 404: Data yang dicari (ruangan, user, reservasi) gak ada di database backend
         404 => NotFoundFailure(msg),
+        // 500 / 502 / 503: Backend crash atau database server lagi bermasalah
         500 || 502 || 503 => ServerFailure(msg),
         _ => ValidationFailure(msg, statusCode: code),
       };
@@ -43,6 +51,9 @@ class ExceptionMapper {
     return UnknownFailure(error.message ?? 'Gagal menghubungi server.');
   }
 
+  // Helper buat ngambil teks pesan error dari JSON balikan backend:
+  // Kadang backend ngasih format {"message": "..."} atau {"error": "..."}.
+  // Fungsi ini otomatis ngecek kedua kemungkinan itu.
   static String? _extractMessage(dynamic data) {
     if (data is Map<String, dynamic>) {
       final msg = data['message']?.toString();

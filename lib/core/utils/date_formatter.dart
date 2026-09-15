@@ -40,7 +40,9 @@ class DateFormatter {
     }
   }
 
-  /// 2026-10-15  (untuk parameter API)
+  // Format tanggal standar buat dikirim ke parameter API backend (YYYY-MM-DD).
+  // padLeft(2, '0') dipake biar kalau angka bulan/hari cuma 1 digit (misal Mei = 5),
+  // otomatis jadi '05' sesuai format database MySQL backend.
   static String toApiDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
@@ -49,7 +51,9 @@ class DateFormatter {
   static String formatTimeRange(String jamMulai, String jamSelesai) =>
       '$jamMulai - $jamSelesai WIB';
 
-  /// '2026-10-15' atau ISO string → 15 Oktober 2026
+  // Ubah tanggal ISO dari server (misal: '2026-10-15T08:00:00.000Z' atau '2026-10-15')
+  // jadi format santai Indonesia (contoh: 15 Oktober 2026).
+  // Dibedah manual pake split('-') biar cepat dan gak berat parsing DateTime.
   static String formatIndonesian(String isoDate) {
     try {
       final parts = isoDate.split('T').first.split('-');

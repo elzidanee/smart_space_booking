@@ -460,7 +460,12 @@ class _BoardingPassCard extends StatelessWidget {
   }
 }
 
-/// CustomPainter untuk membuat garis putus-putus (dashed line)
+// CustomPainter untuk membuat garis putus-putus (efek perforasi sobekan tiket bioskop/boarding pass):
+// Di Flutter gak ada widget garis putus-putus bawaan, jadi kita gambar sendiri di atas canvas.
+// Logika loop while:
+// 1. Gambar garis strip sepanjang 6px (dashWidth)
+// 2. Beri jeda kosong 4px (dashSpace)
+// 3. Ulangi terus sampai koordinat X menyentuh ujung kanan kartu (size.width)
 class _DashedLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

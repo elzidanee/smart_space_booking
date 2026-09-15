@@ -11,8 +11,11 @@ final selectedSpaceCategoryProvider = StateProvider<String>((ref) => 'all');
 /// Provider keyword pencarian
 final spaceSearchQueryProvider = StateProvider<String>((ref) => '');
 
-/// Provider daftar space (dengan filter kategori & pencarian)
-/// Menggunakan cache retention 5 menit agar navigasi antar-tab instan tanpa loading ulang.
+// Provider daftar space (dengan filter kategori & pencarian):
+// Trik Caching Memori 5 Menit:
+// Pake autoDispose biar hemat RAM HP, tapi kita kasih napas 5 menit pake ref.keepAlive().
+// Jadi kalau user bolak-balik buka tab katalog dalam kurun 5 menit, datanya langsung muncul instan
+// tanpa perlu request ulang ke internet. Lewat dari 5 menit, cache baru dibersihkan.
 final spacesListProvider = FutureProvider.autoDispose<List<SpaceModel>>((ref) async {
   final link = ref.keepAlive();
   final timer = Timer(const Duration(minutes: 5), () => link.close());
@@ -92,8 +95,12 @@ class BookingFormState {
     return '$h:$m';
   }
 
+  // --- Rumus Perhitungan Biaya Booking ---
+  // 1. Subtotal = harga ruangan per jam dikalikan berapa jam durasi booking yang dipilih
   int calculateSubtotal(int hargaPerJam) => hargaPerJam * durationHours;
 
+  // 2. Diskon = kalau ada voucher persentase (misal 20%), hitung (subtotal * 20 / 100).
+  // Dibulatkan pake .round() biar gak ada angka pecahan/perak desimal.
   int calculateDiscount(int subtotal) {
     if (appliedPromo == null) return 0;
     if (appliedPromo!.persentase > 0 && subtotal > 0) {
@@ -103,6 +110,8 @@ class BookingFormState {
     return 0;
   }
 
+  // 3. Total Bayar = Subtotal dikurangi potongan diskon.
+  // Dijaga minimal 0 (total < 0 ? 0 : total) biar gak minus kalau dapet voucher gratis/100%.
   int calculateTotal(int hargaPerJam) {
     final subtotal = calculateSubtotal(hargaPerJam);
     final discount = calculateDiscount(subtotal);
@@ -144,7 +153,7 @@ class BookingFormState {
   }
 }
 
-/// Notifier Controller untuk manajemen form reservasi space
+// Controller untuk mengelola seluruh formulir pemesanan ruangan (Layar Booking).
 class BookingController extends StateNotifier<BookingFormState> {
   final SpacesRepository _repository;
 
@@ -155,6 +164,9 @@ class BookingController extends StateNotifier<BookingFormState> {
           durationHours: 3,
         ));
 
+  // Catatan: Di setiap perubahan tanggal/jam/durasi di bawah, kita pasang 'clearAvailability: true'.
+  // Kenapa? Karena kalau jadwal diubah, hasil pengecekan slot yang lama udah gak valid.
+  // Jadi hasil ketersediaan direset biar user wajib ngecek slot baru ke server.
   void setDate(DateTime date) {
     state = state.copyWith(
       selectedDate: date,
@@ -187,6 +199,7 @@ class BookingController extends StateNotifier<BookingFormState> {
     }
   }
 
+  // Cek ketersediaan slot ke server:
   Future<void> checkAvailability(int spaceId) async {
     state = state.copyWith(isCheckingAvailability: true, clearError: true);
     try {
@@ -210,6 +223,7 @@ class BookingController extends StateNotifier<BookingFormState> {
     }
   }
 
+  // Terapkan kupon promo / diskon:
   Future<bool> applyPromo(String code, int subtotal) async {
     if (code.trim().isEmpty) return false;
     state = state.copyWith(isCheckingPromo: true, clearPromoError: true);
@@ -236,10 +250,14 @@ class BookingController extends StateNotifier<BookingFormState> {
     state = state.copyWith(clearPromo: true, clearPromoError: true);
   }
 
+  // Proses pengiriman booking ke server:
   Future<ReservationModel?> submitBooking(int spaceId, {int? hargaPerJam}) async {
     state = state.copyWith(isSubmitting: true, clearError: true);
     try {
-      // 1. Re-check ketersediaan slot real-time tepat sebelum submit
+      // Trik Pengaman (Double Check):
+      // Sebelum kirim data booking, kita cek ulang ketersediaan slot real-time tepat detik ini.
+      // Tujuannya mencegah 'race condition': siapa tahu pas user lagi asyik isi form,
+      // ada orang lain yang kebetulan baru aja ngebayar slot jam tersebut.
       final avail = await _repository.checkAvailability(
         spaceId: spaceId,
         tanggal: state.formattedDate,

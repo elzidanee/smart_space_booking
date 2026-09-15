@@ -29,7 +29,10 @@ final myReservationsProvider =
   final status = ref.watch(selectedReservationStatusFilterProvider);
   final list = await repository.getMyReservations(status: status);
 
-  // Jika ada data dengan totalBayar <= 0, perkaya data dari katalog space
+  // Trik Penyelamat Data (Defensive Data Enrichment):
+  // Kadang respon backend UKK untuk daftar tiket cuma ngasih data mentah (totalBayar 0 atau nama/foto ruangan null).
+  // Biar tampilan kartu tiket di HP member gak kosong melompong:
+  // Kita ambil katalog ruangan dari SpacesRepository, lalu kita jodohkan (mapping) berdasarkan spaceId atau nama ruangannya.
   if (list.any((r) => r.totalBayar <= 0)) {
     try {
       final spacesRepo = ref.watch(spacesRepositoryProvider);
@@ -46,6 +49,7 @@ final myReservationsProvider =
         if (matched != null && matched.hargaPerJam > 0) {
           final durasi = r.durasi > 0 ? r.durasi : 1;
           final calcSubtotal = matched.hargaPerJam * durasi;
+          // Hitung ulang total bayar: subtotal - diskon
           final calcTotal = (calcSubtotal - r.potonganDiskon) > 0
               ? (calcSubtotal - r.potonganDiskon)
               : calcSubtotal;
@@ -137,8 +141,8 @@ final cancelReservationControllerProvider =
   return CancelReservationController(repository, ref);
 });
 
-/// Provider statistik pemakaian member (total booking, total jam, total pengeluaran).
-/// Menggabungkan data dari reservasi member dan history agar selalu akurat dan tidak 0.
+// Provider agregasi statistik pemakaian untuk ditampilkan di layar Profil Member:
+// Menghitung: Total Booking, Total Jam Pemakaian, dan Total Biaya yang sudah dikeluarkan.
 final memberUsageStatsProvider = FutureProvider.autoDispose<
     ({int totalBooking, int totalJam, int totalPengeluaran})>((ref) async {
   final repo = ref.watch(reservationsRepositoryProvider);
@@ -150,15 +154,22 @@ final memberUsageStatsProvider = FutureProvider.autoDispose<
     dev.log('[MEMBER STATS] Gagal load all reservations: $e', name: 'MEMBER');
   }
 
+  // 1. Ambil transaksi yang valid (buang yang dibatalkan biar statistiknya gak palsu)
   final validRes = allReservations
       .where((r) => r.status.toLowerCase() != 'dibatalkan')
       .toList();
   final resBooking = validRes.length;
+
+  // 2. Akumulasi jam sewa pake .fold() (mirip rumus reduce di JavaScript):
+  // Kita jumlahkan durasi dari setiap tiket (0 + tiket1 + tiket2 + ...)
   final resJam =
       validRes.fold<int>(0, (sum, r) => sum + (r.durasi > 0 ? r.durasi : 1));
+
+  // 3. Akumulasi total rupiah yang dibayar
   final resPengeluaran =
       validRes.fold<int>(0, (sum, r) => sum + r.totalBayar);
 
+  // 4. Bandingkan dengan riwayat bulanan dari server backend:
   int histBooking = 0;
   int histJam = 0;
   int histPengeluaran = 0;
@@ -171,6 +182,8 @@ final memberUsageStatsProvider = FutureProvider.autoDispose<
     histPengeluaran = history.totalPengeluaran;
   } catch (_) {}
 
+  // Pilih angka yang paling tinggi / lengkap antara hitungan lokal vs data history backend
+  // Biar tampilan statistik di profil user selalu terisi akurat dan gak 0
   return (
     totalBooking: resBooking > histBooking ? resBooking : histBooking,
     totalJam: resJam > histJam ? resJam : histJam,

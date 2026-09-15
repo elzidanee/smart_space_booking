@@ -24,13 +24,18 @@ class DiscoverWorkspacesIllustration extends StatelessWidget {
   }
 }
 
+// CustomPainter untuk menggambar ilustrasi gedung coworking space secara native di Canvas:
+// Keunggulan cara ini: ringan, hemat memori (gak butuh file aset gambar PNG/SVG berat),
+// dan gambarnya tajam (resolusi tajam di semua jenis layar HP tanpa pecah).
 class _DiscoverWorkspacesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // Semua ukuran di bawah dikalikan lebar (w) dan tinggi (h) canvas.
+    // Trik koordinat rasio ini bikin ilustrasi otomatis responsif dan pas di segala ukuran layar.
     final w = size.width;
     final h = size.height;
 
-    // Large soft background circle
+    // 1. Lingkaran background lembut dengan gradasi radial (pendaran cahaya di belakang gedung)
     final bgPaint = Paint()
       ..shader = RadialGradient(
         center: Alignment.center,
@@ -42,18 +47,20 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
       ).createShader(Rect.fromCircle(center: Offset(w * 0.5, h * 0.48), radius: w * 0.42));
     canvas.drawCircle(Offset(w * 0.5, h * 0.48), w * 0.42, bgPaint);
 
-    // Ground / floor line
+    // 2. Garis lantai / tanah horizontal di bagian bawah gedung
     final groundPaint = Paint()
       ..color = const Color(0xFFE2DDD7)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(w * 0.08, h * 0.82), Offset(w * 0.92, h * 0.82), groundPaint);
 
-    // === MAIN BUILDING ===
-    // Building body
+    // === GEDUNG UTAMA ===
+    // Trik Efek Bayangan 3D:
+    // Gambar bayangannya dulu di layer bawah (koordinat digeser dikit ke kanan-bawah: w * 0.22, h * 0.22),
+    // baru kemudian timpa bodi putih gedung di atasnya (w * 0.20, h * 0.20).
     final buildingPaint = Paint()..color = Colors.white;
     final buildingShadow = Paint()..color = const Color(0xFFE8E4DF);
-    // Shadow
+    // Layer bayangan
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(w * 0.22, h * 0.22, w * 0.52, h * 0.62),
@@ -61,7 +68,7 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
       ),
       buildingShadow,
     );
-    // Main body
+    // Layer bodi gedung
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(w * 0.20, h * 0.20, w * 0.52, h * 0.62),
@@ -70,7 +77,7 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
       buildingPaint,
     );
 
-    // Building roof accent bar (Terracotta)
+    // Aksen atap gedung warna terracotta (khas tema brand)
     final roofPaint = Paint()..color = AppColors.primary;
     final roofRect = Rect.fromLTWH(w * 0.20, h * 0.20, w * 0.52, h * 0.045);
     canvas.drawRRect(
@@ -82,7 +89,10 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
       roofPaint,
     );
 
-    // === WINDOWS (3x3 grid) ===
+    // === JENDELA KACA (Grid 3 baris x 3 kolom) ===
+    // Loop bersarang untuk menata 9 jendela gedung.
+    // Trik selang-seling (isLit): rumus (r + c) % 2 == 0 bikin warna jendela gantian,
+    // ada jendela yang lampunya nyala (kuning hangat) dan ada yang mati (warna gelap).
     final windowPaint = Paint()..color = AppColors.secondary;
     final windowGlow = Paint()..color = AppColors.secondaryContainer;
     const windowW = 0.11;
@@ -92,7 +102,6 @@ class _DiscoverWorkspacesPainter extends CustomPainter {
 
     for (int r = 0; r < rows.length; r++) {
       for (int c = 0; c < cols.length; c++) {
-        // Determine if window is "lit"
         final isLit = (r + c) % 2 == 0;
         final paint = isLit ? windowPaint : windowGlow;
         canvas.drawRRect(

@@ -10,15 +10,19 @@ class CurrencyFormatter {
     try {
       return _fmt.format(amount);
     } catch (_) {
-      // Fallback manual jika locale belum ter-load
+      // Algoritma manual pembagi ribuan (fallback kalau package intl/locale id_ID bermasalah di HP lama):
       final isNeg = amount < 0;
-      final s = amount.abs().truncate().toString();
+      final s = amount.abs().truncate().toString(); // Buang koma dan ambil nilai positifnya
       final buf = StringBuffer();
+      
+      // Loop tiap karakter angka dari depan ke belakang:
       for (int i = 0; i < s.length; i++) {
-        final rev = s.length - i;
+        final rev = s.length - i; // Sisa digit yang ada di sebelah kanan
         buf.write(s[i]);
+        // Rumus matematika: Kalau sisa digit adalah kelipatan 3 (ribuan/jutaan), selipkan titik (.)
         if (rev > 1 && rev % 3 == 1) buf.write('.');
       }
+      // Gabungkan tanda minus (kalau ada) dan simbol Rp
       return '${isNeg ? '-Rp ' : 'Rp '}$buf';
     }
   }
