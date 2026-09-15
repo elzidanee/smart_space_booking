@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -8,6 +9,8 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
+import '../../../../core/widgets/status_badge.dart';
+import '../../../member/presentation/screens/member_shell_screen.dart';
 import '../providers/spaces_controller.dart';
 import '../../data/models/space_models.dart';
 
@@ -189,7 +192,7 @@ class _SpaceDetailBookingScreenState
                     if (!mounted) return;
 
                     if (res != null) {
-                      _showSuccessBookingDialog(res);
+                      _showSuccessBookingDialog(res, space: space);
                     } else {
                       final err = ref.read(bookingControllerProvider).errorMessage;
                       AppAlert.showToast(
@@ -210,85 +213,320 @@ class _SpaceDetailBookingScreenState
     );
   }
 
-  void _showSuccessBookingDialog(ReservationModel reservation) {
+  void _showSuccessBookingDialog(ReservationModel reservation, {SpaceModel? space}) {
+    final bookingState = ref.read(bookingControllerProvider);
+
+    // Pastikan kode booking selalu ada teksnya (defensive fallback jika server kosong)
+    final displayKode = reservation.kodeBooking.trim().isNotEmpty
+        ? reservation.kodeBooking.trim()
+        : (reservation.id > 0
+            ? 'BK-${reservation.id.toString().padLeft(6, '0')}'
+            : 'BK-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}');
+
+    final displayNamaSpace = (reservation.namaSpace != null && reservation.namaSpace!.isNotEmpty)
+        ? reservation.namaSpace!
+        : (space?.nama ?? 'Ruangan Coworking');
+
+    final displayTanggal = reservation.tanggal.isNotEmpty
+        ? reservation.tanggal
+        : bookingState.displayDate;
+
+    final displayJam = reservation.jamMulai.isNotEmpty
+        ? '${reservation.jamMulai} WIB (${reservation.durasi} Jam)'
+        : '${bookingState.formattedTime} WIB (${bookingState.durationHours} Jam)';
+
+    final displayTotal = reservation.totalBayar > 0
+        ? reservation.totalBayar
+        : (space != null ? bookingState.calculateTotal(space.hargaPerJam) : reservation.subtotal);
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+          borderRadius: BorderRadius.circular(24),
         ),
-        title: Center(
-          child: Column(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md12),
-              Text(
-                'Reservasi Berhasil Dibuat!',
-                style: AppTypography.h2,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Kode booking reservasi Anda:',
-              style: AppTypography.caption,
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  reservation.kodeBooking,
-                  style: AppTypography.h2.copyWith(
-                    color: AppColors.primary,
-                    letterSpacing: 2,
+        elevation: 8,
+        backgroundColor: AppColors.surface0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 1. Success Glow Icon Badge
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.success.withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md12),
-            Text(
-              'Status saat ini: Belum Dikonfirmasi. Menunggu persetujuan dari pengelola space.',
-              style: AppTypography.caption.copyWith(color: AppColors.ink600),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.pop(); // Kembali ke katalog
-              },
-              child: const Text('Selesai & Kembali ke Beranda'),
+                const SizedBox(height: 16),
+
+                // 2. Title & Subtitle
+                Text(
+                  'Reservasi Berhasil Dibuat!',
+                  style: AppTypography.h1.copyWith(fontSize: 20),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Pemesanan ruangan Anda berhasil dicatat ke sistem',
+                  style: AppTypography.caption.copyWith(color: AppColors.ink600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 18),
+
+                // 3. Kode Booking Ticket Box dengan Fitur Salin
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.25),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.confirmation_number_outlined, size: 14, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'KODE BOOKING RESERVASI',
+                            style: AppTypography.sectionLabel.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.center,
+                              child: Text(
+                                displayKode,
+                                style: AppTypography.h1.copyWith(
+                                  color: AppColors.primary,
+                                  letterSpacing: 2.2,
+                                  fontFamily: 'monospace',
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Tooltip(
+                            message: 'Salin Kode Booking',
+                            child: Material(
+                              color: AppColors.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: displayKode));
+                                  AppAlert.showToast(
+                                    context: context,
+                                    type: AppAlertType.success,
+                                    title: 'Kode Disalin',
+                                    message: 'Kode booking $displayKode berhasil disalin ke clipboard.',
+                                  );
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(
+                                    Icons.copy_rounded,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 4. Rincian Reservasi Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface50,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildDialogDetailRow(Icons.meeting_room_outlined, 'Ruangan', displayNamaSpace),
+                      const SizedBox(height: 10),
+                      _buildDialogDetailRow(Icons.calendar_today_outlined, 'Jadwal', '$displayTanggal • $displayJam'),
+                      const SizedBox(height: 10),
+                      _buildDialogDetailRow(Icons.payments_outlined, 'Total Bayar', CurrencyFormatter.format(displayTotal), isBold: true),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Divider(height: 1, color: AppColors.border),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Status Saat Ini', style: AppTypography.caption.copyWith(color: AppColors.ink600)),
+                          StatusBadge(
+                            status: ReservasiStatus.fromApi(reservation.status),
+                            compact: true,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // 5. Friendly Informative Note
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, size: 16, color: AppColors.info),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Menunggu konfirmasi pengelola. Anda dapat memantau status atau menunjukkan tiket pada menu Reservasi.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.ink600,
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 6. Action Buttons (Dual Buttons)
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      ref.read(memberNavIndexProvider.notifier).state = 1;
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/member');
+                      }
+                    },
+                    icon: const Icon(Icons.receipt_long_rounded, size: 18),
+                    label: const Text(
+                      'Lihat Status & E-Ticket',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      ref.read(memberNavIndexProvider.notifier).state = 0;
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/member');
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.border),
+                      foregroundColor: AppColors.ink600,
+                    ),
+                    child: const Text('Kembali ke Beranda'),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildDialogDetailRow(IconData icon, String label, String value, {bool isBold = false}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: AppColors.ink600),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: isBold
+                ? AppTypography.captionMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  )
+                : AppTypography.captionMedium.copyWith(
+                    color: AppColors.ink900,
+                  ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

@@ -76,6 +76,15 @@ class ETicketScreen extends ConsumerWidget {
             );
           }
 
+          final statusLower = ticket.status.toLowerCase();
+          // Logika Pengaman Status:
+          // Jika status reservasi masih 'menunggu' (belum_dikonfirm), QR code dan aksi tiket disesuaikan
+          // agar pengguna paham bahwa persetujuan admin space masih ditunggu.
+          final isPending = statusLower == 'belum_dikonfirm' ||
+              statusLower == 'menunggu' ||
+              statusLower == 'pending';
+          final isCancelled = statusLower == 'dibatalkan';
+
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg16,
@@ -85,6 +94,35 @@ class ETicketScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
+                if (isPending) ...[
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Reservasi ini masih menunggu verifikasi admin. QR Code check-in akan aktif otomatis begitu disetujui.',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.ink900,
+                              fontSize: 12,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // ── Card Boarding Pass Perforated Ticket ─────────────────────
                 _BoardingPassCard(ticket: ticket),
                 const SizedBox(height: AppSpacing.xl24),
@@ -121,6 +159,15 @@ class ETicketScreen extends ConsumerWidget {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
+                          if (isPending) {
+                            AppAlert.showToast(
+                              context: context,
+                              type: AppAlertType.warning,
+                              title: 'Menunggu Persetujuan',
+                              message: 'Tiket baru dapat dibagikan setelah reservasi disetujui oleh admin space.',
+                            );
+                            return;
+                          }
                           AppAlert.showToast(
                             context: context,
                             type: AppAlertType.info,
@@ -129,7 +176,7 @@ class ETicketScreen extends ConsumerWidget {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: isPending ? AppColors.ink300 : AppColors.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -151,17 +198,39 @@ class ETicketScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md12),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                    color: isPending
+                        ? AppColors.warning.withValues(alpha: 0.1)
+                        : (isCancelled
+                            ? AppColors.danger.withValues(alpha: 0.1)
+                            : AppColors.primaryContainer.withValues(alpha: 0.3)),
                     borderRadius: BorderRadius.circular(AppSpacing.radiusField),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: isPending
+                          ? AppColors.warning.withValues(alpha: 0.3)
+                          : (isCancelled
+                              ? AppColors.danger.withValues(alpha: 0.3)
+                              : AppColors.primary.withValues(alpha: 0.2)),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                      Icon(
+                        isPending
+                            ? Icons.hourglass_empty_rounded
+                            : (isCancelled ? Icons.cancel_outlined : Icons.info_outline),
+                        color: isPending
+                            ? AppColors.warning
+                            : (isCancelled ? AppColors.danger : AppColors.primary),
+                        size: 20,
+                      ),
                       const SizedBox(width: AppSpacing.sm8),
                       Expanded(
                         child: Text(
-                          'Tunjukkan QR Code ini ke petugas saat tiba di lokasi untuk proses check-in.',
+                          isPending
+                              ? 'Pemesanan ini masih menunggu verifikasi admin space. Begitu disetujui, QR Code check-in akan aktif otomatis di sini.'
+                              : (isCancelled
+                                  ? 'Pemesanan ini telah dibatalkan. QR Code check-in tidak dapat digunakan.'
+                                  : 'Tunjukkan QR Code ini ke petugas saat tiba di lokasi untuk proses check-in.'),
                           style: AppTypography.captionMedium.copyWith(color: AppColors.ink900),
                         ),
                       ),
@@ -206,6 +275,16 @@ class _BoardingPassCard extends StatelessWidget {
         ? DateFormatter.formatFullDate(parsedDate)
         : ticket.tanggal;
 
+    final statusLower = ticket.status.toLowerCase();
+    // Logika Pengaman QR:
+    // Kalau status reservasi masih 'menunggu' (belum_dikonfirm), QR Code sengaja kita tahan/kunci dulu.
+    // Tujuannya biar member gak bisa asal scan check-in ke lokasi sebelum beneran disetujui sama admin space.
+    // Begitu admin klik konfirmasi/setujui, QR Code bakal langsung muncul otomatis.
+    final isPending = statusLower == 'belum_dikonfirm' ||
+        statusLower == 'menunggu' ||
+        statusLower == 'pending';
+    final isCancelled = statusLower == 'dibatalkan';
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -230,40 +309,150 @@ class _BoardingPassCard extends StatelessWidget {
                 _buildStatusPill(ticket.status),
                 const SizedBox(height: AppSpacing.lg16),
 
-                // QR Code Container
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                if (isPending) ...[
+                  // Kotak Pengganti QR Code saat status masih Menunggu Verifikasi Admin
+                  Container(
+                    width: 214,
+                    constraints: const BoxConstraints(minHeight: 190),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface50,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                      border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.4),
+                        width: 1.5,
                       ),
-                    ],
-                  ),
-                  child: QrImageView(
-                    data: ticket.kodeBooking,
-                    version: QrVersions.auto,
-                    size: 190.0,
-                    eyeStyle: const QrEyeStyle(
-                      eyeShape: QrEyeShape.square,
-                      color: AppColors.ink900,
                     ),
-                    dataModuleStyle: const QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
-                      color: AppColors.ink900,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.lock_clock_rounded,
+                            color: AppColors.warning,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'QR Code Belum Tersedia',
+                          style: AppTypography.bodyEmphasis.copyWith(
+                            color: AppColors.ink900,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Menunggu persetujuan admin space sebelum QR code dapat digunakan untuk check-in.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.ink600,
+                            fontSize: 10.5,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                ] else if (isCancelled) ...[
+                  // Kotak Pengganti QR Code saat reservasi Dibatalkan
+                  Container(
+                    width: 214,
+                    constraints: const BoxConstraints(minHeight: 190),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface50,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.danger.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.cancel_outlined,
+                            color: AppColors.danger,
+                            size: 26,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Reservasi Dibatalkan',
+                          style: AppTypography.bodyEmphasis.copyWith(
+                            color: AppColors.danger,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tiket ini tidak berlaku lagi dan QR code dinonaktifkan.',
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.ink600,
+                            fontSize: 10.5,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // QR Code Container Resmi (hanya jika disetujui / aktif / selesai)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: QrImageView(
+                      data: ticket.kodeBooking,
+                      version: QrVersions.auto,
+                      size: 190.0,
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: AppColors.ink900,
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: AppColors.ink900,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md12),
 
                 // Booking Code Label & Value
                 Text(
-                  'BOOKING CODE',
+                  isPending ? 'KODE PENGAJUAN' : 'BOOKING CODE',
                   style: AppTypography.caption.copyWith(
                     letterSpacing: 1.2,
                     color: AppColors.ink600,

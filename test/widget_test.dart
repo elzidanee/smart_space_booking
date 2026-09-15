@@ -14,6 +14,7 @@ import 'package:bookingworkroom/features/spaces/presentation/screens/space_detai
 import 'package:bookingworkroom/main.dart';
 
 import 'package:bookingworkroom/features/onboarding/presentation/screens/onboarding_flow_screen.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 void main() {
   testWidgets('SmartSpaceApp main smoke test', (WidgetTester tester) async {
@@ -221,6 +222,54 @@ void main() {
     expect(find.text('BOOKING CODE'), findsOneWidget);
     expect(find.text('Flexi Desk 01 (Sora Med)'), findsOneWidget);
     expect(find.text('3 Jam'), findsOneWidget);
+  });
+
+  testWidgets(
+      'ETicketScreen hides QR Code and displays pending placeholder when status is belum_dikonfirm',
+      (WidgetTester tester) async {
+    const pendingTicket = ReservationModel(
+      id: 102,
+      kodeBooking: '#BOOK-20260830-0099',
+      spaceId: 2,
+      namaSpace: 'Meeting Room Alpha',
+      tipeSpace: 'meeting_room',
+      fotoSpace: '',
+      tanggal: '2026-08-30',
+      jamMulai: '13:00',
+      jamSelesai: '15:00',
+      durasi: 2,
+      subtotal: 100000,
+      potonganDiskon: 0,
+      totalBayar: 100000,
+      status: 'belum_dikonfirm',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          latestActiveTicketProvider.overrideWith((ref) => Future.value(pendingTicket)),
+          eTicketProvider(102).overrideWith((ref) => Future.value(pendingTicket)),
+        ],
+        child: const MaterialApp(
+          home: ETicketScreen(reservationId: 102),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // QR Code harus tersembunyi
+    expect(find.byType(QrImageView), findsNothing);
+
+    // Placeholder pending harus muncul
+    expect(find.text('QR Code Belum Tersedia'), findsOneWidget);
+    expect(
+      find.text('Menunggu persetujuan admin space sebelum QR code dapat digunakan untuk check-in.'),
+      findsOneWidget,
+    );
+    expect(find.text('KODE PENGAJUAN'), findsOneWidget);
+    expect(find.text('Menunggu Konfirmasi'), findsOneWidget);
   });
 }
 

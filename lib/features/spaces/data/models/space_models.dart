@@ -539,9 +539,34 @@ class ReservationModel {
         'potongan=$parsedPotongan totalBayar=$parsedTotalBayar '
         'jamMulai=$jamMulaiRaw jamSelesai=$jamSelesaiRaw', name: 'MODEL');
 
+    final parsedId = _parseInt(json['id'], defaultValue: 0);
+
+    // Prioritaskan berbagai key booking code yang mungkin dikembalikan backend
+    String parsedKodeBooking = (
+      json['kode_booking'] ??
+      json['booking_code'] ??
+      json['kode_reservasi'] ??
+      json['nomor_booking'] ??
+      json['kode'] ??
+      json['nomor_reservasi'] ??
+      json['e_ticket_number'] ??
+      detailObj?['kode_booking'] ??
+      (json['reservasi'] is Map ? json['reservasi']['kode_booking'] : null) ??
+      (json['data'] is Map ? json['data']['kode_booking'] : null)
+    )?.toString().trim() ?? '';
+
+    // Jika server mengembalikan string kosong / tidak menyertakan kode booking, buat kode booking cadangan yang rapi
+    if (parsedKodeBooking.isEmpty) {
+      if (parsedId > 0) {
+        parsedKodeBooking = 'BK-${parsedId.toString().padLeft(6, '0')}';
+      } else {
+        parsedKodeBooking = 'BK-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      }
+    }
+
     return ReservationModel(
-      id: _parseInt(json['id'], defaultValue: 0),
-      kodeBooking: json['kode_booking']?.toString() ?? json['booking_code']?.toString() ?? '',
+      id: parsedId,
+      kodeBooking: parsedKodeBooking,
       spaceId: parsedSpaceId,
       namaSpace: namaSpaceRaw,
       tipeSpace: tipeSpaceRaw,
