@@ -271,5 +271,46 @@ void main() {
     expect(find.text('KODE PENGAJUAN'), findsOneWidget);
     expect(find.text('Menunggu Konfirmasi'), findsOneWidget);
   });
+
+  testWidgets(
+      'ETicketScreen shows real share button and interactive QR card for approved ticket',
+      (WidgetTester tester) async {
+    const approvedTicket = ReservationModel(
+      id: 103,
+      kodeBooking: '#BOOK-20260830-0777',
+      spaceId: 3,
+      namaSpace: 'Podcast Room Studio',
+      tipeSpace: 'meeting_room',
+      fotoSpace: '',
+      tanggal: '2026-08-30',
+      jamMulai: '10:00',
+      jamSelesai: '12:00',
+      durasi: 2,
+      subtotal: 150000,
+      potonganDiskon: 0,
+      totalBayar: 150000,
+      status: 'disetujui',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          latestActiveTicketProvider.overrideWith((ref) => Future.value(approvedTicket)),
+          eTicketProvider(103).overrideWith((ref) => Future.value(approvedTicket)),
+        ],
+        child: const MaterialApp(
+          home: ETicketScreen(reservationId: 103),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Bagikan'), findsOneWidget);
+    expect(find.byIcon(Icons.share_rounded), findsNWidgets(2)); // AppBar + Action Button
+    expect(find.text('Ketuk QR untuk membagikan berkas'), findsOneWidget);
+    expect(find.byType(QrImageView), findsOneWidget);
+  });
 }
 

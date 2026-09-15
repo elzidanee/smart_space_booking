@@ -96,8 +96,10 @@ Aplikasi mengimplementasikan **seluruh 24 Kebutuhan Fungsional (FR-01 s.d. FR-24
 * **Pelacakan Status & Pembatalan Mandiri**:
   * Layar pelacakan status dengan tab filter (Semua, Menunggu, Disetujui, Aktif, Selesai, Dibatalkan).
   * Fitur pembatalan mandiri untuk pemesanan yang masih berstatus `belum_dikonfirm` atau `disetujui`.
-* **Tiket Digital (E-Ticket) dengan QR Code**:
+* **Tiket Digital (E-Ticket) & Fitur Berbagi Nyata (Real Mobile Share)**:
   * Menampilkan e-ticket resmi bergaya boarding pass modern dengan nomor reservasi, detail space, jadwal sewa, nama pemesan, dan QR Code dinamis (`qr_flutter`) untuk proses *check-in* di resepsionis.
+  * **Fitur Bagikan Nyata ke HP**: Melalui integrasi `share_plus` dan `path_provider`, sistem me-render gambar QR Code beresolusi tinggi (600x600 px PNG) dan membuka *Native ShareSheet* bawaan Android / iOS lengkap dengan berkas gambar QR dan ringkasan pemesanan (Ruangan, Kode, Jam, Pemesan, Total Biaya, Petunjuk Check-in). Pengguna dapat langsung mengirimnya ke WhatsApp, Telegram, Gmail, Bluetooth, atau menyimpannya ke memori perangkat.
+  * **Proteksi Status Menunggu**: QR Code dan fitur bagikan secara otomatis dikunci saat pemesanan masih berstatus menunggu konfirmasi admin space, dan langsung aktif otomatis begitu disetujui.
 * **Histori Pemesanan Bulanan**:
   * Arsip riwayat pemesanan yang dapat difilter per bulan dan tahun.
   * Kartu ringkasan finansial personal: Total Reservasi, Akumulasi Jam, dan Total Pengeluaran bulanan.

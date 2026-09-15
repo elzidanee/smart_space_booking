@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/ticket_share_helper.dart';
 import '../../../../core/widgets/app_alert.dart';
 import '../../../../core/widgets/app_illustrations.dart';
 import '../../../../core/widgets/app_shimmer.dart';
@@ -15,17 +16,82 @@ import '../../../spaces/data/models/space_models.dart';
 import '../providers/reservations_controller.dart';
 
 /// Layar E-Ticket Digital sesuai Stitch Screen 09 (a4fe2ef1773c4b56afee8ae1115da513).
-class ETicketScreen extends ConsumerWidget {
+class ETicketScreen extends ConsumerStatefulWidget {
   final int? reservationId;
 
   const ETicketScreen({super.key, this.reservationId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ETicketScreen> createState() => _ETicketScreenState();
+}
+
+class _ETicketScreenState extends ConsumerState<ETicketScreen> {
+  // Status loading saat sistem sedang me-render gambar QR code dan membuka menu share di HP
+  bool _isSharing = false;
+
+  /// Logika untuk membagikan QR Code tiket beneran ke aplikasi lain (WhatsApp, Gmail, Telegram, dll)
+  Future<void> _handleShare(
+    ReservationModel ticket, {
+    required bool isPending,
+    required bool isCancelled,
+  }) async {
+    // Kalau reservasi belum disetujui, jangan kasih share QR resmi dulu
+    if (isPending) {
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.warning,
+        title: 'Menunggu Persetujuan',
+        message: 'Tiket baru dapat dibagikan setelah reservasi disetujui oleh admin space.',
+      );
+      return;
+    }
+
+    if (isCancelled) {
+      AppAlert.showToast(
+        context: context,
+        type: AppAlertType.warning,
+        title: 'Reservasi Dibatalkan',
+        message: 'Tiket yang dibatalkan tidak dapat dibagikan ke aplikasi lain.',
+      );
+      return;
+    }
+
+    if (_isSharing) return;
+
+    setState(() {
+      _isSharing = true;
+    });
+
+    try {
+      // Panggil helper yang merender gambar QR Code PNG dan memanggil ShareSheet bawaan HP
+      await TicketShareHelper.shareTicket(
+        context: context,
+        ticket: ticket,
+      );
+    } catch (e) {
+      if (mounted) {
+        AppAlert.showToast(
+          context: context,
+          type: AppAlertType.danger,
+          title: 'Gagal Membagikan',
+          message: 'Terjadi kendala saat membuka menu berbagi di perangkat: $e',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSharing = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Jika reservationId diberikan, ambil detail reservasi tersebut.
     // Jika null (misal diakses via Shell Tab 3), ambil latest active ticket.
-    final AsyncValue<ReservationModel?> ticketAsync = reservationId != null
-        ? ref.watch(eTicketProvider(reservationId!)).whenData((data) => data)
+    final AsyncValue<ReservationModel?> ticketAsync = widget.reservationId != null
+        ? ref.watch(eTicketProvider(widget.reservationId!)).whenData((data) => data)
         : ref.watch(latestActiveTicketProvider);
 
     return Scaffold(
@@ -51,6 +117,28 @@ class ETicketScreen extends ConsumerWidget {
         ),
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: AppColors.ink900),
+            tooltip: 'Bagikan Tiket & QR',
+            onPressed: () {
+              final ticket = ticketAsync.valueOrNull;
+              if (ticket != null) {
+                final statusLower = ticket.status.toLowerCase();
+                final isPending = statusLower == 'belum_dikonfirm' ||
+                    statusLower == 'menunggu' ||
+                    statusLower == 'pending';
+                final isCancelled = statusLower == 'dibatalkan';
+                _handleShare(ticket, isPending: isPending, isCancelled: isCancelled);
+              } else {
+                AppAlert.showToast(
+                  context: context,
+                  type: AppAlertType.info,
+                  title: 'Tiket Belum Tersedia',
+                  message: 'Tidak ada tiket aktif yang dapat dibagikan saat ini.',
+                );
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline, color: AppColors.ink600),
             onPressed: () {
@@ -124,10 +212,15 @@ class ETicketScreen extends ConsumerWidget {
                 ],
 
                 // ── Card Boarding Pass Perforated Ticket ─────────────────────
-                _BoardingPassCard(ticket: ticket),
+                _BoardingPassCard(
+                  ticket: ticket,
+                  onShare: isPending || isCancelled
+                      ? null
+                      : () => _handleShare(ticket, isPending: isPending, isCancelled: isCancelled),
+                ),
                 const SizedBox(height: AppSpacing.xl24),
 
-                // ── Action Buttons (Unduh & Bagikan) ─────────────────────────
+                // ── Action Buttons (Salin Kode & Bagikan Beneran) ────────────
                 Row(
                   children: [
                     Expanded(
@@ -158,23 +251,13 @@ class ETicketScreen extends ConsumerWidget {
                     const SizedBox(width: AppSpacing.md12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          if (isPending) {
-                            AppAlert.showToast(
-                              context: context,
-                              type: AppAlertType.warning,
-                              title: 'Menunggu Persetujuan',
-                              message: 'Tiket baru dapat dibagikan setelah reservasi disetujui oleh admin space.',
-                            );
-                            return;
-                          }
-                          AppAlert.showToast(
-                            context: context,
-                            type: AppAlertType.info,
-                            title: 'Bagikan Tiket',
-                            message: 'E-Ticket siap dibagikan ke anggota tim atau tamu.',
-                          );
-                        },
+                        onPressed: _isSharing
+                            ? null
+                            : () => _handleShare(
+                                  ticket,
+                                  isPending: isPending,
+                                  isCancelled: isCancelled,
+                                ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isPending ? AppColors.ink300 : AppColors.primary,
                           foregroundColor: Colors.white,
@@ -183,9 +266,18 @@ class ETicketScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(AppSpacing.radiusField),
                           ),
                         ),
-                        icon: const Icon(Icons.share_rounded, size: 18),
+                        icon: _isSharing
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.share_rounded, size: 18),
                         label: Text(
-                          'Bagikan',
+                          _isSharing ? 'Menyiapkan...' : 'Bagikan',
                           style: AppTypography.bodyEmphasis.copyWith(color: Colors.white),
                         ),
                       ),
@@ -261,8 +353,12 @@ class ETicketScreen extends ConsumerWidget {
 /// Kartu Tiket Boarding-Pass dengan lubang perforasi di samping & dashed line di tengah
 class _BoardingPassCard extends StatelessWidget {
   final ReservationModel ticket;
+  final VoidCallback? onShare;
 
-  const _BoardingPassCard({required this.ticket});
+  const _BoardingPassCard({
+    required this.ticket,
+    this.onShare,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -419,32 +515,57 @@ class _BoardingPassCard extends StatelessWidget {
                   ),
                 ] else ...[
                   // QR Code Container Resmi (hanya jika disetujui / aktif / selesai)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  // Bisa diketuk langsung di HP untuk membagikan gambar QR Code ke aplikasi lain
+                  InkWell(
+                    onTap: onShare,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+                            border: Border.all(color: AppColors.border),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: QrImageView(
+                            data: ticket.kodeBooking,
+                            version: QrVersions.auto,
+                            size: 190.0,
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: AppColors.ink900,
+                            ),
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: AppColors.ink900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.touch_app_outlined, size: 12, color: AppColors.ink600),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Ketuk QR untuk membagikan berkas',
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 10.5,
+                                color: AppColors.ink600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    child: QrImageView(
-                      data: ticket.kodeBooking,
-                      version: QrVersions.auto,
-                      size: 190.0,
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: AppColors.ink900,
-                      ),
-                      dataModuleStyle: const QrDataModuleStyle(
-                        dataModuleShape: QrDataModuleShape.square,
-                        color: AppColors.ink900,
-                      ),
                     ),
                   ),
                 ],

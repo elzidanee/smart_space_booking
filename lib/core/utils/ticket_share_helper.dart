@@ -45,17 +45,33 @@ Tunjukkan gambar QR Code terlampir ke resepsionis saat tiba di lokasi untuk pros
 ''';
 
       // 2. Render gambar QR Code menggunakan QrPainter beresolusi tinggi (600x600 px)
+      // Menggunakan warna hitam pekat di atas modul kotak agar mudah di-scan scanner resepsionis
       final painter = QrPainter(
         data: ticket.kodeBooking,
         version: QrVersions.auto,
         gapless: true,
-        color: const Color(0xFF1C1917), // Deep ink dark
-        emptyColor: Colors.white,
+        eyeStyle: const QrEyeStyle(
+          eyeShape: QrEyeShape.square,
+          color: Color(0xFF1C1917),
+        ),
+        dataModuleStyle: const QrDataModuleStyle(
+          dataModuleShape: QrDataModuleShape.square,
+          color: Color(0xFF1C1917),
+        ),
       );
 
       final picData = await painter.toImageData(600.0, format: ui.ImageByteFormat.png);
 
-      // Kalau render gambar berhasil, kirim gambar + caption teks
+      // Bounding box untuk posisi pop-up share di tablet / iPad
+      Rect? sharePositionOrigin;
+      if (context.mounted) {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null && box.hasSize) {
+          sharePositionOrigin = box.localToGlobal(Offset.zero) & box.size;
+        }
+      }
+
+      // Kalau render gambar berhasil, kirim berkas gambar PNG + teks keterangan tiket
       if (picData != null) {
         final bytes = picData.buffer.asUint8List();
         final tempDir = await getTemporaryDirectory();
@@ -66,37 +82,35 @@ Tunjukkan gambar QR Code terlampir ke resepsionis saat tiba di lokasi untuk pros
 
         final xFile = XFile(file.path, mimeType: 'image/png');
 
-        // Bounding box untuk posisi pop-up share di tablet / iPad
-        Rect? sharePositionOrigin;
-        if (context.mounted) {
-          final box = context.findRenderObject() as RenderBox?;
-          if (box != null && box.hasSize) {
-            sharePositionOrigin = box.localToGlobal(Offset.zero) & box.size;
-          }
-        }
-
-        final result = await Share.shareXFiles(
-          [xFile],
-          text: shareText,
-          subject: 'E-Ticket Reservasi #${ticket.kodeBooking}',
-          sharePositionOrigin: sharePositionOrigin,
+        final result = await SharePlus.instance.share(
+          ShareParams(
+            files: [xFile],
+            text: shareText,
+            subject: 'E-Ticket Reservasi #${ticket.kodeBooking}',
+            sharePositionOrigin: sharePositionOrigin,
+          ),
         );
 
         return result.status != ShareResultStatus.dismissed;
       } else {
         // Fallback: jika device gagal render byte PNG, bagikan teks tiket saja
-        await Share.share(
-          shareText,
-          subject: 'E-Ticket Reservasi #${ticket.kodeBooking}',
+        await SharePlus.instance.share(
+          ShareParams(
+            text: shareText,
+            subject: 'E-Ticket Reservasi #${ticket.kodeBooking}',
+            sharePositionOrigin: sharePositionOrigin,
+          ),
         );
         return true;
       }
     } catch (e) {
-      // Fallback kedua: teks sederhana
+      // Fallback kedua: teks sederhana jika terjadi kendala sistem
       try {
-        await Share.share(
-          'E-Ticket Smart Space: ${ticket.kodeBooking} (${ticket.namaSpace ?? "Coworking Space"})',
-          subject: 'E-Ticket ${ticket.kodeBooking}',
+        await SharePlus.instance.share(
+          ShareParams(
+            text: 'E-Ticket Smart Space: ${ticket.kodeBooking} (${ticket.namaSpace ?? "Coworking Space"})',
+            subject: 'E-Ticket ${ticket.kodeBooking}',
+          ),
         );
         return true;
       } catch (_) {
