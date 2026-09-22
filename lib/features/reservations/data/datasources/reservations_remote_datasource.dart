@@ -264,35 +264,70 @@ class ReservationsRemoteDataSourceImpl implements ReservationsRemoteDataSource {
 
   @override
   Future<ReservationModel> getETicket(int id) async {
-    final response = await _dio.get(ApiEndpoints.eTicket(id));
-    final dynamic raw = response.data['data'] ?? response.data;
-    if (raw is Map<String, dynamic>) {
-      // API e-ticket mengembalikan struktur:
-      // { e_ticket_number, kode_booking, coworking_space, member, space, jadwal, rincian_pembayaran, status_reservasi, qr_code_payload }
-      final jadwal = raw['jadwal'] as Map<String, dynamic>? ?? {};
-      final space = raw['space'] as Map<String, dynamic>? ?? {};
-      final rincian = raw['rincian_pembayaran'] as Map<String, dynamic>? ?? {};
-      final member = raw['member'] as Map<String, dynamic>? ?? {};
+    // Strategi dual-source:
+    // 1. Ambil data dari endpoint e-ticket → dapat kode_booking, status, member info
+    // 2. Ambil data dari endpoint detail reservasi → dapat harga, jadwal, durasi yang akurat
+    // Gabungkan keduanya: prioritaskan harga dari detail reservasi (lebih lengkap),
+    // sedangkan kode_booking dan status dari e-ticket.
 
-      return ReservationModel(
-        id: id,
-        kodeBooking: raw['kode_booking']?.toString() ?? '',
-        spaceId: space['id'] is int ? space['id'] : int.tryParse(space['id']?.toString() ?? '$id') ?? id,
-        namaSpace: space['nama_space']?.toString() ?? space['nama']?.toString(),
-        tipeSpace: space['tipe']?.toString(),
-        fotoSpace: space['foto_url']?.toString() ?? space['foto']?.toString(),
-        tanggal: jadwal['tanggal_reservasi']?.toString() ?? '',
-        jamMulai: jadwal['jam_mulai']?.toString() ?? '',
-        jamSelesai: jadwal['jam_selesai']?.toString() ?? '',
-        durasi: jadwal['durasi_jam'] is int ? jadwal['durasi_jam'] : int.tryParse(jadwal['durasi_jam']?.toString() ?? '1') ?? 1,
-        subtotal: rincian['total_harga_awal'] is int ? rincian['total_harga_awal'] : int.tryParse(rincian['total_harga_awal']?.toString() ?? '0') ?? 0,
-        potonganDiskon: rincian['potongan_diskon'] is int ? rincian['potongan_diskon'] : int.tryParse(rincian['potongan_diskon']?.toString() ?? '0') ?? 0,
-        totalBayar: rincian['total_bayar'] is int ? rincian['total_bayar'] : int.tryParse(rincian['total_bayar']?.toString() ?? '0') ?? 0,
-        status: raw['status_reservasi']?.toString() ?? 'disetujui',
-        namaMember: member['nama_member']?.toString(),
-        teleponMember: member['telp']?.toString(),
-      );
+    // ── Langkah 1: Fetch e-ticket endpoint ───────────────────────────────────
+    String? eTicketKodeBooking;
+    String? eTicketStatus;
+    String? eTicketNamaSpace;
+    String? eTicketFotoSpace;
+    String? eTicketTipeSpace;
+    String? eTicketNamaMember;
+    String? eTicketTelponMember;
+
+    try {
+      final response = await _dio.get(ApiEndpoints.eTicket(id));
+      final dynamic raw = response.data['data'] ?? response.data;
+      if (raw is Map<String, dynamic>) {
+        final space  = raw['space']  as Map<String, dynamic>? ?? {};
+        final member = raw['member'] as Map<String, dynamic>? ?? {};
+
+        eTicketKodeBooking  = raw['kode_booking']?.toString();
+        eTicketStatus       = raw['status_reservasi']?.toString();
+        eTicketNamaSpace    = space['nama_space']?.toString() ?? space['nama']?.toString();
+        eTicketFotoSpace    = space['foto_url']?.toString()   ?? space['foto']?.toString();
+        eTicketTipeSpace    = space['tipe']?.toString();
+        eTicketNamaMember   = member['nama_member']?.toString();
+        eTicketTelponMember = member['telp']?.toString();
+
+        dev.log('[E-TICKET #$id] kode=$eTicketKodeBooking status=$eTicketStatus', name: 'API');
+      }
+    } catch (e) {
+      dev.log('[E-TICKET #$id] e-ticket endpoint error: $e — akan fallback ke detail', name: 'API');
     }
-    return getReservationById(id);
+
+    // ── Langkah 2: Fetch detail reservasi (sumber data harga & jadwal terpercaya) ─
+    ReservationModel detail;
+    try {
+      detail = await getReservationById(id);
+    } catch (e) {
+      // Jika keduanya gagal, lempar error
+      throw Exception('Gagal memuat data tiket reservasi #$id: $e');
+    }
+
+    // ── Langkah 3: Gabungkan — prioritas e-ticket untuk identitas, detail untuk harga ─
+    final merged = detail.copyWith(
+      kodeBooking:   (eTicketKodeBooking  != null && eTicketKodeBooking.trim().isNotEmpty)
+                         ? eTicketKodeBooking.trim()
+                         : (detail.kodeBooking.isNotEmpty ? detail.kodeBooking : null),
+      status:        eTicketStatus ?? detail.status,
+      namaSpace:     eTicketNamaSpace  ?? detail.namaSpace,
+      fotoSpace:     eTicketFotoSpace  ?? detail.fotoSpace,
+      tipeSpace:     eTicketTipeSpace  ?? detail.tipeSpace,
+      namaMember:    eTicketNamaMember  ?? detail.namaMember,
+      teleponMember: eTicketTelponMember ?? detail.teleponMember,
+    );
+
+    dev.log(
+      '[E-TICKET #$id] MERGED totalBayar=${merged.totalBayar} subtotal=${merged.subtotal} '
+      'tanggal=${merged.tanggal} jamMulai=${merged.jamMulai} durasi=${merged.durasi}',
+      name: 'API',
+    );
+
+    return merged;
   }
 }

@@ -671,7 +671,7 @@ class _BoardingPassCard extends StatelessWidget {
                     const SizedBox(width: AppSpacing.sm8),
                     Flexible(
                       child: Text(
-                        CurrencyFormatter.format(ticket.totalBayar),
+                        CurrencyFormatter.format(ticket.displayPrice),
                         textAlign: TextAlign.right,
                         style: AppTypography.h2.copyWith(
                           color: AppColors.primary,

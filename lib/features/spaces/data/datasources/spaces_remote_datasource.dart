@@ -236,7 +236,7 @@ class SpacesRemoteDataSourceImpl implements SpacesRemoteDataSource {
 
             return AvailabilityCheckResult(
               isAvailable: false,
-              message: 'Slot ruangan pukul ${res.jamMulai} - $endStr sudah ter-reservasi (${res.kodeBooking}). Silakan pilih jam lain.',
+              message: 'Slot ruangan pukul ${res.jamMulai} - $endStr sudah ter-reservasi. Silakan pilih jam lain.',
               tanggal: tanggal,
               jamMulai: jamMulai,
               durasi: durasi,

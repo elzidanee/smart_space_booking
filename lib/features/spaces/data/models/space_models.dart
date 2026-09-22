@@ -172,13 +172,25 @@ class AvailabilityCheckResult {
   final String? jamMulai;
   final int? durasi;
 
-  const AvailabilityCheckResult({
+  AvailabilityCheckResult({
     required this.isAvailable,
-    required this.message,
+    required String message,
     this.tanggal,
     this.jamMulai,
     this.durasi,
-  });
+  }) : message = sanitizeMessage(message);
+
+  /// Sanitasi: hapus kode booking orang lain dari pesan (misal "BK-000553", "(BK-000553)", dsb)
+  /// agar privasi pemesan lain terjaga dan member tidak melihat kode internal orang lain.
+  static String sanitizeMessage(String msg) {
+    return msg
+        .replaceAll(RegExp(r'\s*\([A-Z]{2,}-\d{4,}\)'), '')   // hapus (BK-000553)
+        .replaceAll(RegExp(r'\b[A-Z]{2,}-\d{4,}\b'), '')       // hapus BK-000553 tanpa kurung
+        .replaceAll(RegExp(r'\s*\([A-Za-z0-9_-]{5,}\)'), '')   // hapus kode dalam tanda kurung lainnya
+        .replaceAll(RegExp(r'\s{2,}'), ' ')                    // bersihkan spasi ganda
+        .replaceAll(RegExp(r'\s([.,])'), r'$1')                 // bersihkan spasi sebelum titik/koma
+        .trim();
+  }
 
   factory AvailabilityCheckResult.fromJson(Map<String, dynamic> json) {
     // Cek berbagai kemungkinan format boolean ketersediaan dari API:
@@ -453,6 +465,16 @@ class ReservationModel {
     this.createdAt,
   });
 
+  /// Total biaya yang pasti dan akurat untuk ditampilkan di UI (card, e-ticket, qr code)
+  int get displayPrice {
+    if (totalBayar > 0) return totalBayar;
+    if (subtotal > 0) {
+      final afterDiscount = subtotal - potonganDiskon;
+      return afterDiscount > 0 ? afterDiscount : subtotal;
+    }
+    return 0;
+  }
+
   factory ReservationModel.fromJson(Map<String, dynamic> json) {
     // ── Nested objects ──────────────────────────────────────────────────────
     final memberObj  = json['member']  is Map ? Map<String, dynamic>.from(json['member']  as Map) : null;
@@ -498,6 +520,9 @@ class ReservationModel {
 
     // ── tanggal ───────────────────────────────────────────────────────────
     var tanggalRaw = (
+      detailObj?['tanggal_reservasi'] ??
+      detailObj?['tanggal'] ??
+      detailObj?['tgl_reservasi'] ??
       json['tanggal_reservasi'] ??
       jadwalObj?['tanggal_reservasi'] ??
       json['tanggal'] ??
@@ -512,14 +537,23 @@ class ReservationModel {
 
     // ── durasi & jam ──────────────────────────────────────────────────────
     final parsedDurasi = _parseInt(
+      detailObj?['durasi_jam'] ?? detailObj?['durasi'] ?? detailObj?['durasi_sewa'] ??
       json['durasi_jam'] ?? jadwalObj?['durasi_jam'] ?? json['durasi'] ?? json['durasi_sewa'],
       defaultValue: 1,
     );
 
-    final jamMulaiRaw = (json['jam_mulai'] ?? jadwalObj?['jam_mulai'])?.toString() ?? '';
+    final jamMulaiRaw = (
+      detailObj?['jam_mulai'] ??
+      json['jam_mulai'] ??
+      jadwalObj?['jam_mulai']
+    )?.toString() ?? '';
 
     // jam_selesai: ambil dari response, atau hitung dari jam_mulai + durasi_jam
-    String jamSelesaiRaw = (json['jam_selesai'] ?? jadwalObj?['jam_selesai'])?.toString() ?? '';
+    String jamSelesaiRaw = (
+      detailObj?['jam_selesai'] ??
+      json['jam_selesai'] ??
+      jadwalObj?['jam_selesai']
+    )?.toString() ?? '';
     if (jamSelesaiRaw.isEmpty && jamMulaiRaw.isNotEmpty && parsedDurasi > 0) {
       try {
         final parts = jamMulaiRaw.split(':');
@@ -534,6 +568,7 @@ class ReservationModel {
 
     // ── harga per jam (dari detail_reservasi.space atau root) ─────────────
     final spaceHarga = _parseInt(
+      detailSpaceObj?['harga_per_jam'] ?? detailSpaceObj?['harga'] ?? detailSpaceObj?['tarif'] ??
       spaceObj?['harga_per_jam'] ?? spaceObj?['harga'] ?? spaceObj?['tarif'] ??
       json['harga_per_jam'] ?? json['harga'] ?? json['price'] ?? json['tarif'],
       defaultValue: 0,
@@ -542,6 +577,7 @@ class ReservationModel {
     // ── diskon persentase → hitung potongan ───────────────────────────────
     // Subtotal = harga_per_jam × durasi_jam
     int parsedSubtotal = _parseInt(
+      detailObj?['subtotal'] ?? detailObj?['total_harga_awal'] ?? detailObj?['biaya'] ??
       rincianObj?['total_harga_awal'] ?? rincianObj?['subtotal'] ??
       json['total_harga_awal'] ?? json['subtotal'] ?? json['sub_total'] ??
       json['total_biaya'] ?? json['biaya'],
@@ -553,6 +589,7 @@ class ReservationModel {
 
     // Potongan diskon: coba field eksplisit dulu, fallback hitung dari persentase
     int parsedPotongan = _parseInt(
+      detailObj?['potongan_diskon'] ?? detailObj?['potongan'] ?? detailObj?['diskon_nominal'] ??
       rincianObj?['potongan_diskon'] ??
       json['potongan_diskon'] ?? json['potongan'] ?? json['discount'],
       defaultValue: 0,
@@ -567,13 +604,32 @@ class ReservationModel {
       }
     }
 
-    // ── total_bayar: ambil dari detail_reservasi.total_harga ─────────────
-    // API: detail_reservasi[0].total_harga = total setelah diskon
+    // ── total_bayar: ambil dari detail_reservasi.total_harga atau transaksi ──
+    final bayarObj = json['pembayaran'] is Map
+        ? Map<String, dynamic>.from(json['pembayaran'] as Map)
+        : (json['transaksi'] is Map ? Map<String, dynamic>.from(json['transaksi'] as Map) : null);
+
     int parsedTotalBayar = _parseInt(
       detailObj?['total_harga'] ??          // ← FIELD UTAMA dari API
+      detailObj?['total_bayar'] ??
+      detailObj?['total_biaya'] ??
       rincianObj?['total_bayar'] ??
-      json['total_bayar'] ?? json['total'] ?? json['tagihan'] ??
-      json['total_tagihan'] ?? json['grand_total'] ?? json['net_total'] ?? json['amount'],
+      rincianObj?['total_harga'] ??
+      rincianObj?['total_biaya'] ??
+      bayarObj?['total_bayar'] ??
+      bayarObj?['total_harga'] ??
+      bayarObj?['total_biaya'] ??
+      bayarObj?['nominal'] ??
+      bayarObj?['jumlah_bayar'] ??
+      json['total_harga'] ??
+      json['total_bayar'] ??
+      json['total_biaya'] ??
+      json['total'] ??
+      json['tagihan'] ??
+      json['total_tagihan'] ??
+      json['grand_total'] ??
+      json['net_total'] ??
+      json['amount'],
       defaultValue: 0,
     );
 

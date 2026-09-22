@@ -299,13 +299,7 @@ class _ReservationCard extends StatelessWidget {
         ? DateFormatter.formatFullDate(parsedDate)
         : reservation.tanggal;
 
-    final displayPrice = reservation.totalBayar > 0
-        ? reservation.totalBayar
-        : (reservation.subtotal > 0
-            ? (reservation.subtotal - reservation.potonganDiskon > 0
-                ? reservation.subtotal - reservation.potonganDiskon
-                : reservation.subtotal)
-            : 0);
+    final displayPrice = reservation.displayPrice;
 
     return Container(
       decoration: BoxDecoration(

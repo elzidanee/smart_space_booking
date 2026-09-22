@@ -89,7 +89,39 @@ final reservationDetailProvider =
 final eTicketProvider =
     FutureProvider.autoDispose.family<ReservationModel, int>((ref, id) async {
   final repository = ref.watch(reservationsRepositoryProvider);
-  return await repository.getETicket(id);
+  ReservationModel ticket = await repository.getETicket(id);
+
+  // Enrichment: jika totalBayar masih 0 setelah parsing (backend kadang tidak mengirim field harga),
+  // hitung ulang dari katalog ruangan berdasarkan spaceId atau nama space.
+  if (ticket.totalBayar <= 0) {
+    try {
+      final spacesRepo = ref.watch(spacesRepositoryProvider);
+      final spaces = await spacesRepo.getSpaces();
+      final spaceMap = {for (final s in spaces) s.id: s};
+      final spaceNameMap = {
+        for (final s in spaces) s.nama.toLowerCase().trim(): s
+      };
+
+      final matched = spaceMap[ticket.spaceId] ??
+          spaceNameMap[ticket.namaSpace?.toLowerCase().trim() ?? ''];
+      if (matched != null && matched.hargaPerJam > 0) {
+        final durasi = ticket.durasi > 0 ? ticket.durasi : 1;
+        final calcSubtotal = matched.hargaPerJam * durasi;
+        final calcTotal = (calcSubtotal - ticket.potonganDiskon) > 0
+            ? (calcSubtotal - ticket.potonganDiskon)
+            : calcSubtotal;
+        ticket = ticket.copyWith(
+          subtotal: ticket.subtotal > 0 ? ticket.subtotal : calcSubtotal,
+          totalBayar: calcTotal,
+          namaSpace: ticket.namaSpace ?? matched.nama,
+          tipeSpace: ticket.tipeSpace ?? matched.tipe,
+          fotoSpace: ticket.fotoSpace ?? matched.foto,
+        );
+      }
+    } catch (_) {}
+  }
+
+  return ticket;
 });
 
 /// Provider tiket aktif paling baru (untuk Tab 3 Tiket pada Shell)

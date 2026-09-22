@@ -39,7 +39,7 @@ class TicketShareHelper {
 📅 Tanggal: $dateDisplay
 ⏰ Jam: ${ticket.jamMulai} - ${ticket.jamSelesai} WIB (${ticket.durasi} Jam)
 👤 Nama Pemesan: ${ticket.namaMember ?? 'Member Smart Space'}
-💰 Total Biaya: ${CurrencyFormatter.format(ticket.totalBayar)}
+💰 Total Biaya: ${CurrencyFormatter.format(ticket.displayPrice)}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 Tunjukkan gambar QR Code terlampir ke resepsionis saat tiba di lokasi untuk proses check-in.
 ''';
